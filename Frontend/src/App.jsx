@@ -1,18 +1,15 @@
-import { Routes, Route } from "react-router-dom";
-
-function Home() {
-  return <h1>Home Page</h1>;
-}
-
-function Login() {
-  return <h1>Login Page</h1>;
-}
+import React from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import LoginPage from "./pages/auth/LoginPage"; 
 
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/login" element={<Login />} />
+      {/* Login page (SchoolLink design, no demo credentials) */}
+      <Route path="/" element={<LoginPage />} />
+
+      {/* Catch-all redirect */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
