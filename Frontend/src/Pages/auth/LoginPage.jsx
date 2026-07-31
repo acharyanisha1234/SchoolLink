@@ -1,12 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const [loginData, setLoginData] = useState({ email: "", password: "" });
 
   return (
     <div className="min-h-screen bg-slate-100 flex">
-      {/* LEFT SIDE - same as commit 1 */}
+      {/* LEFT SIDE - same */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-indigo-700 text-white p-12 flex-col justify-between">
         <div>
           <div className="flex items-center gap-3 mb-8">
@@ -35,7 +36,6 @@ const LoginPage = () => {
       {/* RIGHT SIDE */}
       <div className="w-full lg:w-1/2 bg-white flex items-center justify-center p-8">
         <div className="w-full max-w-md">
-          {/* Mobile header (visible only on small screens) */}
           <div className="lg:hidden text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-800">SchoolLink</h1>
             <p className="text-gray-500 text-sm mt-1">School Management Platform</p>
@@ -43,11 +43,23 @@ const LoginPage = () => {
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-gray-800">Sign in to your account</h2>
             <p className="text-gray-500 text-sm mt-1">
-              Don't have an account?{" "}
-              <a href="#" className="text-blue-600 hover:underline font-medium">Register</a>
+              Don't have an account? <a href="#" className="text-blue-600 hover:underline font-medium">Register</a>
             </p>
           </div>
-          {/* We'll add the form fields in the next commit */}
+          <form className="space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+              <input
+                type="email"
+                placeholder="enter email"
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                value={loginData.email}
+                onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+                required
+              />
+            </div>
+  
+          </form>
         </div>
       </div>
     </div>
