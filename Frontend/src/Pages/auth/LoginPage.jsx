@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 const LoginPage = () => {
   const navigate = useNavigate();
   const [loginData, setLoginData] = useState({ email: "", password: "" });
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <div className="min-h-screen bg-slate-100 flex">
@@ -51,7 +52,7 @@ const LoginPage = () => {
               <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
               <input
                 type="email"
-                placeholder="Enter Email"
+                placeholder="kavita.rao@schoollink.edu"
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
                 value={loginData.email}
                 onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
@@ -60,15 +61,30 @@ const LoginPage = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-              <input
-                type="password"
-                placeholder="••••••••"
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-                value={loginData.password}
-                onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                required
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 pr-16 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                  value={loginData.password}
+                  onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-blue-600 hover:text-blue-700"
+                >
+                  {showPassword ? "HIDE" : "SHOW"}
+                </button>
+              </div>
             </div>
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input type="checkbox" className="rounded border-gray-300" /> Remember me
+              </label>
+            </div>
+            
           </form>
         </div>
       </div>
