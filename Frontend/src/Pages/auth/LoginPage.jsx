@@ -4,10 +4,66 @@ import { useNavigate } from "react-router-dom";
 const LoginPage = () => {
   const navigate = useNavigate();
   const [loginData, setLoginData] = useState({ email: "", password: "" });
+  const [loginErrors, setLoginErrors] = useState({ password: "" });
   const [showPassword, setShowPassword] = useState(false);
+  const [toast, setToast] = useState({ message: "", type: "" });
+  const [loading, setLoading] = useState(false);
+
+  const showToast = (message, type = "info") => {
+    setToast({ message, type });
+    setTimeout(() => setToast({ message: "", type: "" }), 3000);
+  };
+
+  const handleLoginSubmit = async (e) => {
+    e.preventDefault();
+    if (loginData.password.length < 6) {
+      setLoginErrors({ password: "Password must be at least 6 characters." });
+      return;
+    }
+    setLoginErrors({ password: "" });
+    setLoading(true);
+
+    try {
+      const response = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(loginData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.accessToken && data.user) {
+        // We'll handle redirect in the next commit
+        showToast("Login Successful", "success");
+        setLoading(false);
+      } else {
+        showToast(data.message || "Login failed.", "error");
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      let serverMessage = "Login failed. Please try again.";
+      if (error.message.includes("Network Error")) {
+        serverMessage = "Cannot connect to server. Is your backend running?";
+      }
+      showToast(serverMessage, "error");
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-100 flex">
+      {/* Toast Notification */}
+      {toast.message && (
+        <div
+          className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg text-white z-50 ${
+            toast.type === "success" ? "bg-green-600" : "bg-red-600"
+          }`}
+        >
+          {toast.message}
+        </div>
+      )}
+
       {/* LEFT SIDE - same */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-indigo-700 text-white p-12 flex-col justify-between">
         <div>
@@ -47,7 +103,7 @@ const LoginPage = () => {
               Don't have an account? <a href="#" className="text-blue-600 hover:underline font-medium">Register</a>
             </p>
           </div>
-          <form className="space-y-5">
+          <form onSubmit={handleLoginSubmit} className="space-y-5">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
               <input
@@ -78,18 +134,20 @@ const LoginPage = () => {
                   {showPassword ? "HIDE" : "SHOW"}
                 </button>
               </div>
+              {loginErrors.password && <p className="text-red-500 text-sm mt-1">{loginErrors.password}</p>}
             </div>
             <div className="flex items-center justify-between">
               <label className="flex items-center gap-2 text-sm text-gray-700">
                 <input type="checkbox" className="rounded border-gray-300" /> Remember me
               </label>
-             <a href="#" className="text-sm text-blue-600 hover:underline">Forgot your password?</a>
+              <a href="#" className="text-sm text-blue-600 hover:underline">Forgot your password?</a>
             </div>
             <button
               type="submit"
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
+              disabled={loading}
+              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Sign In
+              {loading ? "Signing in..." : "Sign In"}
             </button>
           </form>
         </div>
