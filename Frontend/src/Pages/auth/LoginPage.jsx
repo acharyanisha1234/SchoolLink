@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const LoginPage = () => {
@@ -8,6 +8,23 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [toast, setToast] = useState({ message: "", type: "" });
   const [loading, setLoading] = useState(false);
+
+  // Auto-redirect if already logged in
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const userString = localStorage.getItem("user");
+    if (token && userString) {
+      try {
+        const user = JSON.parse(userString);
+        const role = user.role?.toUpperCase() || "";
+        if (role === "ADMIN") navigate("/admin", { replace: true });
+        else if (role === "TEACHER") navigate("/teacher", { replace: true });
+        else if (role === "STUDENT") navigate("/student", { replace: true });
+      } catch (e) {
+        console.error("Auto-redirect error", e);
+      }
+    }
+  }, [navigate]);
 
   const showToast = (message, type = "info") => {
     setToast({ message, type });
@@ -74,7 +91,7 @@ const LoginPage = () => {
         </div>
       )}
 
-      {/* LEFT SIDE - same */}
+      {/* LEFT SIDE - Brand/Info Panel */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-indigo-700 text-white p-12 flex-col justify-between">
         <div>
           <div className="flex items-center gap-3 mb-8">
@@ -100,7 +117,7 @@ const LoginPage = () => {
         </div>
       </div>
 
-      {/* RIGHT SIDE */}
+      {/* RIGHT SIDE - Login Form */}
       <div className="w-full lg:w-1/2 bg-white flex items-center justify-center p-8">
         <div className="w-full max-w-md">
           <div className="lg:hidden text-center mb-8">
@@ -110,7 +127,8 @@ const LoginPage = () => {
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-gray-800">Sign in to your account</h2>
             <p className="text-gray-500 text-sm mt-1">
-              Don't have an account? <a href="#" className="text-blue-600 hover:underline font-medium">Register</a>
+              Don't have an account?{" "}
+              <a href="#" className="text-blue-600 hover:underline font-medium">Register</a>
             </p>
           </div>
           <form onSubmit={handleLoginSubmit} className="space-y-5">
@@ -181,6 +199,15 @@ const LoginPage = () => {
             </svg>
             <span className="text-gray-700 font-medium">Sign in with Google</span>
           </button>
+
+          {/* MST-Style Info Panel */}
+          <div className="mt-8 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <p className="text-xs text-gray-600">
+              <span className="font-medium">For Students & Schools:</span> Login using the email
+              and password provided by your school. Please contact your school admin if you
+              haven't received the credentials.
+            </p>
+          </div>
         </div>
       </div>
     </div>
