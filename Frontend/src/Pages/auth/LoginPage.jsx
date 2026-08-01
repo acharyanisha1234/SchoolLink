@@ -83,8 +83,14 @@ const LoginPage = () => {
               <label className="flex items-center gap-2 text-sm text-gray-700">
                 <input type="checkbox" className="rounded border-gray-300" /> Remember me
               </label>
+             <a href="#" className="text-sm text-blue-600 hover:underline">Forgot your password?</a>
             </div>
-            
+            <button
+              type="submit"
+              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
+            >
+              Sign In
+            </button>
           </form>
         </div>
       </div>
