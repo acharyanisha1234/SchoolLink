@@ -79,11 +79,11 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 flex">
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center p-4">
       {/* Toast Notification */}
       {toast.message && (
         <div
-          className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg text-white z-50 ${
+          className={`fixed top-6 right-6 p-4 rounded-xl shadow-2xl text-white z-50 ${
             toast.type === "success" ? "bg-green-600" : "bg-red-600"
           }`}
         >
@@ -91,65 +91,87 @@ const LoginPage = () => {
         </div>
       )}
 
-      {/* LEFT SIDE - Brand/Info Panel */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-indigo-700 text-white p-12 flex-col justify-between">
-        <div>
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-2xl font-bold">SL</div>
-            <span className="text-2xl font-bold">SchoolLink</span>
+      <div className="w-full max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col lg:flex-row">
+        {/* LEFT SIDE - Brand/Info Panel */}
+        <div className="lg:w-1/2 bg-gradient-to-br from-blue-700 to-indigo-800 text-white p-10 lg:p-14 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center gap-3 mb-10">
+              <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center text-2xl font-bold shadow-lg">
+                SL
+              </div>
+              <span className="text-2xl font-bold tracking-tight">SchoolLink</span>
+            </div>
+            <div className="space-y-4">
+              <h1 className="text-4xl lg:text-5xl font-extrabold leading-tight">
+                Welcome to <br />SchoolLink
+              </h1>
+              <p className="text-blue-100 text-lg font-light">
+                The Complete School Management Platform
+              </p>
+              <p className="text-blue-200 text-sm max-w-sm leading-relaxed">
+                Unifying administration, teaching, and learning in one powerful,
+                beautifully designed platform.
+              </p>
+            </div>
           </div>
-          <div className="mt-16">
-            <h1 className="text-4xl font-bold mb-4">Welcome to SchoolLink</h1>
-            <p className="text-blue-100 text-lg mb-6">The Complete School Management Platform</p>
-            <p className="text-blue-200 text-sm max-w-md">
-              Unifying administration, teaching, and learning in one powerful,
-              beautifully designed platform.
-            </p>
-          </div>
-        </div>
-        <div className="flex gap-8 text-sm">
-          <div><span className="block text-2xl font-bold">1,200+</span><span className="text-blue-200">Students</span></div>
-          <div><span className="block text-2xl font-bold">80+</span><span className="text-blue-200">Teachers</span></div>
-          <div><span className="block text-2xl font-bold">95%</span><span className="text-blue-200">Satisfaction</span></div>
-        </div>
-        <div className="text-xs text-blue-300 mt-8 border-t border-blue-400/30 pt-4">
-          SchoolLink v2.4.1 © 2024 SchoolLink Inc.
-        </div>
-      </div>
 
-      {/* RIGHT SIDE - Login Form */}
-      <div className="w-full lg:w-1/2 bg-white flex items-center justify-center p-8">
-        <div className="w-full max-w-md">
+          <div className="flex gap-8 text-sm mt-10">
+            <div>
+              <span className="block text-3xl font-bold">1,200+</span>
+              <span className="text-blue-200">Students</span>
+            </div>
+            <div>
+              <span className="block text-3xl font-bold">80+</span>
+              <span className="text-blue-200">Teachers</span>
+            </div>
+            <div>
+              <span className="block text-3xl font-bold">95%</span>
+              <span className="text-blue-200">Satisfaction</span>
+            </div>
+          </div>
+
+          <div className="text-xs text-blue-300 mt-8 border-t border-blue-400/30 pt-4">
+            SchoolLink v2.4.1 © 2024 SchoolLink Inc.
+          </div>
+        </div>
+
+        {/* RIGHT SIDE - Login Form */}
+        <div className="lg:w-1/2 bg-white p-8 lg:p-14 flex flex-col justify-center">
           <div className="lg:hidden text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-800">SchoolLink</h1>
-            <p className="text-gray-500 text-sm mt-1">School Management Platform</p>
+            <p className="text-gray-500 text-sm">School Management Platform</p>
           </div>
+
           <div className="mb-8">
-            <h2 className="text-2xl font-bold text-gray-800">Sign in to your account</h2>
+            <h2 className="text-2xl lg:text-3xl font-bold text-gray-800">Sign in to your account</h2>
             <p className="text-gray-500 text-sm mt-1">
               Don't have an account?{" "}
-              <a href="#" className="text-blue-600 hover:underline font-medium">Register</a>
+              <a href="#" className="text-blue-600 hover:underline font-medium">
+                Register
+              </a>
             </p>
           </div>
-          <form onSubmit={handleLoginSubmit} className="space-y-5">
+
+          <form onSubmit={handleLoginSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">Email Address</label>
               <input
                 type="email"
-                placeholder="kavita.rao@schoollink.edu"
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                placeholder="Enter email"
+                className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
                 value={loginData.email}
                 onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
                 required
               />
             </div>
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">Password</label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 pr-16 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3 pr-16 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
                   value={loginData.password}
                   onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
                   required
@@ -157,52 +179,71 @@ const LoginPage = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-blue-600 hover:text-blue-700"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium text-blue-600 hover:text-blue-700 transition"
                 >
                   {showPassword ? "HIDE" : "SHOW"}
                 </button>
               </div>
-              {loginErrors.password && <p className="text-red-500 text-sm mt-1">{loginErrors.password}</p>}
+              {loginErrors.password && (
+                <p className="text-red-500 text-sm mt-1">{loginErrors.password}</p>
+              )}
             </div>
+
             <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 text-sm text-gray-700">
-                <input type="checkbox" className="rounded border-gray-300" /> Remember me
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                Remember me
               </label>
-              <a href="#" className="text-sm text-blue-600 hover:underline">Forgot your password?</a>
+              <a href="#" className="text-sm text-blue-600 hover:underline font-medium">
+                Forgot your password?
+              </a>
             </div>
+
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-blue-600 text-white py-3.5 rounded-xl font-semibold hover:bg-blue-700 transition duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "Signing in..." : "Sign In"}
             </button>
           </form>
 
           {/* Divider */}
-          <div className="relative my-6">
+          <div className="relative my-8">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">OR</span>
+              <span className="px-4 bg-white text-gray-400 font-medium">OR</span>
             </div>
           </div>
 
           {/* Social Login */}
-          <button className="w-full border border-gray-300 rounded-lg py-3 flex items-center justify-center gap-3 hover:bg-gray-50 transition">
+          <button className="w-full border border-gray-300 rounded-xl py-3 flex items-center justify-center gap-3 hover:bg-gray-50 transition duration-200">
             <svg className="w-5 h-5" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              <path
+                fill="#4285F4"
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+              />
+              <path
+                fill="#EA4335"
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+              />
             </svg>
             <span className="text-gray-700 font-medium">Sign in with Google</span>
           </button>
 
-          {/* MST-Style Info Panel */}
-          <div className="mt-8 p-4 bg-gray-50 rounded-lg border border-gray-200">
-            <p className="text-xs text-gray-600">
+          {/* Info Panel (restored the missing text) */}
+          <div className="mt-8 p-4 bg-gray-50 rounded-xl border border-gray-200">
+            <p className="text-xs text-gray-600 leading-relaxed">
               <span className="font-medium">For Students & Schools:</span> Login using the email
               and password provided by your school. Please contact your school admin if you
               haven't received the credentials.
