@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom"; // ← Link imported here
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -9,7 +9,7 @@ const LoginPage = () => {
   const [toast, setToast] = useState({ message: "", type: "" });
   const [loading, setLoading] = useState(false);
 
-  // Auto-redirect if already logged in
+  // Auto-redirect if already logged in – runs once
   useEffect(() => {
     const token = localStorage.getItem("token");
     const userString = localStorage.getItem("user");
@@ -24,7 +24,7 @@ const LoginPage = () => {
         console.error("Auto-redirect error", e);
       }
     }
-  }, [navigate]);
+  }, []); // ✅ empty array – no infinite loop
 
   const showToast = (message, type = "info") => {
     setToast({ message, type });
@@ -146,9 +146,9 @@ const LoginPage = () => {
             <h2 className="text-2xl lg:text-3xl font-bold text-gray-800">Sign in to your account</h2>
             <p className="text-gray-500 text-sm mt-1">
               Don't have an account?{" "}
-              <a href="#" className="text-blue-600 hover:underline font-medium">
+              <Link to="/register" className="text-blue-600 hover:underline font-medium">
                 Register
-              </a>
+              </Link>
             </p>
           </div>
 
@@ -241,7 +241,7 @@ const LoginPage = () => {
             <span className="text-gray-700 font-medium">Sign in with Google</span>
           </button>
 
-          {/* Info Panel (restored the missing text) */}
+          {/* Info Panel */}
           <div className="mt-8 p-4 bg-gray-50 rounded-xl border border-gray-200">
             <p className="text-xs text-gray-600 leading-relaxed">
               <span className="font-medium">For Students & Schools:</span> Login using the email
