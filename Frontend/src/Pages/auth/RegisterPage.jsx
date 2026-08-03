@@ -19,7 +19,7 @@ const RegisterPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center p-4">
       <div className="w-full max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col lg:flex-row">
-        {/* LEFT SIDE - Brand/Info Panel */}
+        {/* LEFT SIDE - Brand/Info Panel (same as before) */}
         <div className="lg:w-1/2 bg-gradient-to-br from-blue-700 to-indigo-800 text-white p-10 lg:p-14 flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-3 mb-10">
@@ -51,7 +51,7 @@ const RegisterPage = () => {
           </div>
         </div>
 
-        {/* RIGHT SIDE - Register Form */}
+        {/* RIGHT SIDE */}
         <div className="lg:w-1/2 bg-white p-8 lg:p-14 flex flex-col justify-center">
           <div className="lg:hidden text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-800">SchoolLink</h1>
@@ -61,9 +61,7 @@ const RegisterPage = () => {
             <h2 className="text-2xl lg:text-3xl font-bold text-gray-800">Create an account</h2>
             <p className="text-gray-500 text-sm mt-1">
               Already have an account?{" "}
-              <Link to="/" className="text-blue-600 hover:underline font-medium">
-                Login
-              </Link>
+              <Link to="/" className="text-blue-600 hover:underline font-medium">Login</Link>
             </p>
           </div>
           <form className="space-y-5">
@@ -91,31 +89,49 @@ const RegisterPage = () => {
                 required
               />
             </div>
-            {/* Password */}
+            {/* Password with toggle */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">Password</label>
-              <input
-                type="password"
-                placeholder="••••••••"
-                className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
-                value={registerData.password}
-                onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
-                required
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3 pr-16 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+                  value={registerData.password}
+                  onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium text-blue-600 hover:text-blue-700 transition"
+                >
+                  {showPassword ? "HIDE" : "SHOW"}
+                </button>
+              </div>
             </div>
-            {/* Confirm Password */}
+            {/* Confirm Password with toggle */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">Confirm Password</label>
-              <input
-                type="password"
-                placeholder="••••••••"
-                className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
-                value={registerData.confirmPassword}
-                onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })}
-                required
-              />
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3 pr-16 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+                  value={registerData.confirmPassword}
+                  onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium text-blue-600 hover:text-blue-700 transition"
+                >
+                  {showConfirmPassword ? "HIDE" : "SHOW"}
+                </button>
+              </div>
             </div>
-            {/* Terms and button will be added later */}
+            {/* Terms and button will be added next */}
           </form>
         </div>
       </div>
