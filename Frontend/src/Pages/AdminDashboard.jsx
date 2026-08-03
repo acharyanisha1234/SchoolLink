@@ -1,11 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
-  HomeIcon,
   UsersIcon,
   AcademicCapIcon,
   BookOpenIcon,
   MegaphoneIcon,
-  UserCircleIcon,
   ChartBarIcon,
   UserPlusIcon,
   PlusIcon,
@@ -20,8 +18,16 @@ import {
   CheckCircleIcon,
   DocumentTextIcon,
   XMarkIcon,
-  PhotoIcon,
-} from '@heroicons/react/24/outline';
+} from "@heroicons/react/24/outline";
+import Sidebar from "../components/Sidebar";
+import {
+  stats,
+  students,
+  teachers,
+  subjects,
+  announcements,
+  recentActivities,
+} from "../data/AdminMockData.js";
 
 const AdminDashboard = () => {
   // State for different sections
@@ -31,65 +37,6 @@ const AdminDashboard = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [modalType, setModalType] = useState('');
 
-  // Mock Data
-  const stats = {
-    totalStudents: 1247,
-    totalTeachers: 48,
-    totalSubjects: 32,
-    totalMaterials: 156,
-    totalAssignments: 89,
-    totalSubmissions: 234,
-    totalTasks: 67,
-    recentNotices: 5,
-  };
-
-  const students = [
-    { id: 1, name: 'John Doe', class: '10', section: 'A', studentId: 'STU-2024-001', status: 'Active' },
-    { id: 2, name: 'Jane Smith', class: '9', section: 'B', studentId: 'STU-2024-002', status: 'Active' },
-    { id: 3, name: 'Mike Johnson', class: '8', section: 'A', studentId: 'STU-2024-003', status: 'Inactive' },
-    { id: 4, name: 'Sarah Williams', class: '10', section: 'C', studentId: 'STU-2024-004', status: 'Active' },
-    { id: 5, name: 'David Brown', class: '7', section: 'B', studentId: 'STU-2024-005', status: 'Active' },
-  ];
-
-  const teachers = [
-    { id: 1, name: 'Mr. Robert Wilson', email: 'robert@school.com', subjects: ['Mathematics', 'Physics'], classes: ['10', '9'] },
-    { id: 2, name: 'Ms. Emily Davis', email: 'emily@school.com', subjects: ['English', 'Literature'], classes: ['8', '7'] },
-    { id: 3, name: 'Dr. James Miller', email: 'james@school.com', subjects: ['Chemistry', 'Biology'], classes: ['10', '9'] },
-  ];
-
-  const subjects = [
-    { 
-      id: 1, 
-      name: 'Computer Science', 
-      teacher: 'Mr. Robert Wilson',
-      chapters: ['Introduction to Programming', 'Data Structures', 'Algorithms', 'Database Management']
-    },
-    { 
-      id: 2, 
-      name: 'Mathematics', 
-      teacher: 'Ms. Emily Davis',
-      chapters: ['Algebra', 'Geometry', 'Trigonometry', 'Calculus']
-    },
-    { 
-      id: 3, 
-      name: 'English', 
-      teacher: 'Dr. James Miller',
-      chapters: ['Grammar', 'Literature', 'Writing Skills', 'Communication']
-    },
-  ];
-
-  const announcements = [
-    { id: 1, title: 'School Holiday - May 1st', date: '2024-04-28', content: 'School will remain closed on May 1st due to Labor Day.' },
-    { id: 2, title: 'Parent-Teacher Meeting', date: '2024-04-25', content: 'Parent-Teacher meeting scheduled for May 15th.' },
-    { id: 3, title: 'Annual Sports Day', date: '2024-04-20', content: 'Annual Sports Day will be held on June 1st.' },
-  ];
-
-  const recentActivities = [
-    { message: 'John Doe submitted Math homework', time: '2 hours ago' },
-    { message: 'New teacher Mrs. Sarah joined', time: '5 hours ago' },
-    { message: 'Computer Science exam scheduled', time: '1 day ago' },
-    { message: '5 new students enrolled', time: '2 days ago' },
-  ];
 
   // Helper Functions
   const toggleSubject = (id) => {
@@ -105,46 +52,6 @@ const AdminDashboard = () => {
     setShowAddModal(false);
     setModalType('');
   };
-
-  // Sidebar Navigation
-  const Sidebar = () => (
-    <div className="h-screen w-64 bg-gray-900 text-white fixed left-0 top-0 overflow-y-auto">
-      <div className="p-6 border-b border-gray-800">
-        <h1 className="text-2xl font-bold">🏫 SchoolLink</h1>
-        <p className="text-sm text-gray-400 mt-1">Admin Dashboard</p>
-      </div>
-      
-      <nav className="mt-6 px-3">
-        {[
-          { id: 'dashboard', icon: HomeIcon, label: 'Dashboard' },
-          { id: 'students', icon: UsersIcon, label: 'Students' },
-          { id: 'teachers', icon: AcademicCapIcon, label: 'Teachers' },
-          { id: 'subjects', icon: BookOpenIcon, label: 'Subjects' },
-          { id: 'announcements', icon: MegaphoneIcon, label: 'Announcements' },
-        ].map((item) => (
-          <button
-            key={item.id}
-            onClick={() => setActiveTab(item.id)}
-            className={`flex items-center w-full px-4 py-3 my-1 text-sm rounded-lg transition-colors ${
-              activeTab === item.id 
-                ? 'bg-blue-600 text-white' 
-                : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-            }`}
-          >
-            <item.icon className="h-5 w-5 mr-3" />
-            {item.label}
-          </button>
-        ))}
-      </nav>
-
-      <div className="absolute bottom-0 w-full p-4 border-t border-gray-800">
-        <div className="bg-gray-800 rounded-lg p-4">
-          <p className="text-xs text-gray-400">Admin User</p>
-          <p className="text-sm text-white">admin@school.com</p>
-        </div>
-      </div>
-    </div>
-  );
 
   // Stat Card Component
   const StatCard = ({ icon: Icon, label, value, color, bgColor }) => (
@@ -231,7 +138,7 @@ const AdminDashboard = () => {
           <h1 className="text-3xl font-bold text-gray-900">Students</h1>
           <p className="text-gray-600 mt-1">Manage all students in your school</p>
         </div>
-        <button onClick={() => openModal('student')} className="btn-primary inline-flex items-center">
+        <button onClick={() => openModal('student')} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium inline-flex items-center">
           <PlusIcon className="h-5 w-5 mr-2" />
           Add Student
         </button>
@@ -301,7 +208,7 @@ const AdminDashboard = () => {
           <h1 className="text-3xl font-bold text-gray-900">Teachers</h1>
           <p className="text-gray-600 mt-1">Manage all teachers in your school</p>
         </div>
-        <button onClick={() => openModal('teacher')} className="btn-primary inline-flex items-center">
+        <button onClick={() => openModal('teacher')} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium inline-flex items-center">
           <PlusIcon className="h-5 w-5 mr-2" />
           Add Teacher
         </button>
@@ -355,7 +262,7 @@ const AdminDashboard = () => {
           <h1 className="text-3xl font-bold text-gray-900">Subjects</h1>
           <p className="text-gray-600 mt-1">Manage subjects and their chapters</p>
         </div>
-        <button onClick={() => openModal('subject')} className="btn-primary inline-flex items-center">
+        <button onClick={() => openModal('subject')} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium inline-flex items-center">
           <PlusIcon className="h-5 w-5 mr-2" />
           Create Subject
         </button>
@@ -418,7 +325,7 @@ const AdminDashboard = () => {
           <h1 className="text-3xl font-bold text-gray-900">Announcements</h1>
           <p className="text-gray-600 mt-1">Manage school announcements</p>
         </div>
-        <button onClick={() => openModal('announcement')} className="btn-primary inline-flex items-center">
+        <button onClick={() => openModal('announcement')} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium inline-flex items-center">
           <PlusIcon className="h-5 w-5 mr-2" />
           Post Announcement
         </button>
@@ -525,7 +432,7 @@ const AdminDashboard = () => {
                 <textarea rows="4" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Write announcement content..."></textarea>
               </div>
             )}
-            <button type="submit" className="w-full btn-primary">
+            <button type="submit" className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium">
               {modalType === 'student' ? 'Add Student' : 
                modalType === 'teacher' ? 'Add Teacher' : 
                modalType === 'subject' ? 'Create Subject' : 'Post Announcement'}
@@ -538,18 +445,23 @@ const AdminDashboard = () => {
 
   // Main Render
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-      <div className="ml-64 flex-1 p-8">
-        {activeTab === 'dashboard' && <DashboardView />}
-        {activeTab === 'students' && <StudentsView />}
-        {activeTab === 'teachers' && <TeachersView />}
-        {activeTab === 'subjects' && <SubjectsView />}
-        {activeTab === 'announcements' && <AnnouncementsView />}
-      </div>
-      <Modal />
+  <div className="flex min-h-screen bg-gray-50">
+    <Sidebar
+      activeTab={activeTab}
+      setActiveTab={setActiveTab}
+    />
+
+    <div className="ml-64 flex-1 p-8">
+      {activeTab === "dashboard" && <DashboardView />}
+      {activeTab === "students" && <StudentsView />}
+      {activeTab === "teachers" && <TeachersView />}
+      {activeTab === "subjects" && <SubjectsView />}
+      {activeTab === "announcements" && <AnnouncementsView />}
     </div>
-  );
+
+    <Modal />
+  </div>
+);
 };
 
 export default AdminDashboard;
