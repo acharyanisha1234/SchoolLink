@@ -1,14 +1,13 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import LoginPage from "./pages/auth/LoginPage"; 
-
+import LoginPage from "./pages/auth/LoginPage";
+import RegisterPage from "./pages/auth/RegisterPage";
 
 function App() {
   return (
     <Routes>
-      {/* Login page (SchoolLink design, no demo credentials) */}
       <Route path="/" element={<LoginPage />} />
-      {/* Catch-all redirect */}
+      <Route path="/register" element={<RegisterPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
