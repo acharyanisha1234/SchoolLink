@@ -51,9 +51,22 @@ const RegisterPage = () => {
           </div>
         </div>
 
-        {/* Right panel placeholder */}
+        {/* RIGHT SIDE - Register Form */}
         <div className="lg:w-1/2 bg-white p-8 lg:p-14 flex flex-col justify-center">
-          Right panel content coming...
+          <div className="lg:hidden text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-800">SchoolLink</h1>
+            <p className="text-gray-500 text-sm">School Management Platform</p>
+          </div>
+          <div className="mb-8">
+            <h2 className="text-2xl lg:text-3xl font-bold text-gray-800">Create an account</h2>
+            <p className="text-gray-500 text-sm mt-1">
+              Already have an account?{" "}
+              <Link to="/" className="text-blue-600 hover:underline font-medium">
+                Login
+              </Link>
+            </p>
+          </div>
+          {/* Form will be added next */}
         </div>
       </div>
     </div>
