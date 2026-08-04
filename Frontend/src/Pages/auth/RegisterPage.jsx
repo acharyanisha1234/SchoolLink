@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+
 const RegisterPage = () => {
   const navigate = useNavigate();
   const [registerData, setRegisterData] = useState({
@@ -8,6 +9,7 @@ const RegisterPage = () => {
     password: "",
     confirmPassword: "",
     birthday: { month: "", day: "", year: "" },
+    gender: "",
     agreeTerms: false,
   });
   const [errors, setErrors] = useState({});
@@ -20,6 +22,7 @@ const RegisterPage = () => {
     setToast({ message, type });
     setTimeout(() => setToast({ message: "", type: "" }), 3000);
   };
+
   const validate = () => {
     const newErrors = {};
     if (!registerData.fullName.trim()) newErrors.fullName = "Full name is required";
@@ -32,9 +35,11 @@ const RegisterPage = () => {
     if (!registerData.birthday.month) newErrors.birthday = "Birth month is required";
     if (!registerData.birthday.day) newErrors.birthday = "Birth day is required";
     if (!registerData.birthday.year) newErrors.birthday = "Birth year is required";
+    if (!registerData.gender) newErrors.gender = "Please select your gender";
     if (!registerData.agreeTerms) newErrors.agreeTerms = "You must agree to the terms";
     return newErrors;
   };
+
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
     const validationErrors = validate();
@@ -44,6 +49,7 @@ const RegisterPage = () => {
     }
     setErrors({});
     setLoading(true);
+
     try {
       const response = await fetch("http://localhost:5000/api/auth/register", {
         method: "POST",
@@ -52,9 +58,10 @@ const RegisterPage = () => {
           fullName: registerData.fullName,
           email: registerData.email,
           password: registerData.password,
-          // birthday and gender will be added later
+          // birthday and gender will be added next
         }),
       });
+
       const data = await response.json();
 
       if (response.ok) {
@@ -75,12 +82,14 @@ const RegisterPage = () => {
       setLoading(false);
     }
   };
+
   const dayOptions = Array.from({ length: 31 }, (_, i) => i + 1);
   const monthOptions = [
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
   ];
   const yearOptions = Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center p-4">
       {toast.message && (
@@ -92,6 +101,7 @@ const RegisterPage = () => {
           {toast.message}
         </div>
       )}
+
       <div className="w-full max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col lg:flex-row">
         {/* LEFT SIDE - Brand/Info Panel */}
         <div className="lg:w-1/2 bg-gradient-to-br from-blue-700 to-indigo-800 text-white p-10 lg:p-14 flex flex-col justify-between">
@@ -117,6 +127,7 @@ const RegisterPage = () => {
             SchoolLink v2.4.1 © 2024 SchoolLink Inc.
           </div>
         </div>
+
         {/* RIGHT SIDE - Register Form */}
         <div className="lg:w-1/2 bg-white p-8 lg:p-14 flex flex-col justify-center">
           <div className="lg:hidden text-center mb-8">
@@ -129,6 +140,7 @@ const RegisterPage = () => {
               Already have an account? <Link to="/" className="text-blue-600 hover:underline font-medium">Login</Link>
             </p>
           </div>
+
           <form onSubmit={handleRegisterSubmit} className="space-y-5">
             {/* Full Name */}
             <div>
@@ -145,6 +157,7 @@ const RegisterPage = () => {
               />
               {errors.fullName && <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>}
             </div>
+
             {/* Email */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">Email Address</label>
@@ -160,6 +173,7 @@ const RegisterPage = () => {
               />
               {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
             </div>
+
             {/* Birthday */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">Birthday</label>
@@ -217,6 +231,25 @@ const RegisterPage = () => {
                 </select>
               </div>
               {errors.birthday && <p className="text-red-500 text-sm mt-1">{errors.birthday}</p>}
+            </div>
+
+            {/* Gender */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">Gender</label>
+              <select
+                className={`w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 ${
+                  errors.gender ? "border-red-500" : "border-gray-300"
+                }`}
+                value={registerData.gender}
+                onChange={(e) => setRegisterData({ ...registerData, gender: e.target.value })}
+              >
+                <option value="">Select your gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+                <option value="Prefer not to say">Prefer not to say</option>
+              </select>
+              {errors.gender && <p className="text-red-500 text-sm mt-1">{errors.gender}</p>}
             </div>
 
             {/* Password */}
@@ -319,4 +352,5 @@ const RegisterPage = () => {
     </div>
   );
 };
+
 export default RegisterPage;
