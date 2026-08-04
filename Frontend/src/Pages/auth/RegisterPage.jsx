@@ -148,7 +148,7 @@ const RegisterPage = () => {
               <label className="block text-sm font-semibold text-gray-700 mb-1">Full Name</label>
               <input
                 type="text"
-                placeholder="John Doe"
+                placeholder="Enter Full Name"
                 className={`w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 ${
                   errors.fullName ? "border-red-500" : "border-gray-300"
                 }`}
@@ -164,7 +164,7 @@ const RegisterPage = () => {
               <label className="block text-sm font-semibold text-gray-700 mb-1">Email Address</label>
               <input
                 type="email"
-                placeholder="kavita.rao@schoollink.edu"
+                placeholder="Enter Email"
                 className={`w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 ${
                   errors.email ? "border-red-500" : "border-gray-300"
                 }`}

@@ -24,7 +24,7 @@ const LoginPage = () => {
         console.error("Auto-redirect error", e);
       }
     }
-  }, []); // ✅ empty array – no infinite loop
+  }, []); // empty array – no infinite loop
 
   const showToast = (message, type = "info") => {
     setToast({ message, type });
@@ -194,9 +194,9 @@ const LoginPage = () => {
                 <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
                 Remember me
               </label>
-              <a href="#" className="text-sm text-blue-600 hover:underline font-medium">
-                Forgot your password?
-              </a>
+            <Link to="/reset-password" className="text-sm text-blue-600 hover:underline font-medium">
+               Forgot your password?
+             </Link>
             </div>
 
             <button
