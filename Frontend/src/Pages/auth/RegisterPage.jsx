@@ -58,7 +58,8 @@ const RegisterPage = () => {
           fullName: registerData.fullName,
           email: registerData.email,
           password: registerData.password,
-          // birthday and gender will be added next
+          birthday: `${registerData.birthday.year}-${registerData.birthday.month}-${registerData.birthday.day}`,
+          gender: registerData.gender,
         }),
       });
 
