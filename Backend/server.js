@@ -1,15 +1,22 @@
-const express = require("express");
+import express from 'express';
+import cors from 'cors';
+import 'dotenv/config';
+import http from 'http';
+import { connectDB } from './config/db.js';
+
 
 const app = express();
+const PORT = 5000;
 
-app.use(express.json());
+//DB
+connectDB();
 
-app.get("/", (req, res) => {
-  res.send("SchoolLink Backend is running...");
-});
+app.get("/", (req,res) => {
+    res.send("API WORKING");
+})
 
-const PORT = process.env.PORT || 5000;
+const server = http.createServer(app);
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+server.listen(PORT, () => {
+    console.log(`Server Started on http://localhost:${PORT}`)
 });
