@@ -4,7 +4,6 @@ import { useNavigate, Link } from "react-router-dom";
 const ResetPasswordPage = () => {
   const navigate = useNavigate();
 
-  // State same as commit 1
   const [email, setEmail] = useState("");
   const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
   const [newPassword, setNewPassword] = useState("");
@@ -19,10 +18,13 @@ const ResetPasswordPage = () => {
     setTimeout(() => setToast({ message: "", type: "" }), 3000);
   };
 
+  // Placeholder handlers – to be implemented later
+  const handleSendOtp = (e) => { e.preventDefault(); };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center p-4">
       <div className="w-full max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col lg:flex-row">
-        {/* LEFT SIDE - Brand/Info Panel */}
+        {/* LEFT SIDE - Brand/Info Panel (same as commit 2) */}
         <div className="lg:w-1/2 bg-gradient-to-br from-blue-700 to-indigo-800 text-white p-10 lg:p-14 flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-3 mb-10">
@@ -47,9 +49,44 @@ const ResetPasswordPage = () => {
           </div>
         </div>
 
-        {/* Right panel placeholder */}
+        {/* RIGHT SIDE - Reset Form */}
         <div className="lg:w-1/2 bg-white p-8 lg:p-14 flex flex-col justify-center">
-          Right panel content coming...
+          <div className="lg:hidden text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-800">SchoolLink</h1>
+            <p className="text-gray-500 text-sm">School Management Platform</p>
+          </div>
+          <div className="mb-8">
+            <h2 className="text-2xl lg:text-3xl font-bold text-gray-800">Reset Password</h2>
+            <p className="text-gray-500 text-sm mt-1">
+              Remember your password?{" "}
+              <Link to="/" className="text-blue-600 hover:underline font-medium">Login</Link>
+            </p>
+          </div>
+
+          {/* Step 1: Email (only shown when OTP not sent) */}
+          {!isOtpSent && (
+            <form onSubmit={handleSendOtp} className="space-y-6">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Email Address</label>
+                <input
+                  type="email"
+                  placeholder="Enter email"
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-blue-600 text-white py-3.5 rounded-xl font-semibold hover:bg-blue-700 transition duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? "Sending OTP..." : "Send OTP"}
+              </button>
+            </form>
+          )}
+          {/* Step 2 will be added later */}
         </div>
       </div>
     </div>
