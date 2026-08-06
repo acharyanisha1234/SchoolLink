@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom"; // ← Link imported here
+import { useNavigate, Link } from "react-router-dom";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -8,6 +8,8 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [toast, setToast] = useState({ message: "", type: "" });
   const [loading, setLoading] = useState(false);
+
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
   // Auto-redirect if already logged in – runs once
   useEffect(() => {
@@ -24,7 +26,7 @@ const LoginPage = () => {
         console.error("Auto-redirect error", e);
       }
     }
-  }, []); // empty array – no infinite loop
+  }, []);
 
   const showToast = (message, type = "info") => {
     setToast({ message, type });
@@ -41,7 +43,7 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:5000/api/auth/login", {
+      const response = await fetch(`${API_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(loginData),
@@ -194,9 +196,9 @@ const LoginPage = () => {
                 <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
                 Remember me
               </label>
-            <Link to="/reset-password" className="text-sm text-blue-600 hover:underline font-medium">
-               Forgot your password?
-             </Link>
+              <Link to="/reset-password" className="text-sm text-blue-600 hover:underline font-medium">
+                Forgot your password?
+              </Link>
             </div>
 
             <button

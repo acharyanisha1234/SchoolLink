@@ -11,14 +11,15 @@ const ResetPasswordPage = () => {
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState({ message: "", type: "" });
-  const [errors, setErrors] = useState({});
+
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
   const showToast = (message, type = "info") => {
     setToast({ message, type });
     setTimeout(() => setToast({ message: "", type: "" }), 3000);
   };
 
-  // Step 1
+  // Step 1: Send OTP 
   const handleSendOtp = async (e) => {
     e.preventDefault();
     if (!email.trim()) {
@@ -27,7 +28,7 @@ const ResetPasswordPage = () => {
     }
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:5000/api/auth/send-reset-otp", {
+      const response = await fetch(`${API_URL}/api/auth/send-reset-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -50,10 +51,44 @@ const ResetPasswordPage = () => {
     }
   };
 
-  // Step 2 – placeholder, will implement in next commit
-  const handleResetPassword = (e) => { e.preventDefault(); };
+  // ---------- Step 2: Reset Password ----------
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    const otp = otpDigits.join("");
+    if (otp.length !== 6) {
+      showToast("Please enter all 6 digits of the OTP.", "error");
+      return;
+    }
+    if (newPassword.length < 6) {
+      showToast("Password must be at least 6 characters.", "error");
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/api/auth/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp, newPassword }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        showToast(data.message || "Password reset successful! Please log in.", "success");
+        setLoading(false);
+        setTimeout(() => navigate("/"), 2000);
+      } else {
+        showToast(data.message || "Failed to reset password.", "error");
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error("Reset password error:", error);
+      let msg = "Failed to reset password. Please try again.";
+      if (error.message.includes("Network Error")) msg = "Cannot connect to server. Is your backend running?";
+      showToast(msg, "error");
+      setLoading(false);
+    }
+  };
 
-  // OTP input handler (auto‑focus next)
+  // OTP input handler (auto‑focus next field)
   const handleOtpChange = (value, index) => {
     if (!/^\d?$/.test(value)) return;
     const updated = [...otpDigits];
@@ -64,7 +99,6 @@ const ResetPasswordPage = () => {
     }
   };
 
-  // Render 6 OTP inputs
   const renderOtpInputs = () => (
     <div className="flex justify-center gap-3">
       {[...Array(6)].map((_, index) => (
@@ -95,7 +129,7 @@ const ResetPasswordPage = () => {
       )}
 
       <div className="w-full max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col lg:flex-row">
-        {/* LEFT SIDE - same as before */}
+        {/* LEFT SIDE - Brand/Info Panel */}
         <div className="lg:w-1/2 bg-gradient-to-br from-blue-700 to-indigo-800 text-white p-10 lg:p-14 flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-3 mb-10">
@@ -120,7 +154,7 @@ const ResetPasswordPage = () => {
           </div>
         </div>
 
-        {/* RIGHT SIDE */}
+        {/* RIGHT SIDE - Reset Form */}
         <div className="lg:w-1/2 bg-white p-8 lg:p-14 flex flex-col justify-center">
           <div className="lg:hidden text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-800">SchoolLink</h1>
@@ -193,7 +227,6 @@ const ResetPasswordPage = () => {
                 {loading ? "Resetting..." : "Reset Password"}
               </button>
 
-              {/* Go back link */}
               <button
                 type="button"
                 onClick={() => {
