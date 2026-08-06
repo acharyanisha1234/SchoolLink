@@ -18,13 +18,61 @@ const ResetPasswordPage = () => {
     setTimeout(() => setToast({ message: "", type: "" }), 3000);
   };
 
-  // Placeholder handlers – to be implemented later
-  const handleSendOtp = (e) => { e.preventDefault(); };
+  // Step 1: Send OTP
+  const handleSendOtp = async (e) => {
+    e.preventDefault();
+    if (!email.trim()) {
+      showToast("Please enter your email.", "error");
+      return;
+    }
+    setLoading(true);
+
+    try {
+      const response = await fetch("http://localhost:5000/api/auth/send-reset-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        showToast(data.message || "OTP sent to your email.", "success");
+        setIsOtpSent(true);
+        setLoading(false);
+      } else {
+        showToast(data.message || "Failed to send OTP.", "error");
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error("Send OTP error:", error);
+      let msg = "Failed to send OTP. Please try again.";
+      if (error.message.includes("Network Error")) {
+        msg = "Cannot connect to server. Is your backend running?";
+      }
+      showToast(msg, "error");
+      setLoading(false);
+    }
+  };
+
+  // Placeholder for Step 2 – to be implemented later
+  const handleResetPassword = (e) => { e.preventDefault(); };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center p-4">
+      {/* Toast Notification */}
+      {toast.message && (
+        <div
+          className={`fixed top-6 right-6 p-4 rounded-xl shadow-2xl text-white z-50 ${
+            toast.type === "success" ? "bg-green-600" : "bg-red-600"
+          }`}
+        >
+          {toast.message}
+        </div>
+      )}
+
       <div className="w-full max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col lg:flex-row">
-        {/* LEFT SIDE - Brand/Info Panel (same as commit 2) */}
+        {/* LEFT SIDE - same as before */}
         <div className="lg:w-1/2 bg-gradient-to-br from-blue-700 to-indigo-800 text-white p-10 lg:p-14 flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-3 mb-10">
@@ -49,7 +97,7 @@ const ResetPasswordPage = () => {
           </div>
         </div>
 
-        {/* RIGHT SIDE - Reset Form */}
+        {/* RIGHT SIDE */}
         <div className="lg:w-1/2 bg-white p-8 lg:p-14 flex flex-col justify-center">
           <div className="lg:hidden text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-800">SchoolLink</h1>
@@ -58,13 +106,11 @@ const ResetPasswordPage = () => {
           <div className="mb-8">
             <h2 className="text-2xl lg:text-3xl font-bold text-gray-800">Reset Password</h2>
             <p className="text-gray-500 text-sm mt-1">
-              Remember your password?{" "}
-              <Link to="/" className="text-blue-600 hover:underline font-medium">Login</Link>
+              Remember your password? <Link to="/" className="text-blue-600 hover:underline font-medium">Login</Link>
             </p>
           </div>
 
-          {/* Step 1: Email (only shown when OTP not sent) */}
-          {!isOtpSent && (
+          {!isOtpSent ? (
             <form onSubmit={handleSendOtp} className="space-y-6">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Email Address</label>
@@ -85,8 +131,10 @@ const ResetPasswordPage = () => {
                 {loading ? "Sending OTP..." : "Send OTP"}
               </button>
             </form>
+          ) : (
+            // Step 2 will be added in next commit
+            <div>Step 2 – coming soon</div>
           )}
-          {/* Step 2 will be added later */}
         </div>
       </div>
     </div>
