@@ -10,26 +10,19 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// DB connect
+// MongoDB connection
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/schoollink';
 mongoose.connect(MONGO_URI)
   .then(() => console.log('Connected to MongoDB'))
-  .catch(err => {
-    console.error(' DB connection error:', err.message);
-    // process.exit(1) 
-  });
+  .catch(err => console.error('DB error:', err.message));
 
-// Auth routes 
+// Auth routes (create a minimal one if not exist)
 try {
   const authRoutes = require('./src/routes/auth');
-  if (typeof authRoutes === 'function' || authRoutes?.router) {
-    app.use('/api/auth', authRoutes);
-    console.log('Auth routes loaded');
-  } else {
-    console.warn(' Auth routes not a valid router – skipping');
-  }
+  app.use('/api/auth', authRoutes);
+  console.log(' Auth routes loaded');
 } catch (err) {
-  console.warn(' Auth routes not found – skipping:', err.message);
+  console.warn('Auth routes not found – skipping:', err.message);
 }
 
 // Test route
@@ -37,7 +30,6 @@ app.get('/', (req, res) => {
   res.send('SchoolLink Backend is running...');
 });
 
-// Error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: 'Something went wrong!' });
