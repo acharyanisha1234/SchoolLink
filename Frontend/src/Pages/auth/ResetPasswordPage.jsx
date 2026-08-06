@@ -18,7 +18,7 @@ const ResetPasswordPage = () => {
     setTimeout(() => setToast({ message: "", type: "" }), 3000);
   };
 
-  // Step 1: Send OTP
+  // Step 1
   const handleSendOtp = async (e) => {
     e.preventDefault();
     if (!email.trim()) {
@@ -26,16 +26,13 @@ const ResetPasswordPage = () => {
       return;
     }
     setLoading(true);
-
     try {
       const response = await fetch("http://localhost:5000/api/auth/send-reset-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
-
       const data = await response.json();
-
       if (response.ok) {
         showToast(data.message || "OTP sent to your email.", "success");
         setIsOtpSent(true);
@@ -47,20 +44,46 @@ const ResetPasswordPage = () => {
     } catch (error) {
       console.error("Send OTP error:", error);
       let msg = "Failed to send OTP. Please try again.";
-      if (error.message.includes("Network Error")) {
-        msg = "Cannot connect to server. Is your backend running?";
-      }
+      if (error.message.includes("Network Error")) msg = "Cannot connect to server. Is your backend running?";
       showToast(msg, "error");
       setLoading(false);
     }
   };
 
-  // Placeholder for Step 2 – to be implemented later
+  // Step 2 – placeholder, will implement in next commit
   const handleResetPassword = (e) => { e.preventDefault(); };
+
+  // OTP input handler (auto‑focus next)
+  const handleOtpChange = (value, index) => {
+    if (!/^\d?$/.test(value)) return;
+    const updated = [...otpDigits];
+    updated[index] = value;
+    setOtpDigits(updated);
+    if (value && index < 5) {
+      document.getElementById(`otp-${index + 1}`)?.focus();
+    }
+  };
+
+  // Render 6 OTP inputs
+  const renderOtpInputs = () => (
+    <div className="flex justify-center gap-3">
+      {[...Array(6)].map((_, index) => (
+        <input
+          key={index}
+          id={`otp-${index}`}
+          maxLength="1"
+          type="text"
+          value={otpDigits[index]}
+          onChange={(e) => handleOtpChange(e.target.value, index)}
+          className="w-12 h-12 text-center rounded-xl border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+          required
+        />
+      ))}
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center p-4">
-      {/* Toast Notification */}
       {toast.message && (
         <div
           className={`fixed top-6 right-6 p-4 rounded-xl shadow-2xl text-white z-50 ${
@@ -132,8 +155,56 @@ const ResetPasswordPage = () => {
               </button>
             </form>
           ) : (
-            // Step 2 will be added in next commit
-            <div>Step 2 – coming soon</div>
+            <form onSubmit={handleResetPassword} className="space-y-6">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2 text-center">
+                  Enter the 6-digit verification code
+                </label>
+                {renderOtpInputs()}
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">New Password</label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    className="w-full border border-gray-300 rounded-xl px-4 py-3 pr-16 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium text-blue-600 hover:text-blue-700 transition"
+                  >
+                    {showPassword ? "HIDE" : "SHOW"}
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Must be at least 6 characters.</p>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-blue-600 text-white py-3.5 rounded-xl font-semibold hover:bg-blue-700 transition duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? "Resetting..." : "Reset Password"}
+              </button>
+
+              {/* Go back link */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsOtpSent(false);
+                  setOtpDigits(["", "", "", "", "", ""]);
+                }}
+                className="text-sm text-blue-600 hover:underline font-medium block mx-auto"
+              >
+                ← Go back to enter email again
+              </button>
+            </form>
           )}
         </div>
       </div>
