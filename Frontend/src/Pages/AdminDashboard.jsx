@@ -1,59 +1,42 @@
 import React, { useState } from "react";
-import {
-  UsersIcon,
-  AcademicCapIcon,
-  BookOpenIcon,
-  MegaphoneIcon,
-  ChartBarIcon,
-  UserPlusIcon,
-  PlusIcon,
-  PencilIcon,
-  TrashIcon,
-  MagnifyingGlassIcon,
-  ChevronDownIcon,
-  ChevronRightIcon,
-  BellIcon,
-  ClipboardDocumentIcon,
-  ClockIcon,
-  CheckCircleIcon,
-  DocumentTextIcon,
-  XMarkIcon,
-} from "@heroicons/react/24/outline";
+import { UsersIcon, AcademicCapIcon, BookOpenIcon, MegaphoneIcon, ChartBarIcon, UserPlusIcon, PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon, 
+  ChevronDownIcon, ChevronRightIcon, BellIcon, ClipboardDocumentIcon, ClockIcon, CheckCircleIcon, DocumentTextIcon, XMarkIcon} from "@heroicons/react/24/outline";
 import Sidebar from "../components/Sidebar";
-import {
-  stats,
-  students,
-  teachers,
-  subjects,
-  announcements,
-  recentActivities,
-} from "../data/AdminMockData.js";
+import {stats, students, teachers, subjects, announcements, recentActivities} from "../data/AdminMockData.js";
 
 const AdminDashboard = () => {
-  // State for different sections
+  // State for managing which tab is currently active in the dashboard
   const [activeTab, setActiveTab] = useState('dashboard');
+  // State for storing the search input value when filtering items
   const [searchTerm, setSearchTerm] = useState('');
+  // State to track which subject is expanded to show its chapters
   const [expandedSubject, setExpandedSubject] = useState(null);
+  // State to control the visibility of the add modal
   const [showAddModal, setShowAddModal] = useState(false);
+  // State to store the type of item being added (student, teacher, subject, announcement)
   const [modalType, setModalType] = useState('');
 
 
   // Helper Functions
+  // Toggles the expansion of a subject to show/hide its chapters
   const toggleSubject = (id) => {
     setExpandedSubject(expandedSubject === id ? null : id);
   };
 
+  // Opens the modal and sets the type of item to be added
   const openModal = (type) => {
     setModalType(type);
     setShowAddModal(true);
   };
 
+  // Closes the modal and resets the modal type
   const closeModal = () => {
     setShowAddModal(false);
     setModalType('');
   };
 
   // Stat Card Component
+  // Reusable card component for displaying statistics with an icon, label, and value
   const StatCard = ({ icon: Icon, label, value, color, bgColor }) => (
     <div className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow">
       <div className="flex items-center">
@@ -69,6 +52,7 @@ const AdminDashboard = () => {
   );
 
   // Dashboard View
+  // Renders the main dashboard overview with stats, recent activities, and quick actions
   const DashboardView = () => (
     <div>
       <div className="mb-8">
@@ -77,6 +61,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* Stats Grid */}
+      {/* Grid layout displaying all statistical cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard icon={UsersIcon} label="Total Students" value={stats.totalStudents} color="text-blue-600" bgColor="bg-blue-100" />
         <StatCard icon={AcademicCapIcon} label="Total Teachers" value={stats.totalTeachers} color="text-green-600" bgColor="bg-green-100" />
@@ -89,6 +74,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* Recent Activities & Quick Actions */}
+      {/* Two-column layout for recent activities and quick action buttons */}
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
@@ -131,6 +117,7 @@ const AdminDashboard = () => {
   );
 
   // Students View
+  // Renders the student management interface with search and table display
   const StudentsView = () => (
     <div>
       <div className="mb-8 flex justify-between items-center">
@@ -201,6 +188,7 @@ const AdminDashboard = () => {
   );
 
   // Teachers View
+  // Renders the teacher management interface with table display
   const TeachersView = () => (
     <div>
       <div className="mb-8 flex justify-between items-center">
@@ -255,6 +243,7 @@ const AdminDashboard = () => {
   );
 
   // Subjects View
+  // Renders the subject management interface with expandable chapters
   const SubjectsView = () => (
     <div>
       <div className="mb-8 flex justify-between items-center">
@@ -318,6 +307,7 @@ const AdminDashboard = () => {
   );
 
   // Announcements View
+  // Renders the announcement management interface
   const AnnouncementsView = () => (
     <div>
       <div className="mb-8 flex justify-between items-center">
@@ -359,6 +349,7 @@ const AdminDashboard = () => {
   );
 
   // Modal Component
+  // Renders a modal form for adding new items (students, teachers, subjects, announcements)
   const Modal = () => {
     if (!showAddModal) return null;
 
@@ -391,6 +382,7 @@ const AdminDashboard = () => {
               <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
               <input type="email" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter email" />
             </div>
+            {/* Conditional fields for student-specific inputs */}
             {modalType === 'student' && (
               <>
                 <div>
@@ -420,12 +412,14 @@ const AdminDashboard = () => {
                 </div>
               </>
             )}
+            {/* Conditional field for subject-specific input */}
             {modalType === 'subject' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Subject Name</label>
                 <input type="text" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter subject name" />
               </div>
             )}
+            {/* Conditional field for announcement-specific input */}
             {modalType === 'announcement' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
@@ -444,6 +438,7 @@ const AdminDashboard = () => {
   };
 
   // Main Render
+  // Renders the complete admin dashboard with sidebar, content area, and modal
   return (
   <div className="flex min-h-screen bg-gray-50">
     <Sidebar
@@ -452,6 +447,7 @@ const AdminDashboard = () => {
     />
 
     <div className="ml-64 flex-1 p-8">
+      {/* Conditionally render the appropriate view based on the active tab */}
       {activeTab === "dashboard" && <DashboardView />}
       {activeTab === "students" && <StudentsView />}
       {activeTab === "teachers" && <TeachersView />}
