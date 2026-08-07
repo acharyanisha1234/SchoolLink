@@ -87,3 +87,35 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: 'Server error during login.' });
   }
 };
+// Send Reset OTP
+exports.sendResetOTP = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required.' });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found with this email.' });
+    }
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Save OTP and expiry (10 minutes)
+    user.resetOTP = otp;
+    user.resetOTPExpiry = Date.now() + 10 * 60 * 1000;
+    await user.save();
+
+    // Log OTP to console (for testing)
+    console.log(` OTP for ${email}: ${otp}`);
+
+    res.json({ 
+      message: 'OTP sent. Check server console for the OTP.' 
+    });
+  } catch (error) {
+    console.error('Send OTP error:', error);
+    res.status(500).json({ message: 'Server error sending OTP.' });
+  }
+};
