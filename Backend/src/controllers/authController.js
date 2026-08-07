@@ -119,3 +119,39 @@ exports.sendResetOTP = async (req, res) => {
     res.status(500).json({ message: 'Server error sending OTP.' });
   }
 };
+// Reset Password
+exports.resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({ message: 'All fields are required.' });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    // Verify OTP
+    if (user.resetOTP !== otp) {
+      return res.status(400).json({ message: 'Invalid OTP.' });
+    }
+
+    // Check expiry
+    if (Date.now() > user.resetOTPExpiry) {
+      return res.status(400).json({ message: 'OTP has expired. Please request a new one.' });
+    }
+
+    // Update password (pre-save hook will hash it)
+    user.password = newPassword;
+    user.resetOTP = null;
+    user.resetOTPExpiry = null;
+    await user.save();
+
+    res.json({ message: 'Password reset successfully. You can now log in.' });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ message: 'Server error resetting password.' });
+  }
+};
