@@ -278,3 +278,48 @@ exports.getAttendanceStats = async (req, res) => {
     res.status(500).json({ success: false, message: 'Error fetching attendance stats', error: error.message });
   }
 };
+//  DASHBOARD STATS
+exports.getDashboardStats = async (req, res) => {
+  try {
+    const teacherId = req.user.id;
+    const totalSubjects = await Subject.countDocuments({ teacherId });
+    const totalAssignments = await Assignment.countDocuments({ teacherId });
+    const totalQuizzes = await Quiz.countDocuments({ teacherId });
+    const totalMaterials = await Material.countDocuments({ teacherId });
+    const totalStudents = await User.countDocuments({ role: 'STUDENT' });
+
+    const recentAssignments = await Assignment.find({ teacherId })
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .populate('chapterId', 'title');
+
+    const recentQuizzes = await Quiz.find({ teacherId })
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .populate('chapterId', 'title');
+
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const todayAttendance = await Attendance.find({ teacherId, date: { $gte: today, $lt: tomorrow } });
+    const presentToday = todayAttendance.filter(a => a.status === 'Present').length;
+    const totalToday = todayAttendance.length;
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalSubjects,
+        totalAssignments,
+        totalQuizzes,
+        totalMaterials,
+        totalStudents,
+        attendanceToday: totalToday > 0 ? ((presentToday / totalToday) * 100).toFixed(2) : 0,
+        recentAssignments,
+        recentQuizzes
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error fetching dashboard stats', error: error.message });
+  }
+};
