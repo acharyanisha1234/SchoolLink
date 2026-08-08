@@ -1,8 +1,33 @@
-import React, { useState } from "react";
-import { UsersIcon, AcademicCapIcon, BookOpenIcon, MegaphoneIcon, ChartBarIcon, UserPlusIcon, PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon, 
-  ChevronDownIcon, ChevronRightIcon, BellIcon, ClipboardDocumentIcon, ClockIcon, CheckCircleIcon, DocumentTextIcon, XMarkIcon} from "@heroicons/react/24/outline";
+import React, { useState, useEffect } from "react";
+import {
+  UsersIcon,
+  AcademicCapIcon,
+  BookOpenIcon,
+  MegaphoneIcon,
+  ChartBarIcon,
+  UserPlusIcon,
+  PlusIcon,
+  PencilIcon,
+  TrashIcon,
+  MagnifyingGlassIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  BellIcon,
+  ClipboardDocumentIcon,
+  ClockIcon,
+  CheckCircleIcon,
+  DocumentTextIcon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
 import Sidebar from "../components/Sidebar";
-import {stats, students, teachers, subjects, announcements, recentActivities} from "../data/AdminMockData.js";
+import {
+  stats,
+  students,
+  teachers,
+  subjects,
+  announcements,
+  recentActivities,
+} from "../data/AdminMockData.js";
 
 const AdminDashboard = () => {
   // State for managing which tab is currently active in the dashboard
@@ -16,6 +41,159 @@ const AdminDashboard = () => {
   // State to store the type of item being added (student, teacher, subject, announcement)
   const [modalType, setModalType] = useState('');
 
+  // Student management states
+  const [studentsList, setStudentsList] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [totalStudents, setTotalStudents] = useState(0);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    class: '',
+    section: '',
+    dateOfBirth: '',
+    parentName: '',
+    parentContact: '',
+    address: ''
+  });
+
+  // API base URL
+  const API_URL = 'http://localhost:5000/api';
+
+  // Fetch students on component mount
+  useEffect(() => {
+    if (activeTab === 'students') {
+      fetchStudents();
+    }
+    // Fetch total students for dashboard
+    if (activeTab === 'dashboard') {
+      fetchTotalStudents();
+    }
+  }, [activeTab]);
+
+  // Fetch total students count
+  const fetchTotalStudents = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/students`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setTotalStudents(data.data.length);
+      }
+    } catch (error) {
+      console.error('Error fetching total students:', error);
+    }
+  };
+
+  // Fetch students
+  const fetchStudents = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/students`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setStudentsList(data.data);
+        setTotalStudents(data.data.length);
+      } else {
+        setError(data.message);
+      }
+    } catch (error) {
+      setError('Error fetching students');
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle form input changes
+  const handleInputChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  // Handle student creation
+  const handleAddStudent = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/students`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        alert(`Student added successfully!`);
+        closeModal();
+        setFormData({
+          name: '',
+          email: '',
+          class: '',
+          section: '',
+          dateOfBirth: '',
+          parentName: '',
+          parentContact: '',
+          address: ''
+        });
+        // Refresh students list
+        fetchStudents();
+        // Update total students
+        setTotalStudents(prev => prev + 1);
+      } else {
+        alert(data.message || 'Error adding student');
+      }
+    } catch (error) {
+      alert('Error adding student');
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle student deletion
+  const handleDeleteStudent = async (studentId) => {
+    if (!window.confirm('Are you sure you want to delete this student?')) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/students/${studentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        alert('Student deleted successfully');
+        fetchStudents(); // Refresh list
+        setTotalStudents(prev => prev - 1);
+      } else {
+        alert(data.message || 'Error deleting student');
+      }
+    } catch (error) {
+      alert('Error deleting student');
+      console.error('Error:', error);
+    }
+  };
 
   // Helper Functions
   // Toggles the expansion of a subject to show/hide its chapters
@@ -63,7 +241,7 @@ const AdminDashboard = () => {
       {/* Stats Grid */}
       {/* Grid layout displaying all statistical cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard icon={UsersIcon} label="Total Students" value={stats.totalStudents} color="text-blue-600" bgColor="bg-blue-100" />
+        <StatCard icon={UsersIcon} label="Total Students" value={totalStudents || stats.totalStudents} color="text-blue-600" bgColor="bg-blue-100" />
         <StatCard icon={AcademicCapIcon} label="Total Teachers" value={stats.totalTeachers} color="text-green-600" bgColor="bg-green-100" />
         <StatCard icon={BookOpenIcon} label="Total Subjects" value={stats.totalSubjects} color="text-purple-600" bgColor="bg-purple-100" />
         <StatCard icon={DocumentTextIcon} label="Learning Materials" value={stats.totalMaterials} color="text-yellow-600" bgColor="bg-yellow-100" />
@@ -125,7 +303,10 @@ const AdminDashboard = () => {
           <h1 className="text-3xl font-bold text-gray-900">Students</h1>
           <p className="text-gray-600 mt-1">Manage all students in your school</p>
         </div>
-        <button onClick={() => openModal('student')} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium inline-flex items-center">
+        <button 
+          onClick={() => openModal('student')} 
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium inline-flex items-center"
+        >
           <PlusIcon className="h-5 w-5 mr-2" />
           Add Student
         </button>
@@ -145,43 +326,60 @@ const AdminDashboard = () => {
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Class</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Section</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {students.map((student) => (
-                <tr key={student.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.studentId}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.class}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.section}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      student.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                      {student.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button className="text-blue-600 hover:text-blue-900 mr-3">
-                      <PencilIcon className="h-5 w-5" />
-                    </button>
-                    <button className="text-red-600 hover:text-red-900">
-                      <TrashIcon className="h-5 w-5" />
-                    </button>
-                  </td>
+          {loading ? (
+            <div className="p-8 text-center text-gray-500">Loading students...</div>
+          ) : error ? (
+            <div className="p-8 text-center text-red-500">{error}</div>
+          ) : (
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Class</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Section</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {studentsList.length > 0 ? (
+                  studentsList.map((student) => (
+                    <tr key={student._id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.studentId}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.name}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.class}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.section}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          student.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
+                          {student.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button className="text-blue-600 hover:text-blue-900 mr-3">
+                          <PencilIcon className="h-5 w-5" />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteStudent(student._id)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          <TrashIcon className="h-5 w-5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="6" className="px-6 py-4 text-center text-gray-500">
+                      No students found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </div>
@@ -365,7 +563,7 @@ const AdminDashboard = () => {
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4">
+        <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-gray-900">{getModalTitle()}</h2>
             <button onClick={closeModal} className="text-gray-400 hover:text-gray-600">
@@ -373,42 +571,105 @@ const AdminDashboard = () => {
             </button>
           </div>
           
-          <form className="space-y-4">
+          <form onSubmit={handleAddStudent} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-              <input type="text" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter full name" />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+              <input 
+                type="text" 
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                placeholder="Enter full name" 
+              />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <input type="email" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter email" />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+              <input 
+                type="email" 
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                placeholder="Enter email" 
+              />
             </div>
-            {/* Conditional fields for student-specific inputs */}
             {modalType === 'student' && (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Class</label>
-                  <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option>Select Class</option>
-                    <option>1</option>
-                    <option>2</option>
-                    <option>3</option>
-                    <option>4</option>
-                    <option>5</option>
-                    <option>6</option>
-                    <option>7</option>
-                    <option>8</option>
-                    <option>9</option>
-                    <option>10</option>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Class *</label>
+                  <select 
+                    name="class"
+                    value={formData.class}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select Class</option>
+                    {[1,2,3,4,5,6,7,8,9,10].map(num => (
+                      <option key={num} value={num}>{num}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Section</label>
-                  <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option>Select Section</option>
-                    <option>A</option>
-                    <option>B</option>
-                    <option>C</option>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Section *</label>
+                  <select 
+                    name="section"
+                    value={formData.section}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select Section</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
                   </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
+                  <input 
+                    type="date" 
+                    name="dateOfBirth"
+                    value={formData.dateOfBirth}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Parent Name</label>
+                  <input 
+                    type="text" 
+                    name="parentName"
+                    value={formData.parentName}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                    placeholder="Enter parent name" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Parent Contact</label>
+                  <input 
+                    type="text" 
+                    name="parentContact"
+                    value={formData.parentContact}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                    placeholder="Enter parent contact number" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                  <textarea 
+                    name="address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    rows="2"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                    placeholder="Enter address"
+                  ></textarea>
                 </div>
               </>
             )}
@@ -416,20 +677,39 @@ const AdminDashboard = () => {
             {modalType === 'subject' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Subject Name</label>
-                <input type="text" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter subject name" />
+                <input 
+                  type="text" 
+                  name="subjectName"
+                  value={formData.subjectName || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                  placeholder="Enter subject name" 
+                />
               </div>
             )}
             {/* Conditional field for announcement-specific input */}
             {modalType === 'announcement' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
-                <textarea rows="4" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Write announcement content..."></textarea>
+                <textarea 
+                  rows="4" 
+                  name="announcementContent"
+                  value={formData.announcementContent || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                  placeholder="Write announcement content..."
+                ></textarea>
               </div>
             )}
-            <button type="submit" className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium">
-              {modalType === 'student' ? 'Add Student' : 
-               modalType === 'teacher' ? 'Add Teacher' : 
-               modalType === 'subject' ? 'Create Subject' : 'Post Announcement'}
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {modalType === 'student' ? (loading ? 'Adding...' : 'Add Student') : 
+               modalType === 'teacher' ? (loading ? 'Adding...' : 'Add Teacher') : 
+               modalType === 'subject' ? (loading ? 'Creating...' : 'Create Subject') : 
+               (loading ? 'Posting...' : 'Post Announcement')}
             </button>
           </form>
         </div>
@@ -440,24 +720,24 @@ const AdminDashboard = () => {
   // Main Render
   // Renders the complete admin dashboard with sidebar, content area, and modal
   return (
-  <div className="flex min-h-screen bg-gray-50">
-    <Sidebar
-      activeTab={activeTab}
-      setActiveTab={setActiveTab}
-    />
+    <div className="flex min-h-screen bg-gray-50">
+      <Sidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+      />
 
-    <div className="ml-64 flex-1 p-8">
-      {/* Conditionally render the appropriate view based on the active tab */}
-      {activeTab === "dashboard" && <DashboardView />}
-      {activeTab === "students" && <StudentsView />}
-      {activeTab === "teachers" && <TeachersView />}
-      {activeTab === "subjects" && <SubjectsView />}
-      {activeTab === "announcements" && <AnnouncementsView />}
+      <div className="ml-64 flex-1 p-8">
+        {/* Conditionally render the appropriate view based on the active tab */}
+        {activeTab === "dashboard" && <DashboardView />}
+        {activeTab === "students" && <StudentsView />}
+        {activeTab === "teachers" && <TeachersView />}
+        {activeTab === "subjects" && <SubjectsView />}
+        {activeTab === "announcements" && <AnnouncementsView />}
+      </div>
+
+      <Modal />
     </div>
-
-    <Modal />
-  </div>
-);
+  );
 };
 
 export default AdminDashboard;
