@@ -278,6 +278,7 @@ exports.getAttendanceStats = async (req, res) => {
     res.status(500).json({ success: false, message: 'Error fetching attendance stats', error: error.message });
   }
 };
+
 //  DASHBOARD STATS
 exports.getDashboardStats = async (req, res) => {
   try {
@@ -321,5 +322,75 @@ exports.getDashboardStats = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error fetching dashboard stats', error: error.message });
+  }
+};
+//  QUIZ CRUD 
+exports.getQuizzes = async (req, res) => {
+  try {
+    const quizzes = await Quiz.find({ teacherId: req.user.id }).populate('chapterId', 'title');
+    res.status(200).json({ success: true, data: quizzes });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error fetching quizzes', error: error.message });
+  }
+};
+
+exports.createQuiz = async (req, res) => {
+  try {
+    const { title, description, timeLimit, deadline, questions, chapterId } = req.body;
+    const teacherId = req.user.id;
+    const chapter = await Chapter.findById(chapterId).populate('subjectId');
+    if (!chapter) return res.status(404).json({ success: false, message: 'Chapter not found' });
+    if (chapter.subjectId.teacherId.toString() !== teacherId) {
+      return res.status(403).json({ success: false, message: 'Unauthorized' });
+    }
+    const quiz = await Quiz.create({
+      title, description, timeLimit: timeLimit || 30, deadline,
+      questions, chapterId, teacherId, published: false
+    });
+    res.status(201).json({ success: true, message: 'Quiz created', data: quiz });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error creating quiz', error: error.message });
+  }
+};
+
+exports.publishQuiz = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const quiz = await Quiz.findOneAndUpdate(
+      { _id: id, teacherId: req.user.id },
+      { published: true },
+      { new: true }
+    );
+    if (!quiz) return res.status(404).json({ success: false, message: 'Quiz not found' });
+    res.status(200).json({ success: true, message: 'Quiz published', data: quiz });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error publishing quiz', error: error.message });
+  }
+};
+
+exports.updateQuiz = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, description, timeLimit, deadline, questions } = req.body;
+    const quiz = await Quiz.findOneAndUpdate(
+      { _id: id, teacherId: req.user.id },
+      { title, description, timeLimit, deadline, questions },
+      { new: true, runValidators: true }
+    );
+    if (!quiz) return res.status(404).json({ success: false, message: 'Quiz not found' });
+    res.status(200).json({ success: true, message: 'Quiz updated', data: quiz });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error updating quiz', error: error.message });
+  }
+};
+
+exports.deleteQuiz = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const quiz = await Quiz.findOneAndDelete({ _id: id, teacherId: req.user.id });
+    if (!quiz) return res.status(404).json({ success: false, message: 'Quiz not found' });
+    res.status(200).json({ success: true, message: 'Quiz deleted' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error deleting quiz', error: error.message });
   }
 };
