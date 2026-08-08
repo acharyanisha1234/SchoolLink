@@ -20,7 +20,7 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 } // 10MB
 });
 
-// ========== ALL ROUTES REQUIRE AUTH ==========
+//  ALL ROUTES REQUIRE AUTH 
 router.use(authMiddleware);
 
 // Dashboard
