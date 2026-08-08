@@ -214,3 +214,67 @@ exports.deleteAssignment = async (req, res) => {
     res.status(500).json({ success: false, message: 'Error deleting assignment', error: error.message });
   }
 };
+
+//  ATTENDANCE CRUD
+exports.getAttendance = async (req, res) => {
+  try {
+    const { subjectId, date } = req.query;
+    const query = { teacherId: req.user.id };
+    if (subjectId) query.subjectId = subjectId;
+    if (date) query.date = new Date(date);
+    const attendance = await Attendance.find(query)
+      .populate('studentId', 'fullName email')
+      .populate('subjectId', 'title');
+    res.status(200).json({ success: true, data: attendance });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error fetching attendance', error: error.message });
+  }
+};
+
+exports.markAttendance = async (req, res) => {
+  try {
+    const { studentId, subjectId, status, date } = req.body;
+    const teacherId = req.user.id;
+    const subject = await Subject.findOne({ _id: subjectId, teacherId });
+    if (!subject) return res.status(404).json({ success: false, message: 'Subject not found or unauthorized' });
+
+    const attendanceDate = date ? new Date(date) : new Date();
+    const start = new Date(attendanceDate);
+    start.setHours(0,0,0,0);
+    const end = new Date(attendanceDate);
+    end.setHours(23,59,59,999);
+
+    const existing = await Attendance.findOne({ studentId, subjectId, date: { $gte: start, $lt: end } });
+    if (existing) {
+      existing.status = status || 'Present';
+      await existing.save();
+      return res.status(200).json({ success: true, message: 'Attendance updated', data: existing });
+    }
+    const attendance = await Attendance.create({ studentId, subjectId, date: attendanceDate, status: status || 'Present', teacherId });
+    res.status(201).json({ success: true, message: 'Attendance marked', data: attendance });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error marking attendance', error: error.message });
+  }
+};
+
+exports.getAttendanceStats = async (req, res) => {
+  try {
+    const { subjectId } = req.params;
+    const present = await Attendance.countDocuments({ subjectId, status: 'Present' });
+    const absent = await Attendance.countDocuments({ subjectId, status: 'Absent' });
+    const late = await Attendance.countDocuments({ subjectId, status: 'Late' });
+    const total = present + absent + late;
+    res.status(200).json({
+      success: true,
+      data: {
+        total,
+        present,
+        absent,
+        late,
+        presentPercentage: total > 0 ? ((present / total) * 100).toFixed(2) : 0
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error fetching attendance stats', error: error.message });
+  }
+};
