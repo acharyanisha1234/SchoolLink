@@ -11,8 +11,7 @@ router.route('/')
   .get(studentController.getAllStudents)
   .post(studentController.createStudent);
 
-router.route('/search')
-  .get(studentController.searchStudents);
+router.route('/search')    
 
 router.route('/:id')
   .get(studentController.getStudent)
