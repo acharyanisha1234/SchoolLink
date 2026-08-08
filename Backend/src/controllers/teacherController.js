@@ -118,3 +118,42 @@ exports.deleteChapter = async (req, res) => {
     res.status(500).json({ success: false, message: 'Error deleting chapter', error: error.message });
   }
 };
+
+//  MATERIAL CRUD
+exports.getMaterials = async (req, res) => {
+  try {
+    const { chapterId } = req.params;
+    const materials = await Material.find({ chapterId });
+    res.status(200).json({ success: true, data: materials });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error fetching materials', error: error.message });
+  }
+};
+
+exports.createMaterial = async (req, res) => {
+  try {
+    const { title, description, type, chapterId } = req.body;
+    const teacherId = req.user.id;
+    const fileUrl = req.file ? `/uploads/${req.file.filename}` : '';
+    const chapter = await Chapter.findById(chapterId).populate('subjectId');
+    if (!chapter) return res.status(404).json({ success: false, message: 'Chapter not found' });
+    if (chapter.subjectId.teacherId.toString() !== teacherId) {
+      return res.status(403).json({ success: false, message: 'Unauthorized' });
+    }
+    const material = await Material.create({ title, description, fileUrl, type, chapterId, teacherId });
+    res.status(201).json({ success: true, message: 'Material uploaded successfully', data: material });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error uploading material', error: error.message });
+  }
+};
+
+exports.deleteMaterial = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const material = await Material.findOneAndDelete({ _id: id, teacherId: req.user.id });
+    if (!material) return res.status(404).json({ success: false, message: 'Material not found' });
+    res.status(200).json({ success: true, message: 'Material deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error deleting material', error: error.message });
+  }
+};
