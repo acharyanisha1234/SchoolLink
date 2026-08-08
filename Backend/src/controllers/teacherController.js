@@ -157,3 +157,60 @@ exports.deleteMaterial = async (req, res) => {
     res.status(500).json({ success: false, message: 'Error deleting material', error: error.message });
   }
 };
+
+
+//  ASSIGNMENT CRUD
+exports.getAssignments = async (req, res) => {
+  try {
+    const assignments = await Assignment.find({ teacherId: req.user.id }).populate('chapterId', 'title');
+    res.status(200).json({ success: true, data: assignments });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error fetching assignments', error: error.message });
+  }
+};
+
+exports.createAssignment = async (req, res) => {
+  try {
+    const { title, description, type, deadline, chapterId, referenceFiles } = req.body;
+    const teacherId = req.user.id;
+    const chapter = await Chapter.findById(chapterId).populate('subjectId');
+    if (!chapter) return res.status(404).json({ success: false, message: 'Chapter not found' });
+    if (chapter.subjectId.teacherId.toString() !== teacherId) {
+      return res.status(403).json({ success: false, message: 'Unauthorized' });
+    }
+    const assignment = await Assignment.create({
+      title, description, type: type || 'Assignment', deadline,
+      referenceFiles: referenceFiles || [], chapterId, teacherId
+    });
+    res.status(201).json({ success: true, message: 'Assignment created successfully', data: assignment });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error creating assignment', error: error.message });
+  }
+};
+
+exports.updateAssignment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, description, type, deadline, referenceFiles } = req.body;
+    const assignment = await Assignment.findOneAndUpdate(
+      { _id: id, teacherId: req.user.id },
+      { title, description, type, deadline, referenceFiles },
+      { new: true, runValidators: true }
+    );
+    if (!assignment) return res.status(404).json({ success: false, message: 'Assignment not found' });
+    res.status(200).json({ success: true, message: 'Assignment updated successfully', data: assignment });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error updating assignment', error: error.message });
+  }
+};
+
+exports.deleteAssignment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const assignment = await Assignment.findOneAndDelete({ _id: id, teacherId: req.user.id });
+    if (!assignment) return res.status(404).json({ success: false, message: 'Assignment not found' });
+    res.status(200).json({ success: true, message: 'Assignment deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error deleting assignment', error: error.message });
+  }
+};
