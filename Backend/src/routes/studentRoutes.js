@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const studentController = require('../../controllers/studentController');
+const studentController = require('../controllers/studentController');
 const { protect, authorize } = require('../middleware/auth');
 
 // All routes are protected and require admin access
@@ -9,9 +9,7 @@ router.use(authorize('admin'));
 
 router.route('/')
   .get(studentController.getAllStudents)
-  .post(studentController.createStudent);
-
-router.route('/search')    
+  .post(studentController.createStudent);   
 
 router.route('/:id')
   .get(studentController.getStudent)

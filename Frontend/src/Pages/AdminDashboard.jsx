@@ -174,13 +174,18 @@ const AdminDashboard = () => {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/students/${studentId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
+      const response = await fetch('http://localhost:5000/api/students', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+          
       const data = await response.json();
       if (data.success) {
         alert('Student deleted successfully');
