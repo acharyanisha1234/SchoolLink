@@ -35,9 +35,8 @@ const ResetPasswordPage = () => {
     setTimeout(() => setToast({ message: "", type: "" }), 3000);
   };
 
-  // ======================================================================
+
   // STEP 1: Send OTP to the provided email
-  // ======================================================================
   const handleSendOtp = async (e) => {
     e.preventDefault();
 
@@ -79,9 +78,8 @@ const ResetPasswordPage = () => {
     }
   };
 
-  // ======================================================================
+  
   // STEP 2: Verify OTP and reset password
-  // ======================================================================
   const handleResetPassword = async (e) => {
     e.preventDefault();
 
@@ -131,9 +129,8 @@ const ResetPasswordPage = () => {
     }
   };
 
-  // ======================================================================
   // OTP Input Handler: auto-focus next field on digit entry
-  // ======================================================================
+  
   const handleOtpChange = (value, index) => {
     // Only allow digits (0-9)
     if (!/^\d?$/.test(value)) return;
@@ -149,9 +146,7 @@ const ResetPasswordPage = () => {
     }
   };
 
-  // ======================================================================
   // Render 6 OTP input fields (reusable)
-  // ======================================================================
   const renderOtpInputs = () => (
     <div className="flex justify-center gap-3">
       {[...Array(6)].map((_, index) => (
@@ -169,9 +164,9 @@ const ResetPasswordPage = () => {
     </div>
   );
 
-  // ======================================================================
+  
   // JSX Rendering
-  // ======================================================================
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center p-4">
       {/* Toast notification – appears at top-right */}
@@ -230,7 +225,7 @@ const ResetPasswordPage = () => {
           </div>
 
           {!isOtpSent ? (
-            // ---------- STEP 1: Email input ----------
+            //  STEP 1: Email input 
             <form onSubmit={handleSendOtp} className="space-y-6">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Email Address</label>
@@ -252,7 +247,7 @@ const ResetPasswordPage = () => {
               </button>
             </form>
           ) : (
-            // ---------- STEP 2: OTP + New Password ----------
+            //  STEP 2: OTP + New Password 
             <form onSubmit={handleResetPassword} className="space-y-6">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2 text-center">
