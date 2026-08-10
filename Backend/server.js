@@ -25,7 +25,7 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve uploaded files (for materials) – NEW
+// Serve uploaded files (for materials)
 app.use('/uploads', express.static('uploads'));
 
 // MongoDB connection
@@ -34,7 +34,7 @@ mongoose.connect(MONGO_URI)
   .then(() => console.log('Connected to MongoDB'))
   .catch(err => console.error('DB error:', err.message));
 
-// Auth routes (unchanged)
+// Auth routes
 try {
   const authRoutes = require('./src/routes/auth');
   app.use('/api/auth', authRoutes);
@@ -43,29 +43,44 @@ try {
   console.warn('Auth routes not found – skipping:', err.message);
 }
 
-// Import student routes
-
+// Student routes
+try {
   const studentRoutes = require('./src/routes/studentRoutes');
   app.use('/api/students', studentRoutes);
-
-  try {
-  const authRoutes = require('./src/routes/auth');
-  app.use('/api/auth', authRoutes);
+  console.log('Student routes loaded');
 } catch (err) {
-  console.log(' Auth routes not found');
+  console.warn('Student routes not found – skipping:', err.message);
 }
 
-// Test route
-//  TEACHER ROUTES – NEW 
+// Teacher routes (for teacher role)
 try {
   const teacherRoutes = require('./src/routes/teacherRoutes');
   app.use('/api/teacher', teacherRoutes);
   console.log('Teacher routes loaded');
 } catch (err) {
-  console.warn(' Teacher routes not found – skipping:', err.message);
+  console.warn('Teacher routes not found – skipping:', err.message);
 }
 
-// Test route (unchanged)
+// Admin Teacher routes (for admin role)
+try {
+  const adminTeacherRoutes = require('./src/routes/adminTeacherRoutes');
+  app.use('/api/admin/teachers', adminTeacherRoutes);
+  console.log('Admin Teacher routes loaded');
+} catch (err) {
+  console.warn('Admin Teacher routes not found – skipping:', err.message);
+}
+
+// Health check route
+app.get('/api/health', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Server is running',
+    database: mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Test route
 app.get('/', (req, res) => {
   res.send('SchoolLink Backend is running...');
 });
@@ -78,8 +93,7 @@ app.use((req, res) => {
   });
 });
 
-// Error handling middleware
-// Global error handler (unchanged)
+// Global error handler
 app.use((err, req, res, next) => {
   console.error('Error:', err.stack);
   res.status(err.status || 500).json({
@@ -91,5 +105,7 @@ app.use((err, req, res, next) => {
 const server = http.createServer(app);
 server.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
-   console.log(` Students API: http://localhost:${PORT}/api/students`);
+  console.log(`Students API: http://localhost:${PORT}/api/students`);
+  console.log(`Teacher API: http://localhost:${PORT}/api/teacher`);
+  console.log(`Admin Teacher API: http://localhost:${PORT}/api/admin/teachers`);
 });
