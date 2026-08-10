@@ -2,57 +2,92 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
 const RegisterPage = () => {
+  // React Router navigation hook 
   const navigate = useNavigate();
+
+  // Form state containing all registration fields 
   const [registerData, setRegisterData] = useState({
     fullName: "",
     email: "",
     password: "",
     confirmPassword: "",
-    birthday: { month: "", day: "", year: "" },
+    birthday: { month: "", day: "", year: "" }, // Nested object for birthday dropdowns
     gender: "",
     agreeTerms: false,
   });
+
+  // Validation errors for each field 
   const [errors, setErrors] = useState({});
+
+  // Toggles for password visibility (show/hide) 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Toast notification state (message + type) 
   const [toast, setToast] = useState({ message: "", type: "" });
+
+  //  Loading state for the submit button 
   const [loading, setLoading] = useState(false);
 
+  // Base API URL from environment variables (fallback to localhost:5000) 
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
+  //  Helper to show toast notifications (auto-hide after 3s) 
   const showToast = (message, type = "info") => {
     setToast({ message, type });
     setTimeout(() => setToast({ message: "", type: "" }), 3000);
   };
 
+  // Client-side validation logic 
   const validate = () => {
     const newErrors = {};
+
+    // Full name validation
     if (!registerData.fullName.trim()) newErrors.fullName = "Full name is required";
+
+    // Email validation
     if (!registerData.email.trim()) newErrors.email = "Email is required";
     else if (!/\S+@\S+\.\S+/.test(registerData.email)) newErrors.email = "Email is invalid";
+
+    // Password validation
     if (!registerData.password) newErrors.password = "Password is required";
     else if (registerData.password.length < 6) newErrors.password = "Password must be at least 6 characters";
+
+    // Confirm password must match
     if (registerData.password !== registerData.confirmPassword)
       newErrors.confirmPassword = "Passwords do not match";
+
+    // Birthday validation – all three fields required
     if (!registerData.birthday.month) newErrors.birthday = "Birth month is required";
     if (!registerData.birthday.day) newErrors.birthday = "Birth day is required";
     if (!registerData.birthday.year) newErrors.birthday = "Birth year is required";
+
+    // Gender validation
     if (!registerData.gender) newErrors.gender = "Please select your gender";
+
+    // Terms & conditions must be accepted
     if (!registerData.agreeTerms) newErrors.agreeTerms = "You must agree to the terms";
+
     return newErrors;
   };
 
+  // --- Handle registration form submission ---
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
+
+    // Run validation – if errors exist, show them and stop
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
     }
     setErrors({});
+
+    // Show loading spinner on button
     setLoading(true);
 
     try {
+      // Send POST request to backend register endpoint
       const response = await fetch(`${API_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -60,6 +95,7 @@ const RegisterPage = () => {
           fullName: registerData.fullName,
           email: registerData.email,
           password: registerData.password,
+          // Combine birthday fields into YYYY-MM-DD format
           birthday: `${registerData.birthday.year}-${registerData.birthday.month}-${registerData.birthday.day}`,
           gender: registerData.gender,
         }),
@@ -68,14 +104,17 @@ const RegisterPage = () => {
       const data = await response.json();
 
       if (response.ok) {
+        // Registration succeeded – show success toast and redirect to login after 2s
         showToast("Registration successful! Please log in.", "success");
         setLoading(false);
         setTimeout(() => navigate("/"), 2000);
       } else {
+        // Registration failed – show error message from backend
         showToast(data.message || "Registration failed.", "error");
         setLoading(false);
       }
     } catch (error) {
+      // Network or other fetch errors
       console.error("Register error:", error);
       let serverMessage = "Registration failed. Please try again.";
       if (error.message.includes("Network Error")) {
@@ -86,15 +125,18 @@ const RegisterPage = () => {
     }
   };
 
-  const dayOptions = Array.from({ length: 31 }, (_, i) => i + 1);
+  // --- Helper arrays for birthday dropdowns ---
+  const dayOptions = Array.from({ length: 31 }, (_, i) => i + 1);          // 1–31
   const monthOptions = [
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
   ];
-  const yearOptions = Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i);
+  const yearOptions = Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i); // current year to 100 years back
 
+  // --- JSX rendering ---
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center p-4">
+      {/* Toast notification – appears at top-right */}
       {toast.message && (
         <div
           className={`fixed top-6 right-6 p-4 rounded-xl shadow-2xl text-white z-50 ${
@@ -105,8 +147,9 @@ const RegisterPage = () => {
         </div>
       )}
 
+      {/* Main card – split layout (brand left, form right) */}
       <div className="w-full max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col lg:flex-row">
-        {/* LEFT SIDE - Brand/Info Panel */}
+        {/* LEFT SIDE – Branding & Info Panel */}
         <div className="lg:w-1/2 bg-gradient-to-br from-blue-700 to-indigo-800 text-white p-10 lg:p-14 flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-3 mb-10">
@@ -121,6 +164,7 @@ const RegisterPage = () => {
               </p>
             </div>
           </div>
+          {/* Static stats – demo data */}
           <div className="flex gap-8 text-sm mt-10">
             <div><span className="block text-3xl font-bold">1,200+</span><span className="text-blue-200">Students</span></div>
             <div><span className="block text-3xl font-bold">80+</span><span className="text-blue-200">Teachers</span></div>
@@ -131,12 +175,15 @@ const RegisterPage = () => {
           </div>
         </div>
 
-        {/* RIGHT SIDE - Register Form */}
+        {/* RIGHT SIDE – Registration Form */}
         <div className="lg:w-1/2 bg-white p-8 lg:p-14 flex flex-col justify-center">
+          {/* Mobile header (visible only on small screens) */}
           <div className="lg:hidden text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-800">SchoolLink</h1>
             <p className="text-gray-500 text-sm">School Management Platform</p>
           </div>
+
+          {/* Form heading and login link */}
           <div className="mb-8">
             <h2 className="text-2xl lg:text-3xl font-bold text-gray-800">Create an account</h2>
             <p className="text-gray-500 text-sm mt-1">
@@ -177,7 +224,7 @@ const RegisterPage = () => {
               {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
             </div>
 
-            {/* Birthday */}
+            {/* Birthday – three dropdowns */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">Birthday</label>
               <div className="flex gap-2">
@@ -236,7 +283,7 @@ const RegisterPage = () => {
               {errors.birthday && <p className="text-red-500 text-sm mt-1">{errors.birthday}</p>}
             </div>
 
-            {/* Gender */}
+            {/* Gender dropdown */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">Gender</label>
               <select
@@ -255,7 +302,7 @@ const RegisterPage = () => {
               {errors.gender && <p className="text-red-500 text-sm mt-1">{errors.gender}</p>}
             </div>
 
-            {/* Password */}
+            {/* Password with show/hide toggle */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">Password</label>
               <div className="relative">
@@ -280,7 +327,7 @@ const RegisterPage = () => {
               {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
             </div>
 
-            {/* Confirm Password */}
+            {/* Confirm Password with show/hide toggle */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">Confirm Password</label>
               <div className="relative">
@@ -305,7 +352,7 @@ const RegisterPage = () => {
               {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>}
             </div>
 
-            {/* Terms */}
+            {/* Terms and Conditions checkbox */}
             <div className="flex items-start gap-2">
               <input
                 type="checkbox"
@@ -320,6 +367,7 @@ const RegisterPage = () => {
             </div>
             {errors.agreeTerms && <p className="text-red-500 text-sm">{errors.agreeTerms}</p>}
 
+            {/* Submit button – shows loading state */}
             <button
               type="submit"
               disabled={loading}
@@ -329,11 +377,13 @@ const RegisterPage = () => {
             </button>
           </form>
 
+          {/* "OR" Divider */}
           <div className="relative my-8">
             <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-300"></div></div>
             <div className="relative flex justify-center text-sm"><span className="px-4 bg-white text-gray-400 font-medium">OR</span></div>
           </div>
 
+          {/* Social Login – Google (UI only) */}
           <button className="w-full border border-gray-300 rounded-xl py-3 flex items-center justify-center gap-3 hover:bg-gray-50 transition duration-200">
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -344,6 +394,7 @@ const RegisterPage = () => {
             <span className="text-gray-700 font-medium">Sign up with Google</span>
           </button>
 
+          {/* Info panel – helpful message for students/schools */}
           <div className="mt-8 p-4 bg-gray-50 rounded-xl border border-gray-200">
             <p className="text-xs text-gray-600 leading-relaxed">
               <span className="font-medium">For Students & Schools:</span> Register with the email
