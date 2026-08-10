@@ -1,36 +1,35 @@
-// src/pages/auth/ResetPasswordPage.jsx
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
 const ResetPasswordPage = () => {
-  // --- React Router navigation hook ---
+  // React Router navigation hook
   const navigate = useNavigate();
 
-  // --- State for the first step (email input) ---
+  // State for the first step (email input) 
   const [email, setEmail] = useState("");
 
-  // --- State for the OTP digits (6 separate inputs) ---
+  // State for the OTP digits (6 separate inputs)
   const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
 
-  // --- State for the new password ---
+  // State for the new password 
   const [newPassword, setNewPassword] = useState("");
 
-  // --- Toggle for password visibility ---
+  //Toggle for password visibility
   const [showPassword, setShowPassword] = useState(false);
 
-  // --- Step management: true = OTP sent, show second step ---
+  //  Step management: true = OTP sent, show second step
   const [isOtpSent, setIsOtpSent] = useState(false);
 
-  // --- Loading state for buttons ---
+  // Loading state for buttons 
   const [loading, setLoading] = useState(false);
 
-  // --- Toast notification state ---
+  //  Toast notification state
   const [toast, setToast] = useState({ message: "", type: "" });
 
-  // --- Base API URL from environment (fallback to localhost:5000) ---
+  //  Base API URL from environment (fallback to localhost:5000) 
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-  // --- Helper to show toast notifications (auto-hide after 3s) ---
+  //  Helper to show toast notifications (auto-hide after 3s)
   const showToast = (message, type = "info") => {
     setToast({ message, type });
     setTimeout(() => setToast({ message: "", type: "" }), 3000);
