@@ -2,23 +2,39 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
 const LoginPage = () => {
+  //  React Router navigation hook 
   const navigate = useNavigate();
+
+  //  Form state: email and password 
   const [loginData, setLoginData] = useState({ email: "", password: "" });
+
+  //  Validation errors for the login form 
   const [loginErrors, setLoginErrors] = useState({ password: "" });
+
+  // Toggle for password visibility (show/hide) 
   const [showPassword, setShowPassword] = useState(false);
+
+  // Toast notification state (message + type) 
   const [toast, setToast] = useState({ message: "", type: "" });
+
+  // Loading state for the submit button 
   const [loading, setLoading] = useState(false);
 
+  // Base API URL from environment variables (fallback to localhost:5000)
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-  // Auto-redirect if already logged in – runs once
+  // Auto-redirect if user is already logged in 
+  // Runs once on component mount (empty dependency array)
   useEffect(() => {
     const token = localStorage.getItem("token");
     const userString = localStorage.getItem("user");
+
     if (token && userString) {
       try {
         const user = JSON.parse(userString);
         const role = user.role?.toUpperCase() || "";
+
+        // Redirect based on role
         if (role === "ADMIN") navigate("/admin", { replace: true });
         else if (role === "TEACHER") navigate("/teacher", { replace: true });
         else if (role === "STUDENT") navigate("/student", { replace: true });
@@ -26,23 +42,30 @@ const LoginPage = () => {
         console.error("Auto-redirect error", e);
       }
     }
-  }, []);
+  }, []); // Empty dependency – runs only once after mount
 
+  // --- Helper to show toast notifications ---
   const showToast = (message, type = "info") => {
     setToast({ message, type });
-    setTimeout(() => setToast({ message: "", type: "" }), 3000);
+    setTimeout(() => setToast({ message: "", type: "" }), 3000); // Auto-hide after 3s
   };
 
+  // --- Handle login form submission ---
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
+
+    // Client-side validation: password must be at least 6 characters
     if (loginData.password.length < 6) {
       setLoginErrors({ password: "Password must be at least 6 characters." });
       return;
     }
     setLoginErrors({ password: "" });
+
+    // Show loading spinner on button
     setLoading(true);
 
     try {
+      // Send POST request to backend login endpoint
       const response = await fetch(`${API_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -51,38 +74,49 @@ const LoginPage = () => {
 
       const data = await response.json();
 
+      // If login successful and token + user data are present
       if (response.ok && data.accessToken && data.user) {
+        // Normalize role: uppercase and map "USER" to "STUDENT" if needed
         let role = data.user.role ? data.user.role.toUpperCase() : "STUDENT";
         if (role === "USER") role = "STUDENT";
+
         const normalizedUser = { ...data.user, role };
 
+        // Store token and user info in localStorage for future authenticated requests
         localStorage.setItem("token", data.accessToken);
         localStorage.setItem("user", JSON.stringify(normalizedUser));
 
+        // Show success toast
         showToast("Login Successful", "success");
         setLoading(false);
 
+        // Redirect based on user role
         if (role === "ADMIN") navigate("/admin", { replace: true });
         else if (role === "TEACHER") navigate("/teacher", { replace: true });
         else navigate("/student", { replace: true });
       } else {
+        // Login failed – show error message from backend
         showToast(data.message || "Login failed.", "error");
         setLoading(false);
       }
     } catch (error) {
+      // Network or other fetch errors
       console.error("Login error:", error);
       let serverMessage = "Login failed. Please try again.";
+
       if (error.message.includes("Network Error")) {
         serverMessage = "Cannot connect to server. Is your backend running?";
       }
+
       showToast(serverMessage, "error");
       setLoading(false);
     }
   };
 
+  // --- JSX rendering ---
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center p-4">
-      {/* Toast Notification */}
+      {/* Toast notification – appears at top-right */}
       {toast.message && (
         <div
           className={`fixed top-6 right-6 p-4 rounded-xl shadow-2xl text-white z-50 ${
@@ -93,8 +127,9 @@ const LoginPage = () => {
         </div>
       )}
 
+      {/* Main card – split layout (brand left, form right) */}
       <div className="w-full max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col lg:flex-row">
-        {/* LEFT SIDE - Brand/Info Panel */}
+        {/* LEFT SIDE – Branding & Info Panel */}
         <div className="lg:w-1/2 bg-gradient-to-br from-blue-700 to-indigo-800 text-white p-10 lg:p-14 flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-3 mb-10">
@@ -117,6 +152,7 @@ const LoginPage = () => {
             </div>
           </div>
 
+          {/* Stats – static demo data */}
           <div className="flex gap-8 text-sm mt-10">
             <div>
               <span className="block text-3xl font-bold">1,200+</span>
@@ -137,15 +173,19 @@ const LoginPage = () => {
           </div>
         </div>
 
-        {/* RIGHT SIDE - Login Form */}
+        {/* RIGHT SIDE – Login Form */}
         <div className="lg:w-1/2 bg-white p-8 lg:p-14 flex flex-col justify-center">
+          {/* Mobile header (visible only on small screens) */}
           <div className="lg:hidden text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-800">SchoolLink</h1>
             <p className="text-gray-500 text-sm">School Management Platform</p>
           </div>
 
+          {/* Form heading and register link */}
           <div className="mb-8">
-            <h2 className="text-2xl lg:text-3xl font-bold text-gray-800">Sign in to your account</h2>
+            <h2 className="text-2xl lg:text-3xl font-bold text-gray-800">
+              Sign in to your account
+            </h2>
             <p className="text-gray-500 text-sm mt-1">
               Don't have an account?{" "}
               <Link to="/register" className="text-blue-600 hover:underline font-medium">
@@ -154,9 +194,13 @@ const LoginPage = () => {
             </p>
           </div>
 
+          {/* Login form */}
           <form onSubmit={handleLoginSubmit} className="space-y-6">
+            {/* Email field */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Email Address</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                Email Address
+              </label>
               <input
                 type="email"
                 placeholder="Enter email"
@@ -167,8 +211,11 @@ const LoginPage = () => {
               />
             </div>
 
+            {/* Password field with show/hide toggle */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Password</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                Password
+              </label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
@@ -186,21 +233,30 @@ const LoginPage = () => {
                   {showPassword ? "HIDE" : "SHOW"}
                 </button>
               </div>
+              {/* Display password validation error */}
               {loginErrors.password && (
                 <p className="text-red-500 text-sm mt-1">{loginErrors.password}</p>
               )}
             </div>
 
+            {/* "Remember me" checkbox and "Forgot password" link */}
             <div className="flex items-center justify-between">
               <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-                <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
                 Remember me
               </label>
-              <Link to="/reset-password" className="text-sm text-blue-600 hover:underline font-medium">
+              <Link
+                to="/reset-password"
+                className="text-sm text-blue-600 hover:underline font-medium"
+              >
                 Forgot your password?
               </Link>
             </div>
 
+            {/* Submit button – shows loading state */}
             <button
               type="submit"
               disabled={loading}
@@ -210,7 +266,7 @@ const LoginPage = () => {
             </button>
           </form>
 
-          {/* Divider */}
+          {/* "OR" Divider */}
           <div className="relative my-8">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-300"></div>
@@ -220,9 +276,10 @@ const LoginPage = () => {
             </div>
           </div>
 
-          {/* Social Login */}
+          {/* Social Login – Google (UI only) */}
           <button className="w-full border border-gray-300 rounded-xl py-3 flex items-center justify-center gap-3 hover:bg-gray-50 transition duration-200">
             <svg className="w-5 h-5" viewBox="0 0 24 24">
+              {/* Google SVG paths */}
               <path
                 fill="#4285F4"
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -243,7 +300,7 @@ const LoginPage = () => {
             <span className="text-gray-700 font-medium">Sign in with Google</span>
           </button>
 
-          {/* Info Panel */}
+          {/* Info panel – helpful message for students/schools */}
           <div className="mt-8 p-4 bg-gray-50 rounded-xl border border-gray-200">
             <p className="text-xs text-gray-600 leading-relaxed">
               <span className="font-medium">For Students & Schools:</span> Login using the email
