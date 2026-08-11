@@ -29,6 +29,253 @@ import {
   recentActivities,
 } from "../data/AdminMockData.js";
 
+const Modal = ({
+  showAddModal,
+  modalType,
+  closeModal,
+  handleAddStudent,
+  formData,
+  handleInputChange,
+  loading,
+}) => {
+  if (!showAddModal) return null;
+
+  const getModalTitle = () => {
+    switch (modalType) {
+      case 'student':
+        return 'Add New Student';
+      case 'teacher':
+        return 'Add New Teacher';
+      case 'subject':
+        return 'Create New Subject';
+      case 'announcement':
+        return 'Post New Announcement';
+      default:
+        return '';
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">
+            {getModalTitle()}
+          </h2>
+
+          <button
+            type="button"
+            onClick={closeModal}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            <XMarkIcon className="h-6 w-6" />
+          </button>
+        </div>
+
+        <form onSubmit={handleAddStudent} className="space-y-4">
+
+          {/* Full Name */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Full Name *
+            </label>
+
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleInputChange}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter full name"
+            />
+          </div>
+
+          {/* Email */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email *
+            </label>
+
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter email"
+            />
+          </div>
+
+          {/* Student Fields */}
+          {modalType === 'student' && (
+            <>
+              {/* Class */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Class *
+                </label>
+
+                <select
+                  name="class"
+                  value={formData.class}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select Class</option>
+
+                  {[1,2,3,4,5,6,7,8,9,10].map((num) => (
+                    <option key={num} value={num}>
+                      {num}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Section */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Section *
+                </label>
+
+                <select
+                  name="section"
+                  value={formData.section}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select Section</option>
+                  <option value="A">A</option>
+                  <option value="B">B</option>
+                  <option value="C">C</option>
+                </select>
+              </div>
+
+              {/* Date of Birth */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Date of Birth
+                </label>
+
+                <input
+                  type="date"
+                  name="dateOfBirth"
+                  value={formData.dateOfBirth}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Parent Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Parent Name
+                </label>
+
+                <input
+                  type="text"
+                  name="parentName"
+                  value={formData.parentName}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter parent name"
+                />
+              </div>
+
+              {/* Parent Contact */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Parent Contact
+                </label>
+
+                <input
+                  type="text"
+                  name="parentContact"
+                  value={formData.parentContact}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter parent contact number"
+                />
+              </div>
+
+              {/* Address */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Address
+                </label>
+
+                <textarea
+                  name="address"
+                  value={formData.address}
+                  onChange={handleInputChange}
+                  rows="2"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter address"
+                />
+              </div>
+            </>
+          )}
+
+          {/* Subject */}
+          {modalType === 'subject' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Subject Name
+              </label>
+
+              <input
+                type="text"
+                name="subjectName"
+                value={formData.subjectName || ''}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter subject name"
+              />
+            </div>
+          )}
+
+          {/* Announcement */}
+          {modalType === 'announcement' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Content
+              </label>
+
+              <textarea
+                rows="4"
+                name="announcementContent"
+                value={formData.announcementContent || ''}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Write announcement content..."
+              />
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {modalType === 'student'
+              ? loading ? 'Adding...' : 'Add Student'
+              : modalType === 'teacher'
+              ? loading ? 'Adding...' : 'Add Teacher'
+              : modalType === 'subject'
+              ? loading ? 'Creating...' : 'Create Subject'
+              : loading ? 'Posting...' : 'Post Announcement'}
+          </button>
+
+        </form>
+      </div>
+    </div>
+  );
+};
+
 const AdminDashboard = () => {
   // State for managing which tab is currently active in the dashboard
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -170,35 +417,32 @@ const AdminDashboard = () => {
 
   // Handle student deletion
   const handleDeleteStudent = async (studentId) => {
-    if (!window.confirm('Are you sure you want to delete this student?')) return;
-    
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/students', {
-      method: 'GET',
+  if (!window.confirm('Are you sure you want to delete this student?')) return;
+
+  try {
+    const token = localStorage.getItem('token');
+
+    const response = await fetch(`${API_URL}/students/${studentId}`, {
+      method: 'DELETE',
       headers: {
-        'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       }
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+
+    if (data.success) {
+      alert('Student deleted successfully');
+      fetchStudents();
+      setTotalStudents(prev => prev - 1);
+    } else {
+      alert(data.message || 'Error deleting student');
     }
-          
-      const data = await response.json();
-      if (data.success) {
-        alert('Student deleted successfully');
-        fetchStudents(); // Refresh list
-        setTotalStudents(prev => prev - 1);
-      } else {
-        alert(data.message || 'Error deleting student');
-      }
-    } catch (error) {
-      alert('Error deleting student');
-      console.error('Error:', error);
-    }
-  };
+  } catch (error) {
+    alert('Error deleting student');
+    console.error('Error:', error);
+  }
+};
 
   // Helper Functions
   // Toggles the expansion of a subject to show/hide its chapters
@@ -551,177 +795,7 @@ const AdminDashboard = () => {
     </div>
   );
 
-  // Modal Component
-  // Renders a modal form for adding new items (students, teachers, subjects, announcements)
-  const Modal = () => {
-    if (!showAddModal) return null;
-
-    const getModalTitle = () => {
-      switch(modalType) {
-        case 'student': return 'Add New Student';
-        case 'teacher': return 'Add New Teacher';
-        case 'subject': return 'Create New Subject';
-        case 'announcement': return 'Post New Announcement';
-        default: return '';
-      }
-    };
-
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">{getModalTitle()}</h2>
-            <button onClick={closeModal} className="text-gray-400 hover:text-gray-600">
-              <XMarkIcon className="h-6 w-6" />
-            </button>
-          </div>
-          
-          <form onSubmit={handleAddStudent} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
-              <input 
-                type="text" 
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                placeholder="Enter full name" 
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-              <input 
-                type="email" 
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                placeholder="Enter email" 
-              />
-            </div>
-            {modalType === 'student' && (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Class *</label>
-                  <select 
-                    name="class"
-                    value={formData.class}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Select Class</option>
-                    {[1,2,3,4,5,6,7,8,9,10].map(num => (
-                      <option key={num} value={num}>{num}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Section *</label>
-                  <select 
-                    name="section"
-                    value={formData.section}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Select Section</option>
-                    <option value="A">A</option>
-                    <option value="B">B</option>
-                    <option value="C">C</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
-                  <input 
-                    type="date" 
-                    name="dateOfBirth"
-                    value={formData.dateOfBirth}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Parent Name</label>
-                  <input 
-                    type="text" 
-                    name="parentName"
-                    value={formData.parentName}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                    placeholder="Enter parent name" 
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Parent Contact</label>
-                  <input 
-                    type="text" 
-                    name="parentContact"
-                    value={formData.parentContact}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                    placeholder="Enter parent contact number" 
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                  <textarea 
-                    name="address"
-                    value={formData.address}
-                    onChange={handleInputChange}
-                    rows="2"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                    placeholder="Enter address"
-                  ></textarea>
-                </div>
-              </>
-            )}
-            {/* Conditional field for subject-specific input */}
-            {modalType === 'subject' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Subject Name</label>
-                <input 
-                  type="text" 
-                  name="subjectName"
-                  value={formData.subjectName || ''}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                  placeholder="Enter subject name" 
-                />
-              </div>
-            )}
-            {/* Conditional field for announcement-specific input */}
-            {modalType === 'announcement' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
-                <textarea 
-                  rows="4" 
-                  name="announcementContent"
-                  value={formData.announcementContent || ''}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                  placeholder="Write announcement content..."
-                ></textarea>
-              </div>
-            )}
-            <button 
-              type="submit" 
-              disabled={loading}
-              className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {modalType === 'student' ? (loading ? 'Adding...' : 'Add Student') : 
-               modalType === 'teacher' ? (loading ? 'Adding...' : 'Add Teacher') : 
-               modalType === 'subject' ? (loading ? 'Creating...' : 'Create Subject') : 
-               (loading ? 'Posting...' : 'Post Announcement')}
-            </button>
-          </form>
-        </div>
-      </div>
-    );
-  };
-
+  
   // Main Render
   // Renders the complete admin dashboard with sidebar, content area, and modal
   return (
@@ -740,7 +814,15 @@ const AdminDashboard = () => {
         {activeTab === "announcements" && <AnnouncementsView />}
       </div>
 
-      <Modal />
+      <Modal
+      showAddModal={showAddModal}
+      modalType={modalType}
+      closeModal={closeModal}
+      handleAddStudent={handleAddStudent}
+      formData={formData}
+      handleInputChange={handleInputChange}
+      loading={loading}
+    />
     </div>
   );
 };

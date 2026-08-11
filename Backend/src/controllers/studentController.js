@@ -4,12 +4,20 @@ const bcrypt = require('bcryptjs');
 // Get all students
 exports.getAllStudents = async (req, res) => {
   try {
+    console.log('GET /api/students called');
+
     const students = await Student.find().select('-password');
+
+    console.log('Students found:', students.length);
+
     res.status(200).json({
       success: true,
       data: students
     });
+
   } catch (error) {
+    console.error('GET STUDENTS ERROR:', error);
+
     res.status(500).json({
       success: false,
       message: 'Error fetching students',
@@ -17,6 +25,7 @@ exports.getAllStudents = async (req, res) => {
     });
   }
 };
+
 
 // Get single student
 exports.getStudent = async (req, res) => {
