@@ -1,9 +1,9 @@
 const User = require('../models/User');
 const Teacher = require('../models/Teacher');
 const Subject = require('../models/Subject');
-const Activity = require('../models/Activity');
 
-// ============ CREATE TEACHER (Admin) ============
+
+// CREATE TEACHER (Admin) 
 exports.createTeacher = async (req, res) => {
   try {
     const {
@@ -591,3 +591,5 @@ exports.getAllSubjectsForDropdown = async (req, res) => {
     });
   }
 };
+
+adminteachercontroller.js ko code
