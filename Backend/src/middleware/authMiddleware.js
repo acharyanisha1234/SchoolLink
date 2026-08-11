@@ -24,7 +24,6 @@ export const verifyToken = (req, res, next) => {
     );
 
     // Attach decoded user information to req.user
-    // so that routes can access the user's id and role
     req.user = decoded;
 
     // Continue to the next middleware or route
@@ -33,6 +32,20 @@ export const verifyToken = (req, res, next) => {
     // Return unauthorized response if the token is invalid or expired
     return res.status(401).json({
       message: "Invalid or expired token",
+    });
+  }
+};
+
+// IS ADMIN – Middleware to restrict access to admin users
+export const isAdmin = (req, res, next) => {
+  // Check if the authenticated user has ADMIN role
+  if (req.user && req.user.role === "ADMIN") {
+    // Allow admin users to continue
+    next();
+  } else {
+    // Reject users without admin privileges
+    res.status(403).json({
+      message: "Admin access required",
     });
   }
 };
