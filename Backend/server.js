@@ -27,6 +27,7 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve uploaded files (for materials)
 app.use('/uploads', express.static('uploads'));
 
 // MongoDB connection
@@ -38,6 +39,7 @@ mongoose.connect(MONGO_URI)
   })
   .catch(err => console.error('DB error:', err.message));
 
+// Auth routes
 
 const createAdminIfNotExists = async () => {
   try {
@@ -71,6 +73,16 @@ try {
   console.warn('Auth routes not found – skipping:', err.message);
 }
 
+// Student routes
+try {
+  const studentRoutes = require('./src/routes/studentRoutes');
+  app.use('/api/students', studentRoutes);
+  console.log('Student routes loaded');
+} catch (err) {
+  console.warn('Student routes not found – skipping:', err.message);
+}
+
+// Teacher routes (for teacher role)
 // Import student routes
 const studentRoutes = require('./src/routes/studentRoutes');
 app.use('/api/students', studentRoutes);
@@ -84,9 +96,29 @@ try {
   app.use('/api/teacher', teacherRoutes);
   console.log('Teacher routes loaded');
 } catch (err) {
-  console.warn(' Teacher routes not found – skipping:', err.message);
+  console.warn('Teacher routes not found – skipping:', err.message);
 }
 
+// Admin Teacher routes (for admin role)
+try {
+  const adminTeacherRoutes = require('./src/routes/adminTeacherRoutes');
+  app.use('/api/admin/teachers', adminTeacherRoutes);
+  console.log('Admin Teacher routes loaded');
+} catch (err) {
+  console.warn('Admin Teacher routes not found – skipping:', err.message);
+}
+
+// Health check route
+app.get('/api/health', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Server is running',
+    database: mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Test route
 try {
   const adminTeacherRoutes = require('./src/routes/adminTeacherRoutes');
   app.use('/api/admin/teachers', adminTeacherRoutes);
@@ -108,8 +140,7 @@ app.use((req, res) => {
   });
 });
 
-// Error handling middleware
-// Global error handler (unchanged)
+// Global error handler
 app.use((err, req, res, next) => {
   console.error('Error:', err.stack);
   res.status(err.status || 500).json({
@@ -121,5 +152,8 @@ app.use((err, req, res, next) => {
 const server = http.createServer(app);
 server.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Students API: http://localhost:${PORT}/api/students`);
+  console.log(`Teacher API: http://localhost:${PORT}/api/teacher`);
+  console.log(`Admin Teacher API: http://localhost:${PORT}/api/admin/teachers`);
   console.log(` Students API: http://localhost:${PORT}/api/students`);
 });
