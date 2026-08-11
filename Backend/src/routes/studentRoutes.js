@@ -5,7 +5,7 @@ const { protect, authorize } = require('../middleware/auth');
 
 // All routes are protected and require admin access
 router.use(protect);
-router.use(authorize('admin'));
+router.use(authorize('ADMIN'));
 
 router.route('/')
   .get(studentController.getAllStudents)
