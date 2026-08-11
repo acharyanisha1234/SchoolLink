@@ -591,5 +591,3 @@ exports.getAllSubjectsForDropdown = async (req, res) => {
     });
   }
 };
-
-adminteachercontroller.js ko code
