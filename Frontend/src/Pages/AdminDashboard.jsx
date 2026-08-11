@@ -417,35 +417,32 @@ const AdminDashboard = () => {
 
   // Handle student deletion
   const handleDeleteStudent = async (studentId) => {
-    if (!window.confirm('Are you sure you want to delete this student?')) return;
-    
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/students', {
-      method: 'GET',
+  if (!window.confirm('Are you sure you want to delete this student?')) return;
+
+  try {
+    const token = localStorage.getItem('token');
+
+    const response = await fetch(`${API_URL}/students/${studentId}`, {
+      method: 'DELETE',
       headers: {
-        'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       }
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+
+    if (data.success) {
+      alert('Student deleted successfully');
+      fetchStudents();
+      setTotalStudents(prev => prev - 1);
+    } else {
+      alert(data.message || 'Error deleting student');
     }
-          
-      const data = await response.json();
-      if (data.success) {
-        alert('Student deleted successfully');
-        fetchStudents(); // Refresh list
-        setTotalStudents(prev => prev - 1);
-      } else {
-        alert(data.message || 'Error deleting student');
-      }
-    } catch (error) {
-      alert('Error deleting student');
-      console.error('Error:', error);
-    }
-  };
+  } catch (error) {
+    alert('Error deleting student');
+    console.error('Error:', error);
+  }
+};
 
   // Helper Functions
   // Toggles the expansion of a subject to show/hide its chapters
