@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom"; 
 import {
   UsersIcon,
   AcademicCapIcon,
@@ -18,6 +19,7 @@ import {
   CheckCircleIcon,
   DocumentTextIcon,
   XMarkIcon,
+  ArrowRightOnRectangleIcon,
 } from "@heroicons/react/24/outline";
 import Sidebar from "../components/Sidebar";
 import {
@@ -460,11 +462,13 @@ const Modal = ({
 };
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedSubject, setExpandedSubject] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [modalType, setModalType] = useState('');
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   // Student states
   const [studentsList, setStudentsList] = useState([]);
@@ -511,7 +515,27 @@ const AdminDashboard = () => {
     announcementContent: ''
   });
 
+
   const API_URL = 'http://localhost:5000/api';
+
+  // ============ LOGOUT HANDLER ============
+  const handleLogout = () => {
+    // Clear all local storage
+    localStorage.clear();
+    sessionStorage.clear();
+    
+    // Redirect to login
+    navigate('/login');
+  };
+
+  // ============ CONFIRM LOGOUT ============
+  const confirmLogout = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const cancelLogout = () => {
+    setShowLogoutConfirm(false);
+  };
 
   // Fetch students and teachers on component mount
   useEffect(() => {
@@ -734,7 +758,8 @@ const AdminDashboard = () => {
           phone: '',
           address: ''
         });
-        // ✅ Refresh teacher list
+
+        //Refresh teacher list
         await fetchTeachers();
         setTotalTeachers(prev => prev + 1);
       } else {
@@ -1028,7 +1053,7 @@ const AdminDashboard = () => {
     </div>
   );
 
-  // ✅ Updated TeachersView - Now uses API data
+  // TeachersView 
   const TeachersView = () => (
     <div>
       <div className="mb-8 flex justify-between items-center">
@@ -1222,13 +1247,76 @@ const AdminDashboard = () => {
         setActiveTab={setActiveTab}
       />
 
-      <div className="ml-64 flex-1 p-8">
-        {activeTab === "dashboard" && <DashboardView />}
-        {activeTab === "students" && <StudentsView />}
-        {activeTab === "teachers" && <TeachersView />}
-        {activeTab === "subjects" && <SubjectsView />}
-        {activeTab === "announcements" && <AnnouncementsView />}
+      <div className="ml-64 flex-1">
+        {/* Add Dashboard Header with Logout Button */}
+        <header className="bg-white shadow-sm px-8 py-4 flex justify-between items-center sticky top-0 z-10">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+            </h1>
+            <p className="text-sm text-gray-500">
+              {activeTab === 'dashboard' && 'Overview of your school'}
+              {activeTab === 'students' && 'Manage all students'}
+              {activeTab === 'teachers' && 'Manage all teachers'}
+              {activeTab === 'subjects' && 'Manage subjects and chapters'}
+              {activeTab === 'announcements' && 'Manage school announcements'}
+            </p>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+           {/* Logout Button */}
+            <button
+              onClick={confirmLogout}
+              className="flex items-center space-x-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200 font-medium"
+            >
+              <ArrowRightOnRectangleIcon className="h-5 w-5" />
+              <span>Logout</span>
+            </button>
+          </div>
+        </header>
+
+        {/* Main Content */}
+        <div className="p-8">
+          {activeTab === "dashboard" && <DashboardView />}
+          {activeTab === "students" && <StudentsView />}
+          {activeTab === "teachers" && <TeachersView />}
+          {activeTab === "subjects" && <SubjectsView />}
+          {activeTab === "announcements" && <AnnouncementsView />}
+        </div>
       </div>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-sm w-full mx-4">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <ArrowRightOnRectangleIcon className="h-6 w-6 text-red-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Confirm Logout
+              </h3>
+              <p className="text-sm text-gray-500 mb-6">
+                Are you sure you want to logout? You will need to login again to access your dashboard.
+              </p>
+              <div className="flex space-x-3">
+                <button
+                  onClick={cancelLogout}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Modal
         showAddModal={showAddModal}
