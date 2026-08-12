@@ -49,7 +49,7 @@ const createAdminIfNotExists = async () => {
         fullName: 'Admin User',
         email: 'admin@school.com',
         password: 'admin123',   
-        role: 'ADMIN',
+        role: 'admin',
         birthday: '2000-01-01',
         gender: 'Other'
       });
