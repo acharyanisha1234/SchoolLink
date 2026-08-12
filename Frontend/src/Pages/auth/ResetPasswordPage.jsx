@@ -163,9 +163,6 @@ const ResetPasswordPage = () => {
       ))}
     </div>
   );
-
-  
-  
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center p-4">
       {/* Toast notification – appears at top-right */}
