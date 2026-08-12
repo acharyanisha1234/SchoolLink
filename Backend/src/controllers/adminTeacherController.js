@@ -1,13 +1,15 @@
 const User = require('../models/User');
 const Teacher = require('../models/Teacher');
 const Subject = require('../models/Subject');
-
+const bcrypt = require('bcryptjs');
 
 // CREATE TEACHER (Admin) 
 exports.createTeacher = async (req, res) => {
   try {
+    console.log('Creating teacher with data:', req.body);
+
     const {
-      name,
+      name,           //  Use 'name' from frontend
       email,
       password,
       qualification,
@@ -18,7 +20,7 @@ exports.createTeacher = async (req, res) => {
       joinDate,
     } = req.body;
 
-    // Validate required fields
+    // Validate required fields -  Check 'name' not 'fullname'
     if (!name || !email || !password) {
       return res.status(400).json({
         success: false,
@@ -44,11 +46,15 @@ exports.createTeacher = async (req, res) => {
       });
     }
 
-    // Create user
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Create user -  Use 'fullName' (capital N) to match User model
     const user = await User.create({
-      name,
+      fullName: name,  //  Map 'name' to 'fullName'
       email,
-      password,
+      password: hashedPassword,
       role: 'teacher',
       isActive: true,
     });
@@ -56,11 +62,11 @@ exports.createTeacher = async (req, res) => {
     // Generate employee ID
     const employeeId = `TCH${Date.now().toString().slice(-6)}`;
 
-    // Create teacher profile
+    // Create teacher profile -  Use 'name' field
     const teacher = await Teacher.create({
       userId: user._id,
       employeeId,
-      name,
+      name,            //  Use 'name' field
       email,
       qualification: qualification || '',
       experience: experience || 0,
@@ -71,19 +77,7 @@ exports.createTeacher = async (req, res) => {
       status: 'Active',
     });
 
-    // Log activity
-    await Activity.create({
-      user: req.user._id,
-      action: 'Added new teacher',
-      details: {
-        employeeId: employeeId,
-        name: name,
-        email: email,
-        qualification: qualification,
-        experience: experience,
-        addedBy: req.user.name,
-      },
-    });
+    console.log('Teacher created:', teacher._id);
 
     res.status(201).json({
       success: true,
@@ -106,6 +100,15 @@ exports.createTeacher = async (req, res) => {
     });
   } catch (error) {
     console.error('Create teacher error:', error);
+    
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: messages.join(', '),
+      });
+    }
+    
     res.status(500).json({
       success: false,
       message: error.message,
@@ -133,7 +136,7 @@ exports.getAllTeachers = async (req, res) => {
 
     // Get teachers with pagination
     const teachers = await Teacher.find(query)
-      .populate('userId', 'name email profilePicture isActive')
+      .populate('userId', 'fullName email profilePicture isActive')
       .populate('assignedSubjects.subjectId', 'name code')
       .skip(skip)
       .limit(parseInt(limit))
@@ -162,7 +165,7 @@ exports.getAllTeachers = async (req, res) => {
 exports.getTeacherById = async (req, res) => {
   try {
     const teacher = await Teacher.findById(req.params.id)
-      .populate('userId', 'name email profilePicture isActive')
+      .populate('userId', 'fullName email profilePicture isActive')
       .populate('assignedSubjects.subjectId', 'name code description');
 
     if (!teacher) {
@@ -198,6 +201,7 @@ exports.updateTeacher = async (req, res) => {
       address,
       joinDate,
       status,
+      password,
     } = req.body;
 
     // Find teacher
@@ -223,8 +227,12 @@ exports.updateTeacher = async (req, res) => {
     // Update user
     const user = await User.findById(teacher.userId);
     if (user) {
-      if (name) user.name = name;
+      if (name) user.fullName = name;
       if (email) user.email = email;
+      if (password) {
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(password, salt);
+      }
       await user.save();
     }
 
@@ -240,17 +248,6 @@ exports.updateTeacher = async (req, res) => {
     if (status) teacher.status = status;
     
     await teacher.save();
-
-    // Log activity
-    await Activity.create({
-      user: req.user._id,
-      action: 'Updated teacher information',
-      details: {
-        employeeId: teacher.employeeId,
-        name: teacher.name,
-        updatedBy: req.user.name,
-      },
-    });
 
     res.status(200).json({
       success: true,
@@ -301,17 +298,6 @@ exports.deleteTeacher = async (req, res) => {
       { $unset: { teacherId: 1 } }
     );
 
-    // Log activity
-    await Activity.create({
-      user: req.user._id,
-      action: 'Deleted teacher',
-      details: {
-        employeeId: teacher.employeeId,
-        name: teacher.name,
-        deletedBy: req.user.name,
-      },
-    });
-
     res.status(200).json({
       success: true,
       message: 'Teacher deleted successfully!',
@@ -343,18 +329,6 @@ exports.toggleTeacherStatus = async (req, res) => {
     // Update user status
     await User.findByIdAndUpdate(teacher.userId, {
       isActive: teacher.status === 'Active',
-    });
-
-    // Log activity
-    await Activity.create({
-      user: req.user._id,
-      action: `Teacher ${teacher.status === 'Active' ? 'activated' : 'deactivated'}`,
-      details: {
-        employeeId: teacher.employeeId,
-        name: teacher.name,
-        status: teacher.status,
-        updatedBy: req.user.name,
-      },
     });
 
     res.status(200).json({
@@ -428,21 +402,6 @@ exports.assignSubjectToTeacher = async (req, res) => {
     subject.teacherId = teacherId;
     await subject.save();
 
-    // Log activity
-    await Activity.create({
-      user: req.user._id,
-      action: 'Assigned subject to teacher',
-      details: {
-        teacher: teacher.name,
-        teacherId: teacher.employeeId,
-        subject: subject.name,
-        subjectCode: subject.code,
-        className: className || subject.class,
-        section: section || subject.section,
-        assignedBy: req.user.name,
-      },
-    });
-
     res.status(200).json({
       success: true,
       message: 'Subject assigned successfully!',
@@ -502,18 +461,6 @@ exports.removeSubjectFromTeacher = async (req, res) => {
       await subject.save();
     }
 
-    // Log activity
-    await Activity.create({
-      user: req.user._id,
-      action: 'Removed subject from teacher',
-      details: {
-        teacher: teacher.name,
-        teacherId: teacher.employeeId,
-        subjectId: subjectId,
-        removedBy: req.user.name,
-      },
-    });
-
     res.status(200).json({
       success: true,
       message: 'Subject removed from teacher successfully!',
@@ -549,7 +496,7 @@ exports.getTeacherStats = async (req, res) => {
 
     // Get recent teachers
     const recentTeachers = await Teacher.find()
-      .populate('userId', 'name email')
+      .populate('userId', 'fullName email')
       .sort({ createdAt: -1 })
       .limit(5);
 
