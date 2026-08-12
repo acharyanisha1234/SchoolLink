@@ -43,7 +43,7 @@ mongoose.connect(MONGO_URI)
 
 const createAdminIfNotExists = async () => {
   try {
-    const existing = await User.findOne({ email: 'admin@example.com' });
+    const existing = await User.findOne({ email: 'admin@school.com' });
     if (!existing) {
       await User.create({
         fullName: 'Admin User',

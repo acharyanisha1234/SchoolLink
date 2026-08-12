@@ -1,72 +1,74 @@
 const mongoose = require('mongoose');
 
 const studentSchema = new mongoose.Schema({
-  studentId: {
-    type: String,
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
     required: true,
-    unique: true
   },
-  name: {
+  fullName: {
     type: String,
     required: true,
-    trim: true
   },
   email: {
     type: String,
     required: true,
     unique: true,
-    lowercase: true,
-    trim: true
   },
-  class: {
+  rollNumber: {
     type: String,
-    required: true
+    required: true,
+  },
+  className: {
+    type: String,
+    required: true,
   },
   section: {
     type: String,
-    required: true,
-    enum: ['A', 'B', 'C']
+    default: '',
+  },
+  dateOfBirth: {
+    type: Date,
+  },
+  gender: {
+    type: String,
+    enum: ['Male', 'Female', 'Other', 'Not Specified'],
+    default: 'Not Specified',
+  },
+  phone: {
+    type: String,
+    default: '',
+  },
+  address: {
+    type: String,
+    default: '',
+  },
+  parentName: {
+    type: String,
+    default: '',
+  },
+  parentPhone: {
+    type: String,
+    default: '',
+  },
+  parentEmail: {
+    type: String,
+    default: '',
+  },
+  admissionDate: {
+    type: Date,
+    default: Date.now,
   },
   status: {
     type: String,
     enum: ['Active', 'Inactive'],
-    default: 'Active'
+    default: 'Active',
   },
-  password: {
-    type: String,
-    required: true
-  },
-  dateOfBirth: {
-    type: Date
-  },
-  parentName: {
-    type: String
-  },
-  parentContact: {
-    type: String
-  },
-  address: {
-    type: String
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
-  }
+}, {
+  timestamps: true,
 });
 
-// Generate student ID before saving
-studentSchema.pre('save', function(next) {
-  if (!this.studentId) {
-    const year = new Date().getFullYear();
-    const random = Math.floor(1000 + Math.random() * 9000);
-    this.studentId = `STU${year}${random}`;
-  }
-  this.updatedAt = new Date();
-  next();
-});
+// Compound index for unique roll number
+studentSchema.index({ rollNumber: 1, className: 1, section: 1 }, { unique: true });
 
 module.exports = mongoose.model('Student', studentSchema);

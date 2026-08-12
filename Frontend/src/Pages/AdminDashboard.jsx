@@ -23,7 +23,6 @@ import Sidebar from "../components/Sidebar";
 import {
   stats,
   students,
-  teachers,
   subjects,
   announcements,
   recentActivities,
@@ -34,7 +33,13 @@ const Modal = ({
   modalType,
   closeModal,
   handleAddStudent,
-  formData,
+  handleAddTeacher,
+  handleAddSubject,
+  handleAddAnnouncement,
+  studentFormData,
+  teacherFormData,
+  subjectFormData,
+  announcementFormData,
   handleInputChange,
   loading,
 }) => {
@@ -55,15 +60,45 @@ const Modal = ({
     }
   };
 
+  const getSubmitHandler = () => {
+    switch (modalType) {
+      case 'student':
+        return handleAddStudent;
+      case 'teacher':
+        return handleAddTeacher;
+      case 'subject':
+        return handleAddSubject;
+      case 'announcement':
+        return handleAddAnnouncement;
+      default:
+        return handleAddStudent;
+    }
+  };
+
+  const getFormData = () => {
+    switch (modalType) {
+      case 'student':
+        return studentFormData;
+      case 'teacher':
+        return teacherFormData;
+      case 'subject':
+        return subjectFormData;
+      case 'announcement':
+        return announcementFormData;
+      default:
+        return studentFormData;
+    }
+  };
+
+  const formData = getFormData();
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-900">
             {getModalTitle()}
           </h2>
-
           <button
             type="button"
             onClick={closeModal}
@@ -73,77 +108,97 @@ const Modal = ({
           </button>
         </div>
 
-        <form onSubmit={handleAddStudent} className="space-y-4">
-
-          {/* Full Name */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Full Name *
-            </label>
-
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter full name"
-            />
-          </div>
-
-          {/* Email */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email *
-            </label>
-
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter email"
-            />
-          </div>
-
-          {/* Student Fields */}
+        <form onSubmit={getSubmitHandler()} className="space-y-4">
+          {/* Student Form */}
           {modalType === 'student' && (
             <>
-              {/* Class */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Full Name *
+                </label>
+                <input
+                  type="text"
+                  name="fullName"
+                  value={formData.fullName || ''}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter full name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email *
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email || ''}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter email"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Password *
+                </label>
+                <input
+                  type="password"
+                  name="password"
+                  value={formData.password || ''}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter password"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Roll Number *
+                </label>
+                <input
+                  type="text"
+                  name="rollNumber"
+                  value={formData.rollNumber || ''}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter roll number"
+                />
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Class *
                 </label>
-
                 <select
-                  name="class"
-                  value={formData.class}
+                  name="className"
+                  value={formData.className || ''}
                   onChange={handleInputChange}
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select Class</option>
-
-                  {[1,2,3,4,5,6,7,8,9,10].map((num) => (
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((num) => (
                     <option key={num} value={num}>
-                      {num}
+                      Class {num}
                     </option>
                   ))}
                 </select>
               </div>
 
-              {/* Section */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Section *
                 </label>
-
                 <select
                   name="section"
-                  value={formData.section}
+                  value={formData.section || ''}
                   onChange={handleInputChange}
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -155,62 +210,85 @@ const Modal = ({
                 </select>
               </div>
 
-              {/* Date of Birth */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Gender
+                </label>
+                <select
+                  name="gender"
+                  value={formData.gender || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select Gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone
+                </label>
+                <input
+                  type="text"
+                  name="phone"
+                  value={formData.phone || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter phone number"
+                />
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Date of Birth
                 </label>
-
                 <input
                   type="date"
                   name="dateOfBirth"
-                  value={formData.dateOfBirth}
+                  value={formData.dateOfBirth || ''}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
-              {/* Parent Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Parent Name
                 </label>
-
                 <input
                   type="text"
                   name="parentName"
-                  value={formData.parentName}
+                  value={formData.parentName || ''}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Enter parent name"
                 />
               </div>
 
-              {/* Parent Contact */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Parent Contact
                 </label>
-
                 <input
                   type="text"
-                  name="parentContact"
-                  value={formData.parentContact}
+                  name="parentPhone"
+                  value={formData.parentPhone || ''}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Enter parent contact number"
                 />
               </div>
 
-              {/* Address */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Address
                 </label>
-
                 <textarea
                   name="address"
-                  value={formData.address}
+                  value={formData.address || ''}
                   onChange={handleInputChange}
                   rows="2"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -220,36 +298,142 @@ const Modal = ({
             </>
           )}
 
-          {/* Subject */}
+          {/* Teacher Form */}
+          {modalType === 'teacher' && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Full Name *
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name || ''}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter full name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email *
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email || ''}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter email"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Password *
+                </label>
+                <input
+                  type="password"
+                  name="password"
+                  value={formData.password || ''}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter password"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Qualification
+                </label>
+                <input
+                  type="text"
+                  name="qualification"
+                  value={formData.qualification || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter qualification"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Experience (years)
+                </label>
+                <input
+                  type="number"
+                  name="experience"
+                  value={formData.experience || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter years of experience"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone
+                </label>
+                <input
+                  type="text"
+                  name="phone"
+                  value={formData.phone || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter phone number"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Address
+                </label>
+                <textarea
+                  name="address"
+                  value={formData.address || ''}
+                  onChange={handleInputChange}
+                  rows="2"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter address"
+                />
+              </div>
+            </>
+          )}
+
+          {/* Subject Form */}
           {modalType === 'subject' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Subject Name
+                Subject Name *
               </label>
-
               <input
                 type="text"
                 name="subjectName"
                 value={formData.subjectName || ''}
                 onChange={handleInputChange}
+                required
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter subject name"
               />
             </div>
           )}
 
-          {/* Announcement */}
+          {/* Announcement Form */}
           {modalType === 'announcement' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Content
+                Content *
               </label>
-
               <textarea
                 rows="4"
                 name="announcementContent"
                 value={formData.announcementContent || ''}
                 onChange={handleInputChange}
+                required
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Write announcement content..."
               />
@@ -269,7 +453,6 @@ const Modal = ({
               ? loading ? 'Creating...' : 'Create Subject'
               : loading ? 'Posting...' : 'Post Announcement'}
           </button>
-
         </form>
       </div>
     </div>
@@ -277,48 +460,74 @@ const Modal = ({
 };
 
 const AdminDashboard = () => {
-  // State for managing which tab is currently active in the dashboard
   const [activeTab, setActiveTab] = useState('dashboard');
-  // State for storing the search input value when filtering items
   const [searchTerm, setSearchTerm] = useState('');
-  // State to track which subject is expanded to show its chapters
   const [expandedSubject, setExpandedSubject] = useState(null);
-  // State to control the visibility of the add modal
   const [showAddModal, setShowAddModal] = useState(false);
-  // State to store the type of item being added (student, teacher, subject, announcement)
   const [modalType, setModalType] = useState('');
 
-  // Student management states
+  // Student states
   const [studentsList, setStudentsList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [totalStudents, setTotalStudents] = useState(0);
-  const [formData, setFormData] = useState({
-    name: '',
+
+  // Teacher states
+  const [teachersList, setTeachersList] = useState([]);
+  const [totalTeachers, setTotalTeachers] = useState(0);
+  const [teacherLoading, setTeacherLoading] = useState(false);
+
+  // Separate form data for each modal type
+  const [studentFormData, setStudentFormData] = useState({
+    fullName: '',
     email: '',
-    class: '',
+    password: '',
+    rollNumber: '',
+    className: '',
     section: '',
     dateOfBirth: '',
+    gender: '',
+    phone: '',
     parentName: '',
-    parentContact: '',
+    parentPhone: '',
     address: ''
   });
 
-  // API base URL
+  const [teacherFormData, setTeacherFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    qualification: '',
+    experience: '',
+    phone: '',
+    address: ''
+  });
+
+  const [subjectFormData, setSubjectFormData] = useState({
+    subjectName: ''
+  });
+
+  const [announcementFormData, setAnnouncementFormData] = useState({
+    announcementContent: ''
+  });
+
   const API_URL = 'http://localhost:5000/api';
 
-  // Fetch students on component mount
+  // Fetch students and teachers on component mount
   useEffect(() => {
     if (activeTab === 'students') {
       fetchStudents();
     }
-    // Fetch total students for dashboard
     if (activeTab === 'dashboard') {
       fetchTotalStudents();
+      fetchTotalTeachers();
+    }
+    if (activeTab === 'teachers') {
+      fetchTeachers();
     }
   }, [activeTab]);
 
-  // Fetch total students count
+  // ============ STUDENT API CALLS ============
   const fetchTotalStudents = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -336,7 +545,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // Fetch students
   const fetchStudents = async () => {
     setLoading(true);
     try {
@@ -361,109 +569,301 @@ const AdminDashboard = () => {
     }
   };
 
-  // Handle form input changes
-  const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+  // ============ TEACHER API CALLS ============
+  const fetchTotalTeachers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/admin/teachers`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setTotalTeachers(data.data.length);
+      }
+    } catch (error) {
+      console.error('Error fetching total teachers:', error);
+    }
   };
 
-  // Handle student creation
+  const fetchTeachers = async () => {
+    setTeacherLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/admin/teachers`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      console.log('Teachers data:', data); // Debug log
+      if (data.success) {
+        setTeachersList(data.data);
+        setTotalTeachers(data.data.length);
+      } else {
+        console.error('Error fetching teachers:', data.message);
+      }
+    } catch (error) {
+      console.error('Error fetching teachers:', error);
+    } finally {
+      setTeacherLoading(false);
+    }
+  };
+
+  // ============ HANDLE INPUT CHANGE ============
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    
+    if (modalType === 'student') {
+      setStudentFormData({
+        ...studentFormData,
+        [name]: value
+      });
+    } else if (modalType === 'teacher') {
+      setTeacherFormData({
+        ...teacherFormData,
+        [name]: value
+      });
+    } else if (modalType === 'subject') {
+      setSubjectFormData({
+        ...subjectFormData,
+        [name]: value
+      });
+    } else if (modalType === 'announcement') {
+      setAnnouncementFormData({
+        ...announcementFormData,
+        [name]: value
+      });
+    }
+  };
+
+  // ============ HANDLE ADD STUDENT ============
   const handleAddStudent = async (e) => {
     e.preventDefault();
     setLoading(true);
     
     try {
       const token = localStorage.getItem('token');
+      
+      if (!studentFormData.fullName || !studentFormData.email || !studentFormData.password || 
+          !studentFormData.rollNumber || !studentFormData.className) {
+        alert('Please fill all required fields: Full Name, Email, Password, Roll Number, and Class');
+        setLoading(false);
+        return;
+      }
+
       const response = await fetch(`${API_URL}/students`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(studentFormData)
       });
 
       const data = await response.json();
       
       if (data.success) {
-        alert(`Student added successfully!`);
+        alert('Student added successfully!');
         closeModal();
-        setFormData({
-          name: '',
+        setStudentFormData({
+          fullName: '',
           email: '',
-          class: '',
+          password: '',
+          rollNumber: '',
+          className: '',
           section: '',
           dateOfBirth: '',
+          gender: '',
+          phone: '',
           parentName: '',
-          parentContact: '',
+          parentPhone: '',
           address: ''
         });
-        // Refresh students list
         fetchStudents();
-        // Update total students
         setTotalStudents(prev => prev + 1);
       } else {
         alert(data.message || 'Error adding student');
       }
     } catch (error) {
-      alert('Error adding student');
-      console.error('Error:', error);
+      console.error('Error details:', error);
+      alert('Error adding student: ' + (error.message || 'Unknown error'));
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle student deletion
-  const handleDeleteStudent = async (studentId) => {
-  if (!window.confirm('Are you sure you want to delete this student?')) return;
-
-  try {
-    const token = localStorage.getItem('token');
-
-    const response = await fetch(`${API_URL}/students/${studentId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`
+  // ============ HANDLE ADD TEACHER ============
+  const handleAddTeacher = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      const token = localStorage.getItem('token');
+      
+      if (!teacherFormData.name || !teacherFormData.email || !teacherFormData.password) {
+        alert('Please fill all required fields: Name, Email, and Password');
+        setLoading(false);
+        return;
       }
-    });
 
-    const data = await response.json();
+      console.log('Sending teacher data:', teacherFormData); // Debug log
 
-    if (data.success) {
-      alert('Student deleted successfully');
-      fetchStudents();
-      setTotalStudents(prev => prev - 1);
-    } else {
-      alert(data.message || 'Error deleting student');
+      const response = await fetch(`${API_URL}/admin/teachers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(teacherFormData)
+      });
+
+      const data = await response.json();
+      console.log('Teacher creation response:', data); // Debug log
+      
+      if (data.success) {
+        alert('Teacher added successfully!');
+        closeModal();
+        setTeacherFormData({
+          name: '',
+          email: '',
+          password: '',
+          qualification: '',
+          experience: '',
+          phone: '',
+          address: ''
+        });
+        // ✅ Refresh teacher list
+        await fetchTeachers();
+        setTotalTeachers(prev => prev + 1);
+      } else {
+        alert(data.message || 'Error adding teacher');
+      }
+    } catch (error) {
+      console.error('Error details:', error);
+      alert('Error adding teacher: ' + (error.message || 'Unknown error'));
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    alert('Error deleting student');
-    console.error('Error:', error);
-  }
-};
+  };
 
-  // Helper Functions
-  // Toggles the expansion of a subject to show/hide its chapters
+  // ============ HANDLE ADD SUBJECT ============
+  const handleAddSubject = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      if (!subjectFormData.subjectName) {
+        alert('Please enter a subject name');
+        setLoading(false);
+        return;
+      }
+
+      alert('Subject creation feature coming soon!');
+      closeModal();
+      setSubjectFormData({ subjectName: '' });
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error adding subject');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ============ HANDLE ADD ANNOUNCEMENT ============
+  const handleAddAnnouncement = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      if (!announcementFormData.announcementContent) {
+        alert('Please enter announcement content');
+        setLoading(false);
+        return;
+      }
+
+      alert('Announcement feature coming soon!');
+      closeModal();
+      setAnnouncementFormData({ announcementContent: '' });
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error posting announcement');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ============ HANDLE DELETE STUDENT ============
+  const handleDeleteStudent = async (studentId) => {
+    if (!window.confirm('Are you sure you want to delete this student?')) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/students/${studentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert('Student deleted successfully');
+        fetchStudents();
+        setTotalStudents(prev => prev - 1);
+      } else {
+        alert(data.message || 'Error deleting student');
+      }
+    } catch (error) {
+      alert('Error deleting student');
+      console.error('Error:', error);
+    }
+  };
+
+  // ============ HANDLE DELETE TEACHER ============
+  const handleDeleteTeacher = async (teacherId) => {
+    if (!window.confirm('Are you sure you want to delete this teacher?')) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/admin/teachers/${teacherId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert('Teacher deleted successfully');
+        fetchTeachers();
+        setTotalTeachers(prev => prev - 1);
+      } else {
+        alert(data.message || 'Error deleting teacher');
+      }
+    } catch (error) {
+      alert('Error deleting teacher');
+      console.error('Error:', error);
+    }
+  };
+
   const toggleSubject = (id) => {
     setExpandedSubject(expandedSubject === id ? null : id);
   };
 
-  // Opens the modal and sets the type of item to be added
   const openModal = (type) => {
     setModalType(type);
     setShowAddModal(true);
   };
 
-  // Closes the modal and resets the modal type
   const closeModal = () => {
     setShowAddModal(false);
     setModalType('');
   };
 
-  // Stat Card Component
-  // Reusable card component for displaying statistics with an icon, label, and value
   const StatCard = ({ icon: Icon, label, value, color, bgColor }) => (
     <div className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow">
       <div className="flex items-center">
@@ -478,8 +878,6 @@ const AdminDashboard = () => {
     </div>
   );
 
-  // Dashboard View
-  // Renders the main dashboard overview with stats, recent activities, and quick actions
   const DashboardView = () => (
     <div>
       <div className="mb-8">
@@ -487,11 +885,9 @@ const AdminDashboard = () => {
         <p className="text-gray-600 mt-1">Welcome back! Here's what's happening in your school.</p>
       </div>
 
-      {/* Stats Grid */}
-      {/* Grid layout displaying all statistical cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard icon={UsersIcon} label="Total Students" value={totalStudents || stats.totalStudents} color="text-blue-600" bgColor="bg-blue-100" />
-        <StatCard icon={AcademicCapIcon} label="Total Teachers" value={stats.totalTeachers} color="text-green-600" bgColor="bg-green-100" />
+        <StatCard icon={AcademicCapIcon} label="Total Teachers" value={totalTeachers || stats.totalTeachers} color="text-green-600" bgColor="bg-green-100" />
         <StatCard icon={BookOpenIcon} label="Total Subjects" value={stats.totalSubjects} color="text-purple-600" bgColor="bg-purple-100" />
         <StatCard icon={DocumentTextIcon} label="Learning Materials" value={stats.totalMaterials} color="text-yellow-600" bgColor="bg-yellow-100" />
         <StatCard icon={ClipboardDocumentIcon} label="Total Assignments" value={stats.totalAssignments} color="text-pink-600" bgColor="bg-pink-100" />
@@ -500,8 +896,6 @@ const AdminDashboard = () => {
         <StatCard icon={MegaphoneIcon} label="Recent Notices" value={stats.recentNotices} color="text-orange-600" bgColor="bg-orange-100" />
       </div>
 
-      {/* Recent Activities & Quick Actions */}
-      {/* Two-column layout for recent activities and quick action buttons */}
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
@@ -543,8 +937,6 @@ const AdminDashboard = () => {
     </div>
   );
 
-  // Students View
-  // Renders the student management interface with search and table display
   const StudentsView = () => (
     <div>
       <div className="mb-8 flex justify-between items-center">
@@ -583,8 +975,9 @@ const AdminDashboard = () => {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Roll No</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Class</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Section</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -595,15 +988,16 @@ const AdminDashboard = () => {
                 {studentsList.length > 0 ? (
                   studentsList.map((student) => (
                     <tr key={student._id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.studentId}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.name}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.class}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.rollNumber}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.fullName || student.name}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.email}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.className}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.section}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 text-xs rounded-full ${
                           student.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                         }`}>
-                          {student.status}
+                          {student.status || 'Active'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -621,7 +1015,7 @@ const AdminDashboard = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="6" className="px-6 py-4 text-center text-gray-500">
+                    <td colSpan="7" className="px-6 py-4 text-center text-gray-500">
                       No students found
                     </td>
                   </tr>
@@ -634,8 +1028,7 @@ const AdminDashboard = () => {
     </div>
   );
 
-  // Teachers View
-  // Renders the teacher management interface with table display
+  // ✅ Updated TeachersView - Now uses API data
   const TeachersView = () => (
     <div>
       <div className="mb-8 flex justify-between items-center">
@@ -650,47 +1043,76 @@ const AdminDashboard = () => {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-gray-200">
+          <div className="relative">
+            <MagnifyingGlassIcon className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search teachers..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+        </div>
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subjects</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Classes</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {teachers.map((teacher) => (
-                <tr key={teacher.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{teacher.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{teacher.email}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {teacher.subjects.join(', ')}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {teacher.classes.join(', ')}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button className="text-blue-600 hover:text-blue-900 mr-3">
-                      <PencilIcon className="h-5 w-5" />
-                    </button>
-                    <button className="text-red-600 hover:text-red-900">
-                      <TrashIcon className="h-5 w-5" />
-                    </button>
-                  </td>
+          {teacherLoading ? (
+            <div className="p-8 text-center text-gray-500">Loading teachers...</div>
+          ) : (
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee ID</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qualification</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {teachersList.length > 0 ? (
+                  teachersList.map((teacher) => (
+                    <tr key={teacher._id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{teacher.employeeId}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{teacher.name}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{teacher.email}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{teacher.qualification || 'N/A'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          teacher.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
+                          {teacher.status || 'Active'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button className="text-blue-600 hover:text-blue-900 mr-3">
+                          <PencilIcon className="h-5 w-5" />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteTeacher(teacher._id)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          <TrashIcon className="h-5 w-5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="6" className="px-6 py-4 text-center text-gray-500">
+                      No teachers found. Click "Add Teacher" to create one.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </div>
   );
 
-  // Subjects View
-  // Renders the subject management interface with expandable chapters
   const SubjectsView = () => (
     <div>
       <div className="mb-8 flex justify-between items-center">
@@ -753,8 +1175,6 @@ const AdminDashboard = () => {
     </div>
   );
 
-  // Announcements View
-  // Renders the announcement management interface
   const AnnouncementsView = () => (
     <div>
       <div className="mb-8 flex justify-between items-center">
@@ -795,9 +1215,6 @@ const AdminDashboard = () => {
     </div>
   );
 
-  
-  // Main Render
-  // Renders the complete admin dashboard with sidebar, content area, and modal
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar
@@ -806,7 +1223,6 @@ const AdminDashboard = () => {
       />
 
       <div className="ml-64 flex-1 p-8">
-        {/* Conditionally render the appropriate view based on the active tab */}
         {activeTab === "dashboard" && <DashboardView />}
         {activeTab === "students" && <StudentsView />}
         {activeTab === "teachers" && <TeachersView />}
@@ -815,14 +1231,20 @@ const AdminDashboard = () => {
       </div>
 
       <Modal
-      showAddModal={showAddModal}
-      modalType={modalType}
-      closeModal={closeModal}
-      handleAddStudent={handleAddStudent}
-      formData={formData}
-      handleInputChange={handleInputChange}
-      loading={loading}
-    />
+        showAddModal={showAddModal}
+        modalType={modalType}
+        closeModal={closeModal}
+        handleAddStudent={handleAddStudent}
+        handleAddTeacher={handleAddTeacher}
+        handleAddSubject={handleAddSubject}
+        handleAddAnnouncement={handleAddAnnouncement}
+        studentFormData={studentFormData}
+        teacherFormData={teacherFormData}
+        subjectFormData={subjectFormData}
+        announcementFormData={announcementFormData}
+        handleInputChange={handleInputChange}
+        loading={loading}
+      />
     </div>
   );
 };

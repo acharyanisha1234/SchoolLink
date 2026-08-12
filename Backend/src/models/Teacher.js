@@ -22,32 +22,23 @@ const teacherSchema = new mongoose.Schema({
   },
   qualification: {
     type: String,
-    trim: true,
+    default: '',
   },
   experience: {
     type: Number,
-    min: 0,
     default: 0,
   },
-  specializations: [{
-    type: String,
-    trim: true,
-  }],
-  assignedSubjects: [{
-    subjectId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Subject',
-    },
-    className: String,
-    section: String,
-  }],
+  specializations: {
+    type: [String],
+    default: [],
+  },
   phone: {
     type: String,
-    trim: true,
+    default: '',
   },
   address: {
     type: String,
-    trim: true,
+    default: '',
   },
   joinDate: {
     type: Date,
@@ -58,6 +49,14 @@ const teacherSchema = new mongoose.Schema({
     enum: ['Active', 'Inactive'],
     default: 'Active',
   },
+  assignedSubjects: [{
+    subjectId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Subject',
+    },
+    className: String,
+    section: String,
+  }],
 }, {
   timestamps: true,
 });
