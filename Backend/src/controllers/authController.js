@@ -1,7 +1,7 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');  // ✅ 1. यो पहिले नै थपिएको हुनुपर्छ
 
-// Generate JWT Token
 const generateToken = (user) => {
   return jwt.sign(
     { id: user._id, email: user.email, role: user.role },
@@ -10,18 +10,16 @@ const generateToken = (user) => {
   );
 };
 
-// Register
+// Register (यथावत)
 exports.register = async (req, res) => {
   try {
     const { fullName, email, password, birthday, gender } = req.body;
 
-    // Check if user exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: 'Email already registered.' });
     }
 
-    // Create user
     const user = new User({
       fullName,
       email,
@@ -33,7 +31,6 @@ exports.register = async (req, res) => {
 
     await user.save();
 
-    // Generate token
     const token = generateToken(user);
 
     res.status(201).json({
@@ -52,26 +49,44 @@ exports.register = async (req, res) => {
   }
 };
 
-// Login
+// ✅ Login (डिबग लाइनहरू थपिएको)
 exports.login = async (req, res) => {
   try {
+    // 🔍 डिबग 1: हेरौं कि frontend बाट के आयो
+    console.log('\n📨 Login request body:', req.body);
+
     const { email, password } = req.body;
 
-    // Find user
-    const user = await User.findOne({ email });
+    // 🔍 डिबग 2: यदि email वा password missing भए
+    if (!email || !password) {
+      console.log('❌ Email or password missing!');
+      return res.status(400).json({ message: 'Email and password are required.' });
+    }
+
+    // Find user (forcefully password select गरौं)
+    const user = await User.findOne({ email }).select('+password');
+
     if (!user) {
+      console.log('❌ User not found for email:', email);
       return res.status(400).json({ message: 'Invalid credentials.' });
     }
 
-    // Check password
-    const isMatch = await user.comparePassword(password);
+    console.log('✅ User found:', user.email);
+    console.log('🔑 Stored hash:', user.password);
+
+    // Check password (direct bcrypt.compare)
+    const isMatch = await bcrypt.compare(password, user.password);
+    console.log('🔐 Password match?', isMatch);
+
     if (!isMatch) {
+      console.log('❌ Password does NOT match');
       return res.status(400).json({ message: 'Invalid credentials.' });
     }
 
     // Generate token
     const token = generateToken(user);
 
+    console.log('✅ Login successful for:', user.email);
     res.json({
       message: 'Login successful.',
       user: {
@@ -83,11 +98,12 @@ exports.login = async (req, res) => {
       accessToken: token,
     });
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('❌ Login error (catch):', error);
     res.status(500).json({ message: 'Server error during login.' });
   }
 };
-// Send Reset OTP
+
+// Send Reset OTP (यथावत)
 exports.sendResetOTP = async (req, res) => {
   try {
     const { email } = req.body;
@@ -100,26 +116,20 @@ exports.sendResetOTP = async (req, res) => {
       return res.status(404).json({ message: 'User not found with this email.' });
     }
 
-    // Generate 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-    // Save OTP and expiry (10 minutes)
     user.resetOTP = otp;
     user.resetOTPExpiry = Date.now() + 10 * 60 * 1000;
     await user.save();
 
-    // Log OTP to console (for testing)
-    console.log(` OTP for ${email}: ${otp}`);
-
-    res.json({ 
-      message: 'OTP sent. Check server console for the OTP.' 
-    });
+    console.log(`🔑 OTP for ${email}: ${otp}`);
+    res.json({ message: 'OTP sent. Check server console for the OTP.' });
   } catch (error) {
     console.error('Send OTP error:', error);
     res.status(500).json({ message: 'Server error sending OTP.' });
   }
 };
-// Reset Password
+
+// Reset Password (यथावत)
 exports.resetPassword = async (req, res) => {
   try {
     const { email, otp, newPassword } = req.body;
@@ -133,17 +143,14 @@ exports.resetPassword = async (req, res) => {
       return res.status(404).json({ message: 'User not found.' });
     }
 
-    // Verify OTP
     if (user.resetOTP !== otp) {
       return res.status(400).json({ message: 'Invalid OTP.' });
     }
 
-    // Check expiry
     if (Date.now() > user.resetOTPExpiry) {
       return res.status(400).json({ message: 'OTP has expired. Please request a new one.' });
     }
 
-    // Update password (pre-save hook will hash it)
     user.password = newPassword;
     user.resetOTP = null;
     user.resetOTPExpiry = null;

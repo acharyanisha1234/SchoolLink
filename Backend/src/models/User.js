@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
   fullName: {
@@ -21,7 +22,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['admin', 'teacher', 'student'],
+    enum: ['ADMIN', 'teacher', 'student'],
     default: 'student',
   },
   profilePicture: {
@@ -32,12 +33,34 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
-  resetPasswordToken: String,
-  resetPasswordExpire: Date,
+  resetOTP: {
+    type: String,
+  },
+  resetOTPExpiry: {
+    type: Date,
+  },
+  birthday: {
+    type: String,
+  },
+  gender: {
+    type: String,
+  },
 }, {
   timestamps: true,
 });
 
-//  NO PRE-SAVE MIDDLEWARE HERE - REMOVED COMPLETELY
+// Pre-save middleware - async/await version (without next)
+userSchema.pre('save', async function() {
+  // Only hash if password is modified
+  if (!this.isModified('password')) return;
+  
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+});
+
+// Compare password method
+userSchema.methods.comparePassword = async function(candidatePassword) {
+  return await bcrypt.compare(candidatePassword, this.password);
+};
 
 module.exports = mongoose.model('User', userSchema);

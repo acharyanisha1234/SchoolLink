@@ -3,74 +3,62 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const http = require('http');
-const path = require('path');
 
 const User = require('./src/models/User');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// CORS configuration to allow multiple origins
-const allowedOrigins = [
-  'http://localhost:3000', 
-  'http://localhost:5173', 
-  'http://127.0.0.1:5173',
-  'http://127.0.0.1:3000'
-];
-
-// Middleware
 app.use(cors({
-  origin: 'http://localhost:5173', 
+  origin: 'http://localhost:5173',
   credentials: true
 }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Serve uploaded files (for materials)
 app.use('/uploads', express.static('uploads'));
 
-// MongoDB connection
-const MONGO_URI = process.env.MONGO_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/schoollink';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/schoollink';
 mongoose.connect(MONGO_URI)
   .then(() => {
     console.log('Connected to MongoDB');
     createAdminIfNotExists();
   })
-  .catch(err => console.error('DB error:', err.message));
-
-// Auth routes
+  .catch(err => console.error('DB connection error:', err.message));
 
 const createAdminIfNotExists = async () => {
   try {
+    console.log('Checking for admin user...');
     const existing = await User.findOne({ email: 'admin@school.com' });
     if (!existing) {
+      console.log('Admin not found. Creating new admin...');
       await User.create({
         fullName: 'Admin User',
         email: 'admin@school.com',
-        password: 'admin123',   
-        role: 'admin',
+        password: 'admin123',
+        role: 'ADMIN',
         birthday: '2000-01-01',
         gender: 'Other'
       });
-      console.log(' Admin user created automatically!');
-      console.log('   Email: admin@school.com');
-      console.log('   Password: admin123');
+      console.log('Admin user created successfully!');
+      console.log('  Email: admin@school.com');
+      console.log('  Password: admin123');
     } else {
-      console.log(' Admin user already exists.');
+      console.log('Admin user already exists.');
     }
   } catch (err) {
     console.error('Error creating admin:', err.message);
+    console.error('Full error:', err);
   }
 };
 
-// Auth routes (unchanged)
+// Auth routes
 try {
   const authRoutes = require('./src/routes/auth');
   app.use('/api/auth', authRoutes);
   console.log('Auth routes loaded');
 } catch (err) {
-  console.warn('Auth routes not found – skipping:', err.message);
+  console.warn('Auth routes not found:', err.message);
 }
 
 // Student routes
@@ -79,36 +67,27 @@ try {
   app.use('/api/students', studentRoutes);
   console.log('Student routes loaded');
 } catch (err) {
-  console.warn('Student routes not found – skipping:', err.message);
+  console.warn('Student routes not found:', err.message);
 }
 
-// Teacher routes (for teacher role)
-// Import student routes
-const studentRoutes = require('./src/routes/studentRoutes');
-app.use('/api/students', studentRoutes);
-
-//   Removed duplicate authRoutes import
-
-// Test route
-// TEACHER ROUTES – NEW 
+// Teacher routes
 try {
   const teacherRoutes = require('./src/routes/teacherRoutes');
   app.use('/api/teacher', teacherRoutes);
   console.log('Teacher routes loaded');
 } catch (err) {
-  console.warn('Teacher routes not found – skipping:', err.message);
+  console.warn('Teacher routes not found:', err.message);
 }
 
-// Admin Teacher routes (for admin role)
+// Admin Teacher routes
 try {
   const adminTeacherRoutes = require('./src/routes/adminTeacherRoutes');
   app.use('/api/admin/teachers', adminTeacherRoutes);
   console.log('Admin Teacher routes loaded');
 } catch (err) {
-  console.warn('Admin Teacher routes not found – skipping:', err.message);
+  console.warn('Admin Teacher routes not found:', err.message);
 }
 
-// Health check route
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,
@@ -118,21 +97,10 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Test route
-try {
-  const adminTeacherRoutes = require('./src/routes/adminTeacherRoutes');
-  app.use('/api/admin/teachers', adminTeacherRoutes);
-  console.log(' Admin Teacher routes loaded');
-} catch (err) {
-  console.warn(' Admin Teacher routes not found – skipping:', err.message);
-}
-
-// Test route (unchanged)
 app.get('/', (req, res) => {
   res.send('SchoolLink Backend is running...');
 });
 
-// 404 handler for undefined routes
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -140,7 +108,6 @@ app.use((req, res) => {
   });
 });
 
-// Global error handler
 app.use((err, req, res, next) => {
   console.error('Error:', err.stack);
   res.status(err.status || 500).json({
@@ -155,5 +122,4 @@ server.listen(PORT, () => {
   console.log(`Students API: http://localhost:${PORT}/api/students`);
   console.log(`Teacher API: http://localhost:${PORT}/api/teacher`);
   console.log(`Admin Teacher API: http://localhost:${PORT}/api/admin/teachers`);
-  console.log(` Students API: http://localhost:${PORT}/api/students`);
 });
