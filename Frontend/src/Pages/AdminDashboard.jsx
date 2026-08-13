@@ -532,18 +532,18 @@ const Modal = ({
           )}
 
           <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {modalType === 'student'
-              ? loading ? 'Adding...' : 'Add Student'
-              : modalType === 'teacher'
-              ? loading ? 'Adding...' : 'Add Teacher'
-              : modalType === 'subject'
-              ? loading ? 'Creating...' : 'Create Subject'
-              : loading ? 'Posting...' : 'Post Announcement'}
-          </button>
+          type="submit"
+          disabled={loading}
+          className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {modalType === 'student'
+            ? loading ? 'Adding...' : 'Add Student'
+            : modalType === 'teacher'
+            ? loading ? 'Adding...' : 'Add Teacher'
+            : modalType === 'subject'
+            ? loading ? (isEditMode ? 'Updating...' : 'Creating...') : (isEditMode ? 'Update Subject' : 'Create Subject')
+            : loading ? 'Posting...' : 'Post Announcement'}
+        </button>
         </form>
       </div>
     </div>
