@@ -481,6 +481,13 @@ const AdminDashboard = () => {
   const [totalTeachers, setTotalTeachers] = useState(0);
   const [teacherLoading, setTeacherLoading] = useState(false);
 
+  // Subject states
+  const [subjectsList, setSubjectsList] = useState([]);
+  const [subjectLoading, setSubjectLoading] = useState(false);
+  const [totalSubjects, setTotalSubjects] = useState(0);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingSubjectId, setEditingSubjectId] = useState(null);
+
   // Separate form data for each modal type
   const [studentFormData, setStudentFormData] = useState({
     fullName: '',
@@ -508,8 +515,13 @@ const AdminDashboard = () => {
   });
 
   const [subjectFormData, setSubjectFormData] = useState({
-    subjectName: ''
-  });
+  title: '',
+  code: '',
+  description: '',
+  teacherId: '',
+  class: '',
+  status: 'Active'
+});
 
   const [announcementFormData, setAnnouncementFormData] = useState({
     announcementContent: ''
@@ -545,10 +557,15 @@ const AdminDashboard = () => {
     if (activeTab === 'dashboard') {
       fetchTotalStudents();
       fetchTotalTeachers();
+      fetchTotalSubjects();
     }
     if (activeTab === 'teachers') {
       fetchTeachers();
     }
+    if (activeTab === 'subjects') {
+    fetchSubjects();
+    fetchTeachers(); 
+  }
   }, [activeTab]);
 
   // ============ STUDENT API CALLS ============
@@ -634,6 +651,49 @@ const AdminDashboard = () => {
       setTeacherLoading(false);
     }
   };
+
+  // ============ SUBJECT API CALLS ============
+const fetchTotalSubjects = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/admin/subjects`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    const data = await response.json();
+    if (data.success) {
+      setTotalSubjects(data.count || data.data.length);
+    }
+  } catch (error) {
+    console.error('Error fetching total subjects:', error);
+  }
+};
+
+const fetchSubjects = async () => {
+  setSubjectLoading(true);
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/admin/subjects`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    const data = await response.json();
+    console.log('Subjects data:', data);
+    if (data.success) {
+      setSubjectsList(data.data);
+      setTotalSubjects(data.count || data.data.length);
+    } else {
+      setError(data.message);
+    }
+  } catch (error) {
+    console.error('Error fetching subjects:', error);
+    setError('Error fetching subjects');
+  } finally {
+    setSubjectLoading(false);
+  }
+};
 
   // ============ HANDLE INPUT CHANGE ============
   const handleInputChange = (e) => {
