@@ -88,6 +88,15 @@ try {
   console.warn('Admin Teacher routes not found:', err.message);
 }
 
+// ADMIN SUBJECT ROUTES 
+try {
+  const adminSubjectRoutes = require('./src/routes/adminSubjectRoutes');
+  app.use('/api/admin/subjects', adminSubjectRoutes);
+  console.log('Admin Subject routes loaded');
+} catch (err) {
+  console.warn('Admin Subject routes not found:', err.message);
+}
+
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,
@@ -122,4 +131,6 @@ server.listen(PORT, () => {
   console.log(`Students API: http://localhost:${PORT}/api/students`);
   console.log(`Teacher API: http://localhost:${PORT}/api/teacher`);
   console.log(`Admin Teacher API: http://localhost:${PORT}/api/admin/teachers`);
+  console.log(`Admin Subject API: http://localhost:${PORT}/api/admin/subjects`);
+
 });
