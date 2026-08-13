@@ -1140,6 +1140,9 @@ const handleDeleteSubject = async (subjectId) => {
   };
 
   const openModal = (type) => {
+    if (type === 'subject') {
+      resetSubjectForm();
+    }
     setModalType(type);
     setShowAddModal(true);
   };
@@ -1171,14 +1174,14 @@ const handleDeleteSubject = async (subjectId) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard icon={UsersIcon} label="Total Students" value={totalStudents || stats.totalStudents} color="text-blue-600" bgColor="bg-blue-100" />
-        <StatCard icon={AcademicCapIcon} label="Total Teachers" value={totalTeachers || stats.totalTeachers} color="text-green-600" bgColor="bg-green-100" />
-        <StatCard icon={BookOpenIcon} label="Total Subjects" value={stats.totalSubjects} color="text-purple-600" bgColor="bg-purple-100" />
-        <StatCard icon={DocumentTextIcon} label="Learning Materials" value={stats.totalMaterials} color="text-yellow-600" bgColor="bg-yellow-100" />
-        <StatCard icon={ClipboardDocumentIcon} label="Total Assignments" value={stats.totalAssignments} color="text-pink-600" bgColor="bg-pink-100" />
-        <StatCard icon={CheckCircleIcon} label="Homework Submissions" value={stats.totalSubmissions} color="text-indigo-600" bgColor="bg-indigo-100" />
-        <StatCard icon={ClockIcon} label="Total Tasks" value={stats.totalTasks} color="text-red-600" bgColor="bg-red-100" />
-        <StatCard icon={MegaphoneIcon} label="Recent Notices" value={stats.recentNotices} color="text-orange-600" bgColor="bg-orange-100" />
+        <StatCard icon={UsersIcon} label="Total Students" value={totalStudents} color="text-blue-600" bgColor="bg-blue-100" />
+        <StatCard icon={AcademicCapIcon} label="Total Teachers" value={totalTeachers} color="text-green-600" bgColor="bg-green-100" />
+        <StatCard icon={BookOpenIcon} label="Total Subjects" value={totalSubjects} color="text-purple-600" bgColor="bg-purple-100" />
+        <StatCard icon={DocumentTextIcon} label="Learning Materials" value={0} color="text-yellow-600" bgColor="bg-yellow-100" />
+        <StatCard icon={ClipboardDocumentIcon} label="Total Assignments" value={0} color="text-pink-600" bgColor="bg-pink-100" />
+        <StatCard icon={CheckCircleIcon} label="Homework Submissions" value={0} color="text-indigo-600" bgColor="bg-indigo-100" />
+        <StatCard icon={ClockIcon} label="Total Tasks" value={0} color="text-red-600" bgColor="bg-red-100" />
+        <StatCard icon={MegaphoneIcon} label="Recent Notices" value={0} color="text-orange-600" bgColor="bg-orange-100" />
       </div>
 
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1222,6 +1225,7 @@ const handleDeleteSubject = async (subjectId) => {
     </div>
   );
 
+  //Student View
   const StudentsView = () => (
     <div>
       <div className="mb-8 flex justify-between items-center">
