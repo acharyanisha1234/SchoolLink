@@ -10,7 +10,6 @@ const generateToken = (user) => {
   );
 };
 
-
 exports.register = async (req, res) => {
   try {
     const { fullName, email, password, birthday, gender } = req.body;
@@ -26,7 +25,7 @@ exports.register = async (req, res) => {
       password,
       birthday: birthday || '',
       gender: gender || '',
-      role: 'STUDENT',
+      role: 'student',   // <-- FIXED: lowercase to match enum ['ADMIN','teacher','student']
     });
 
     await user.save();
@@ -49,10 +48,8 @@ exports.register = async (req, res) => {
   }
 };
 
-
 exports.login = async (req, res) => {
   try {
-   
     console.log('\n📨 Login request body:', req.body);
 
     const { email, password } = req.body;
@@ -62,18 +59,16 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: 'Email and password are required.' });
     }
 
-  
     const user = await User.findOne({ email }).select('+password');
 
     if (!user) {
-      console.log(' User not found for email:', email);
+      console.log('User not found for email:', email);
       return res.status(400).json({ message: 'Invalid credentials.' });
     }
 
-    console.log(' User found:', user.email);
-    console.log(' Stored hash:', user.password);
+    console.log('User found:', user.email);
+    console.log('Stored hash:', user.password);
 
-    // Check password (direct bcrypt.compare)
     const isMatch = await bcrypt.compare(password, user.password);
     console.log('Password match?', isMatch);
 
@@ -82,7 +77,6 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials.' });
     }
 
-    // Generate token
     const token = generateToken(user);
 
     console.log('Login successful for:', user.email);
@@ -102,7 +96,6 @@ exports.login = async (req, res) => {
   }
 };
 
-// Send Reset OTP (यथावत)
 exports.sendResetOTP = async (req, res) => {
   try {
     const { email } = req.body;
@@ -120,7 +113,7 @@ exports.sendResetOTP = async (req, res) => {
     user.resetOTPExpiry = Date.now() + 10 * 60 * 1000;
     await user.save();
 
-    console.log(` OTP for ${email}: ${otp}`);
+    console.log(`OTP for ${email}: ${otp}`);
     res.json({ message: 'OTP sent. Check server console for the OTP.' });
   } catch (error) {
     console.error('Send OTP error:', error);
@@ -128,7 +121,6 @@ exports.sendResetOTP = async (req, res) => {
   }
 };
 
-// Reset Password 
 exports.resetPassword = async (req, res) => {
   try {
     const { email, otp, newPassword } = req.body;
