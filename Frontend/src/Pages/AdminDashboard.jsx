@@ -408,20 +408,109 @@ const Modal = ({
 
           {/* Subject Form */}
           {modalType === 'subject' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Subject Name *
-              </label>
-              <input
-                type="text"
-                name="subjectName"
-                value={formData.subjectName || ''}
-                onChange={handleInputChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter subject name"
-              />
-            </div>
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Subject Title *
+                </label>
+                <input
+                  type="text"
+                  name="title"
+                  value={formData.title || ''}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter subject title"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Subject Code
+                </label>
+                <input
+                  type="text"
+                  name="code"
+                  value={formData.code || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g., MATH101 (optional)"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Class *
+                </label>
+                <select
+                  name="class"
+                  value={formData.class || ''}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select Class</option>
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((num) => (
+                    <option key={num} value={num}>
+                      Class {num}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Assign Teacher *
+                </label>
+                <select
+                  name="teacherId"
+                  value={formData.teacherId || ''}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select Teacher</option>
+                  {teachersList.length > 0 ? (
+                    teachersList.map((teacher) => (
+                      <option key={teacher._id} value={teacher._id}>
+                        {teacher.name} ({teacher.email})
+                      </option>
+                    ))
+                  ) : (
+                    <option value="">No teachers available</option>
+                  )}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Description
+                </label>
+                <textarea
+                  name="description"
+                  value={formData.description || ''}
+                  onChange={handleInputChange}
+                  rows="3"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter subject description (optional)"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Status
+                </label>
+                <select
+                  name="status"
+                  value={formData.status || 'Active'}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
+              </div>
+            </>
           )}
 
           {/* Announcement Form */}
@@ -443,18 +532,18 @@ const Modal = ({
           )}
 
           <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {modalType === 'student'
-              ? loading ? 'Adding...' : 'Add Student'
-              : modalType === 'teacher'
-              ? loading ? 'Adding...' : 'Add Teacher'
-              : modalType === 'subject'
-              ? loading ? 'Creating...' : 'Create Subject'
-              : loading ? 'Posting...' : 'Post Announcement'}
-          </button>
+          type="submit"
+          disabled={loading}
+          className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {modalType === 'student'
+            ? loading ? 'Adding...' : 'Add Student'
+            : modalType === 'teacher'
+            ? loading ? 'Adding...' : 'Add Teacher'
+            : modalType === 'subject'
+            ? loading ? (isEditMode ? 'Updating...' : 'Creating...') : (isEditMode ? 'Update Subject' : 'Create Subject')
+            : loading ? 'Posting...' : 'Post Announcement'}
+        </button>
         </form>
       </div>
     </div>
@@ -835,29 +924,140 @@ const fetchSubjects = async () => {
 
   // ============ HANDLE ADD SUBJECT ============
   const handleAddSubject = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  e.preventDefault();
+  setLoading(true);
+  
+  try {
+    const token = localStorage.getItem('token');
     
-    try {
-      if (!subjectFormData.subjectName) {
-        alert('Please enter a subject name');
-        setLoading(false);
-        return;
-      }
-
-      alert('Subject creation feature coming soon!');
-      closeModal();
-      setSubjectFormData({ subjectName: '' });
-    } catch (error) {
-      console.error('Error:', error);
-      alert('Error adding subject');
-    } finally {
+    // Validation
+    if (!subjectFormData.title) {
+      alert('Please enter a subject title');
       setLoading(false);
+      return;
     }
-  };
+    
+    if (!subjectFormData.teacherId) {
+      alert('Please select a teacher');
+      setLoading(false);
+      return;
+    }
+    
+    if (!subjectFormData.class) {
+      alert('Please select a class');
+      setLoading(false);
+      return;
+    }
+
+    const subjectData = {
+      title: subjectFormData.title,
+      code: subjectFormData.code || undefined,
+      description: subjectFormData.description || '',
+      teacherId: subjectFormData.teacherId,
+      class: parseInt(subjectFormData.class),
+      status: subjectFormData.status || 'Active'
+    };
+
+    console.log('Sending subject data:', subjectData);
+
+    const url = isEditMode 
+      ? `${API_URL}/admin/subjects/${editingSubjectId}`
+      : `${API_URL}/admin/subjects`;
+    
+    const method = isEditMode ? 'PUT' : 'POST';
+
+    const response = await fetch(url, {
+      method: method,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(subjectData)
+    });
+
+    const data = await response.json();
+    console.log('Subject response:', data);
+    
+    if (data.success) {
+      alert(isEditMode ? 'Subject updated successfully!' : 'Subject created successfully!');
+      closeModal();
+      resetSubjectForm();
+      await fetchSubjects();
+      await fetchTotalSubjects();
+    } else {
+      alert(data.message || 'Error processing subject');
+    }
+  } catch (error) {
+    console.error('Error details:', error);
+    alert('Error processing subject: ' + (error.message || 'Unknown error'));
+  } finally {
+    setLoading(false);
+  }
+};
+
+// ============ HANDLE DELETE SUBJECT ============
+const handleDeleteSubject = async (subjectId) => {
+  if (!window.confirm('Are you sure you want to delete this subject?')) return;
+
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/admin/subjects/${subjectId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      alert('Subject deleted successfully');
+      await fetchSubjects();
+      await fetchTotalSubjects();
+    } else {
+      alert(data.message || 'Error deleting subject');
+    }
+  } catch (error) {
+    alert('Error deleting subject');
+    console.error('Error:', error);
+  }
+};
+
+// ============ HANDLE EDIT SUBJECT ============
+  const handleEditSubject = (subjectId) => {
+  const subject = subjectsList.find(s => s._id === subjectId);
+  if (subject) {
+    setIsEditMode(true);
+    setEditingSubjectId(subjectId);
+    setSubjectFormData({
+      title: subject.title || '',
+      code: subject.code || '',
+      description: subject.description || '',
+      teacherId: subject.teacherId?._id || subject.teacherId || '',
+      class: subject.class || '',
+      status: subject.status || 'Active'
+    });
+    setModalType('subject');
+    setShowAddModal(true);
+  }
+};
+
+// ============ RESET SUBJECT FORM ============
+  const resetSubjectForm = () => {
+  setSubjectFormData({
+    title: '',
+    code: '',
+    description: '',
+    teacherId: '',
+    class: '',
+    status: 'Active'
+  });
+  setIsEditMode(false);
+  setEditingSubjectId(null);
+};
 
   // ============ HANDLE ADD ANNOUNCEMENT ============
-  const handleAddAnnouncement = async (e) => {
+    const handleAddAnnouncement = async (e) => {
     e.preventDefault();
     setLoading(true);
     
