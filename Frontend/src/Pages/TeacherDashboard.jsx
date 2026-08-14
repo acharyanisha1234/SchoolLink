@@ -51,14 +51,14 @@ const TeacherDashboard = () => {
   // Redirect if not TEACHER
   useEffect(() => {
     if (!user) return;
-    if (user.role !== 'TEACHER') {
+    if (String(user.role || '').toUpperCase() !== 'TEACHER') {
       navigate('/');
     }
   }, [user, navigate]);
 
   // Fetch data
   useEffect(() => {
-    if (user && user.role === 'TEACHER') {
+    if (user && String(user.role || '').toUpperCase() === 'TEACHER') {
       fetchDashboard();
       fetchSubjects();
       fetchAssignments();
