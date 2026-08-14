@@ -2,9 +2,11 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
+const normalizeRole = (role = '') => String(role).trim().toUpperCase();
+
 const generateToken = (user) => {
   return jwt.sign(
-    { id: user._id, email: user.email, role: user.role },
+    { id: user._id, email: user.email, role: normalizeRole(user.role) },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRY || '7d' }
   );
@@ -25,7 +27,7 @@ exports.register = async (req, res) => {
       password,
       birthday: birthday || '',
       gender: gender || '',
-      role: 'student',   // <-- FIXED: lowercase to match enum ['ADMIN','teacher','student']
+      role: 'STUDENT',
     });
 
     await user.save();
@@ -38,7 +40,7 @@ exports.register = async (req, res) => {
         id: user._id,
         fullName: user.fullName,
         email: user.email,
-        role: user.role,
+        role: normalizeRole(user.role),
       },
       accessToken: token,
     });
@@ -78,6 +80,7 @@ exports.login = async (req, res) => {
     }
 
     const token = generateToken(user);
+    const normalizedRole = normalizeRole(user.role);
 
     console.log('Login successful for:', user.email);
     res.json({
@@ -86,7 +89,7 @@ exports.login = async (req, res) => {
         id: user._id,
         fullName: user.fullName,
         email: user.email,
-        role: user.role,
+        role: normalizedRole,
       },
       accessToken: token,
     });

@@ -6,7 +6,7 @@ const User = require('../models/User');
 
 // All routes require authentication and admin role
 router.use(protect);
-router.use(authorize('admin'));
+router.use(authorize('ADMIN'));
 
 // ============================================
 // GET ALL SUBJECTS
@@ -103,7 +103,7 @@ router.post('/', async (req, res) => {
     
     // Check if teacher exists and is a teacher
     const teacher = await User.findById(teacherId);
-    if (!teacher || teacher.role !== 'teacher') {
+    if (!teacher || String(teacher.role).toUpperCase() !== 'TEACHER') {
       return res.status(400).json({
         success: false,
         message: 'Invalid teacher selected'
@@ -176,7 +176,7 @@ router.put('/:id', async (req, res) => {
     // Check if teacher exists (if teacherId is being updated)
     if (teacherId && teacherId !== subject.teacherId.toString()) {
       const teacher = await User.findById(teacherId);
-      if (!teacher || teacher.role !== 'teacher') {
+      if (!teacher || String(teacher.role).toUpperCase() !== 'TEACHER') {
         return res.status(400).json({
           success: false,
           message: 'Invalid teacher selected'
@@ -268,7 +268,7 @@ router.patch('/:id/assign-teacher', async (req, res) => {
     }
     
     const teacher = await User.findById(teacherId);
-    if (!teacher || teacher.role !== 'teacher') {
+    if (!teacher || String(teacher.role).toUpperCase() !== 'TEACHER') {
       return res.status(400).json({
         success: false,
         message: 'Invalid teacher selected'

@@ -4,8 +4,8 @@ const teacherController = require('../controllers/teacherController');
 const { protect, authorize } = require('../middleware/auth');
 
 // ---- Protect all teacher routes ----
-router.use(protect);               // verify token & attach user
-router.use(authorize('teacher'));  // ensure role === 'teacher'
+router.use(protect);
+router.use(authorize('TEACHER'));
 
 // ---- Your existing routes (unchanged) ----
 router.get('/subjects', teacherController.getSubjects);

@@ -382,7 +382,7 @@ const TeacherDashboard = () => {
 
   // ======================== STAT CARD COMPONENT ========================
   const StatCard = ({ title, value, subtitle, icon, color, trend, trendUp }) => (
-    <div className={`bg-gradient-to-br ${color} rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-shadow duration-300`}>
+    <div className={`bg-linear-to-br ${color} rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-shadow duration-300`}>
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm font-medium text-white/80">{title}</p>
@@ -484,7 +484,7 @@ const TeacherDashboard = () => {
           <p className="text-gray-500 mt-1">Welcome back, {user?.fullName?.split(' ')[0] || 'Teacher'}!</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center text-white font-bold shadow-md">
+          <div className="w-10 h-10 bg-linear-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center text-white font-bold shadow-md">
             {user?.fullName?.charAt(0) || 'T'}
           </div>
         </div>
@@ -804,7 +804,7 @@ const TeacherDashboard = () => {
         </div>
         <div className="p-5 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md">
+            <div className="w-12 h-12 bg-linear-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md">
               {user?.fullName?.charAt(0) || 'T'}
             </div>
             <div>

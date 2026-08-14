@@ -148,7 +148,7 @@ export const teacherApi = {
 
   publishQuiz: (id) =>
     fetch(`${API_URL}/api/teacher/quizzes/${id}/publish`, {
-      method: 'PATCH',
+      method: 'PUT',
       headers: getHeaders(),
     }).then(handleResponse),
 
