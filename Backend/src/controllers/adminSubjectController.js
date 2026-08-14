@@ -69,7 +69,7 @@ exports.createSubject = async (req, res) => {
     // Check if teacher exists
     if (teacherId) {
       const teacher = await User.findById(teacherId);
-      if (!teacher || teacher.role !== 'teacher') {
+      if (!teacher || String(teacher.role).toUpperCase() !== 'TEACHER') {
         return res.status(400).json({
           success: false,
           message: 'Invalid teacher selected'
@@ -136,7 +136,7 @@ exports.updateSubject = async (req, res) => {
     // Check if teacher exists
     if (teacherId) {
       const teacher = await User.findById(teacherId);
-      if (!teacher || teacher.role !== 'teacher') {
+      if (!teacher || String(teacher.role).toUpperCase() !== 'TEACHER') {
         return res.status(400).json({
           success: false,
           message: 'Invalid teacher selected'
@@ -241,7 +241,7 @@ exports.assignTeacher = async (req, res) => {
     }
     
     const teacher = await User.findById(teacherId);
-    if (!teacher || teacher.role !== 'teacher') {
+    if (!teacher || String(teacher.role).toUpperCase() !== 'TEACHER') {
       return res.status(400).json({
         success: false,
         message: 'Invalid teacher selected'
