@@ -534,14 +534,12 @@ const TeacherDashboard = () => {
       <div className="mt-8">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <ActionCard icon="�" label="Add Subject" onClick={() => openModal('subject')} />
+          <ActionCard icon="📘" label="Add Chapter" onClick={() => openModal('chapter')} />
           <ActionCard icon="📋" label="Take Attendance" onClick={() => openModal('attendance')} />
-          <ActionCard icon="📤" label="Upload Material" onClick={() => openModal('material')} />
           <ActionCard icon="📝" label="New Assignment" onClick={() => openModal('assignment')} />
+          <ActionCard icon="📤" label="Upload Material" onClick={() => openModal('material')} />
           <ActionCard icon="📊" label="Create Quiz" onClick={() => openModal('quiz')} />
-          <ActionCard icon="📈" label="Publish Result" onClick={() => showToast('Publish Result feature coming soon!', 'info')} />
-          <ActionCard icon="💬" label="Start Discussion" onClick={() => showToast('Start Discussion feature coming soon!', 'info')} />
-          <ActionCard icon="📅" label="Schedule Event" onClick={() => showToast('Schedule Event feature coming soon!', 'info')} />
-          <ActionCard icon="📊" label="View Analytics" onClick={() => showToast('View Analytics feature coming soon!', 'info')} />
         </div>
       </div>
 
