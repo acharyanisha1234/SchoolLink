@@ -1166,64 +1166,75 @@ const handleDeleteSubject = async (subjectId) => {
     </div>
   );
 
-  const DashboardView = () => (
-    <div>
-      <div className="mb-8">
+  //Dashboard View
+  const DashboardView = ({ onLogout }) => (
+  <div>
+    <div className="mb-8 flex justify-between items-center">
+      <div>
         <h1 className="text-3xl font-bold text-gray-900">Dashboard Overview</h1>
         <p className="text-gray-600 mt-1">Welcome back! Here's what's happening in your school.</p>
       </div>
+      {/* Logout Button */}
+      <button
+        onClick={onLogout}
+        className="flex items-center space-x-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200 font-medium"
+      >
+        <ArrowRightOnRectangleIcon className="h-5 w-5" />
+        <span>Logout</span>
+      </button>
+    </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard icon={UsersIcon} label="Total Students" value={totalStudents} color="text-blue-600" bgColor="bg-blue-100" />
-        <StatCard icon={AcademicCapIcon} label="Total Teachers" value={totalTeachers} color="text-green-600" bgColor="bg-green-100" />
-        <StatCard icon={BookOpenIcon} label="Total Subjects" value={totalSubjects} color="text-purple-600" bgColor="bg-purple-100" />
-        <StatCard icon={DocumentTextIcon} label="Learning Materials" value={0} color="text-yellow-600" bgColor="bg-yellow-100" />
-        <StatCard icon={ClipboardDocumentIcon} label="Total Assignments" value={0} color="text-pink-600" bgColor="bg-pink-100" />
-        <StatCard icon={CheckCircleIcon} label="Homework Submissions" value={0} color="text-indigo-600" bgColor="bg-indigo-100" />
-        <StatCard icon={ClockIcon} label="Total Tasks" value={0} color="text-red-600" bgColor="bg-red-100" />
-        <StatCard icon={MegaphoneIcon} label="Recent Notices" value={0} color="text-orange-600" bgColor="bg-orange-100" />
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <StatCard icon={UsersIcon} label="Total Students" value={totalStudents} color="text-blue-600" bgColor="bg-blue-100" />
+      <StatCard icon={AcademicCapIcon} label="Total Teachers" value={totalTeachers} color="text-green-600" bgColor="bg-green-100" />
+      <StatCard icon={BookOpenIcon} label="Total Subjects" value={totalSubjects} color="text-purple-600" bgColor="bg-purple-100" />
+      <StatCard icon={DocumentTextIcon} label="Learning Materials" value={0} color="text-yellow-600" bgColor="bg-yellow-100" />
+      <StatCard icon={ClipboardDocumentIcon} label="Total Assignments" value={0} color="text-pink-600" bgColor="bg-pink-100" />
+      <StatCard icon={CheckCircleIcon} label="Homework Submissions" value={0} color="text-indigo-600" bgColor="bg-indigo-100" />
+      <StatCard icon={ClockIcon} label="Total Tasks" value={0} color="text-red-600" bgColor="bg-red-100" />
+      <StatCard icon={MegaphoneIcon} label="Recent Notices" value={0} color="text-orange-600" bgColor="bg-orange-100" />
+    </div>
+
+    <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Recent Activities</h2>
+          <BellIcon className="h-5 w-5 text-gray-400" />
+        </div>
+        <div className="space-y-4">
+          {recentActivities.map((activity, index) => (
+            <div key={index} className="border-b border-gray-100 pb-3 last:border-0 last:pb-0">
+              <p className="text-sm text-gray-800">{activity.message}</p>
+              <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
+            </div>
+          ))}
+        </div>
       </div>
 
-      <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Activities</h2>
-            <BellIcon className="h-5 w-5 text-gray-400" />
-          </div>
-          <div className="space-y-4">
-            {recentActivities.map((activity, index) => (
-              <div key={index} className="border-b border-gray-100 pb-3 last:border-0 last:pb-0">
-                <p className="text-sm text-gray-800">{activity.message}</p>
-                <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <button onClick={() => openModal('student')} className="p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors text-blue-700">
-              <UserPlusIcon className="h-6 w-6 mx-auto mb-2" />
-              <span className="text-sm font-medium">Add Student</span>
-            </button>
-            <button onClick={() => openModal('teacher')} className="p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors text-green-700">
-              <AcademicCapIcon className="h-6 w-6 mx-auto mb-2" />
-              <span className="text-sm font-medium">Add Teacher</span>
-            </button>
-            <button onClick={() => openModal('subject')} className="p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors text-purple-700">
-              <BookOpenIcon className="h-6 w-6 mx-auto mb-2" />
-              <span className="text-sm font-medium">Create Subject</span>
-            </button>
-            <button onClick={() => openModal('announcement')} className="p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors text-orange-700">
-              <MegaphoneIcon className="h-6 w-6 mx-auto mb-2" />
-              <span className="text-sm font-medium">Post Announcement</span>
-            </button>
-          </div>
+      <div className="bg-white rounded-xl shadow-sm p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+        <div className="grid grid-cols-2 gap-4">
+          <button onClick={() => openModal('student')} className="p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors text-blue-700">
+            <UserPlusIcon className="h-6 w-6 mx-auto mb-2" />
+            <span className="text-sm font-medium">Add Student</span>
+          </button>
+          <button onClick={() => openModal('teacher')} className="p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors text-green-700">
+            <AcademicCapIcon className="h-6 w-6 mx-auto mb-2" />
+            <span className="text-sm font-medium">Add Teacher</span>
+          </button>
+          <button onClick={() => openModal('subject')} className="p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors text-purple-700">
+            <BookOpenIcon className="h-6 w-6 mx-auto mb-2" />
+            <span className="text-sm font-medium">Create Subject</span>
+          </button>
+          <button onClick={() => openModal('announcement')} className="p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors text-orange-700">
+            <MegaphoneIcon className="h-6 w-6 mx-auto mb-2" />
+            <span className="text-sm font-medium">Post Announcement</span>
+          </button>
         </div>
       </div>
     </div>
-  );
+  </div>
+);
 
   //Student View
   const StudentsView = () => (
@@ -1561,100 +1572,69 @@ const handleDeleteSubject = async (subjectId) => {
   );
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-      />
-
-      <div className="ml-64 flex-1">
-        {/* Add Dashboard Header with Logout Button */}
-        <header className="bg-white shadow-sm px-8 py-4 flex justify-between items-center sticky top-0 z-10">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
-            </h1>
-            <p className="text-sm text-gray-500">
-              {activeTab === 'dashboard' && 'Overview of your school'}
-              {activeTab === 'students' && 'Manage all students'}
-              {activeTab === 'teachers' && 'Manage all teachers'}
-              {activeTab === 'subjects' && 'Manage subjects and chapters'}
-              {activeTab === 'announcements' && 'Manage school announcements'}
-            </p>
-          </div>
-          
-          <div className="flex items-center space-x-4">
-           {/* Logout Button */}
-            <button
-              onClick={confirmLogout}
-              className="flex items-center space-x-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200 font-medium"
-            >
-              <ArrowRightOnRectangleIcon className="h-5 w-5" />
-              <span>Logout</span>
-            </button>
-          </div>
-        </header>
-
-        {/* Main Content */}
-        <div className="p-8">
-          {activeTab === "dashboard" && <DashboardView />}
-          {activeTab === "students" && <StudentsView />}
-          {activeTab === "teachers" && <TeachersView />}
-          {activeTab === "subjects" && <SubjectsView />}
-          {activeTab === "announcements" && <AnnouncementsView />}
-        </div>
+  <div className="flex min-h-screen bg-gray-50">
+    <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+    <div className="ml-64 flex-1">
+      {/* Main Content */}
+      <div className="p-8">
+        {activeTab === "dashboard" && <DashboardView onLogout={confirmLogout} />}
+        {activeTab === "students" && <StudentsView />}
+        {activeTab === "teachers" && <TeachersView />}
+        {activeTab === "subjects" && <SubjectsView />}
+        {activeTab === "announcements" && <AnnouncementsView />}
       </div>
+    </div>
 
-      {/* Logout Confirmation Modal */}
-      {showLogoutConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 max-w-sm w-full mx-4">
-            <div className="text-center">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-                <ArrowRightOnRectangleIcon className="h-6 w-6 text-red-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Confirm Logout
-              </h3>
-              <p className="text-sm text-gray-500 mb-6">
-                Are you sure you want to logout? You will need to login again to access your dashboard.
-              </p>
-              <div className="flex space-x-3">
-                <button
-                  onClick={cancelLogout}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleLogout}
-                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                >
-                  Logout
-                </button>
-              </div>
+    {/* Logout Confirmation Modal */}
+    {showLogoutConfirm && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-xl p-6 max-w-sm w-full mx-4">
+          <div className="text-center">
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+              <ArrowRightOnRectangleIcon className="h-6 w-6 text-red-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Confirm Logout
+            </h3>
+            <p className="text-sm text-gray-500 mb-6">
+              Are you sure you want to logout? You will need to login again to access your dashboard.
+            </p>
+            <div className="flex space-x-3">
+              <button
+                onClick={cancelLogout}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Logout
+              </button>
             </div>
           </div>
         </div>
-      )}
+      </div>
+    )}
 
-      <Modal
-        showAddModal={showAddModal}
-        modalType={modalType}
-        closeModal={closeModal}
-        handleAddStudent={handleAddStudent}
-        handleAddTeacher={handleAddTeacher}
-        handleAddSubject={handleAddSubject}
-        handleAddAnnouncement={handleAddAnnouncement}
-        studentFormData={studentFormData}
-        teacherFormData={teacherFormData}
-        subjectFormData={subjectFormData}
-        announcementFormData={announcementFormData}
-        handleInputChange={handleInputChange}
-        loading={loading}
-      />
-    </div>
-  );
+    <Modal
+      showAddModal={showAddModal}
+      modalType={modalType}
+      closeModal={closeModal}
+      handleAddStudent={handleAddStudent}
+      handleAddTeacher={handleAddTeacher}
+      handleAddSubject={handleAddSubject}
+      handleAddAnnouncement={handleAddAnnouncement}
+      studentFormData={studentFormData}
+      teacherFormData={teacherFormData}
+      subjectFormData={subjectFormData}
+      announcementFormData={announcementFormData}
+      handleInputChange={handleInputChange}
+      loading={loading}
+    />
+  </div>
+);
 };
 
 export default AdminDashboard;
