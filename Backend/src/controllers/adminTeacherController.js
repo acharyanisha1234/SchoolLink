@@ -40,8 +40,8 @@ exports.createTeacher = async (req, res) => {
     const user = await User.create({
       fullName: name,
       email,
-      password: password,   // plain text, not hashed
-      role: 'teacher',
+      password: password,
+      role: 'TEACHER',
       isActive: true,
     });
 

@@ -51,14 +51,14 @@ const TeacherDashboard = () => {
   // Redirect if not TEACHER
   useEffect(() => {
     if (!user) return;
-    if (user.role !== 'TEACHER') {
+    if (String(user.role || '').toUpperCase() !== 'TEACHER') {
       navigate('/');
     }
   }, [user, navigate]);
 
   // Fetch data
   useEffect(() => {
-    if (user && user.role === 'TEACHER') {
+    if (user && String(user.role || '').toUpperCase() === 'TEACHER') {
       fetchDashboard();
       fetchSubjects();
       fetchAssignments();
@@ -382,7 +382,7 @@ const TeacherDashboard = () => {
 
   // ======================== STAT CARD COMPONENT ========================
   const StatCard = ({ title, value, subtitle, icon, color, trend, trendUp }) => (
-    <div className={`bg-gradient-to-br ${color} rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-shadow duration-300`}>
+    <div className={`bg-linear-to-br ${color} rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-shadow duration-300`}>
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm font-medium text-white/80">{title}</p>
@@ -484,7 +484,7 @@ const TeacherDashboard = () => {
           <p className="text-gray-500 mt-1">Welcome back, {user?.fullName?.split(' ')[0] || 'Teacher'}!</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center text-white font-bold shadow-md">
+          <div className="w-10 h-10 bg-linear-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center text-white font-bold shadow-md">
             {user?.fullName?.charAt(0) || 'T'}
           </div>
         </div>
@@ -534,14 +534,12 @@ const TeacherDashboard = () => {
       <div className="mt-8">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <ActionCard icon="�" label="Add Subject" onClick={() => openModal('subject')} />
+          <ActionCard icon="📘" label="Add Chapter" onClick={() => openModal('chapter')} />
           <ActionCard icon="📋" label="Take Attendance" onClick={() => openModal('attendance')} />
-          <ActionCard icon="📤" label="Upload Material" onClick={() => openModal('material')} />
           <ActionCard icon="📝" label="New Assignment" onClick={() => openModal('assignment')} />
+          <ActionCard icon="📤" label="Upload Material" onClick={() => openModal('material')} />
           <ActionCard icon="📊" label="Create Quiz" onClick={() => openModal('quiz')} />
-          <ActionCard icon="📈" label="Publish Result" onClick={() => showToast('Publish Result feature coming soon!', 'info')} />
-          <ActionCard icon="💬" label="Start Discussion" onClick={() => showToast('Start Discussion feature coming soon!', 'info')} />
-          <ActionCard icon="📅" label="Schedule Event" onClick={() => showToast('Schedule Event feature coming soon!', 'info')} />
-          <ActionCard icon="📊" label="View Analytics" onClick={() => showToast('View Analytics feature coming soon!', 'info')} />
         </div>
       </div>
 
@@ -804,7 +802,7 @@ const TeacherDashboard = () => {
         </div>
         <div className="p-5 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md">
+            <div className="w-12 h-12 bg-linear-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md">
               {user?.fullName?.charAt(0) || 'T'}
             </div>
             <div>
