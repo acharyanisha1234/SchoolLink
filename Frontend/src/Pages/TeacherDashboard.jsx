@@ -150,7 +150,7 @@ const TeacherDashboard = () => {
     }
   };
 
-  // --- Toast helper ---
+  //  Toast helper
   const showToast = (message, type = 'info') => {
     setToast({ message, type });
     setTimeout(() => setToast({ message: '', type: '' }), 3000);
@@ -173,7 +173,7 @@ const TeacherDashboard = () => {
     setFormLoading(false);
   };
 
-  // --- CRUD Handlers ---
+  // CRUD Handlers 
   const handleSubjectSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
@@ -457,7 +457,7 @@ const TeacherDashboard = () => {
     { subject: 'CS', pending: 4, submitted: 28 },
   ];
 
-  // ======================== STAT CARD COMPONENT ========================
+  //  STAT CARD COMPONENT 
   const StatCard = ({ title, value, subtitle, icon, color, trend, trendUp }) => (
     <div className={`bg-linear-to-br ${color} rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-shadow duration-300`}>
       <div className="flex items-start justify-between">
@@ -478,7 +478,7 @@ const TeacherDashboard = () => {
     </div>
   );
 
-  // ======================== QUICK ACTION CARD ========================
+  //  QUICK ACTION CARD 
   const ActionCard = ({ icon: Icon, label, onClick }) => (
     <button
       onClick={onClick}
@@ -491,7 +491,7 @@ const TeacherDashboard = () => {
     </button>
   );
 
-  // ======================== SCHEDULE ITEM ========================
+  // SCHEDULE ITEM 
   const ScheduleItem = ({ time, subject, room, classInfo, status }) => {
     const statusColors = {
       completed: 'bg-green-100 text-green-700',
@@ -517,7 +517,7 @@ const TeacherDashboard = () => {
     );
   };
 
-  // ======================== GOAL ITEM ========================
+  // GOAL ITEM 
   const GoalItem = ({ label, current, total }) => {
     const percentage = Math.min(Math.round((current / total) * 100), 100);
     const isComplete = percentage >= 100;
@@ -537,7 +537,7 @@ const TeacherDashboard = () => {
     );
   };
 
-  // ======================== REVIEW CARD ========================
+  //  REVIEW CARD 
   const ReviewCard = ({ title, classInfo, count, onClick }) => (
     <div
       className="bg-gray-50 rounded-2xl p-5 border border-gray-100 hover:border-blue-300 transition-all duration-200 cursor-pointer hover:shadow-md"
@@ -552,7 +552,7 @@ const TeacherDashboard = () => {
     </div>
   );
 
-  // ======================== DASHBOARD VIEW ========================
+  //  DASHBOARD VIEW 
   const DashboardView = () => (
     <div>
       <div className="mb-8 flex justify-between items-start">
@@ -746,7 +746,7 @@ const TeacherDashboard = () => {
     </div>
   );
 
-  // ======================== SUBJECTS VIEW ========================
+  //  SUBJECTS VIEW 
   const SubjectsView = () => (
     <div>
       <div className="flex justify-between items-center mb-8">
@@ -920,7 +920,7 @@ const TeacherDashboard = () => {
     </div>
   );
 
-  // ======================== QUIZZES VIEW ========================
+  //  QUIZZES VIEW 
   const QuizzesView = () => (
     <div>
       <div className="flex justify-between items-center mb-8">
