@@ -28,12 +28,27 @@ exports.getSubject = async (req, res) => {
 
 exports.createSubject = async (req, res) => {
   try {
+    console.log('Create Subject Request Body:', req.body);
+    console.log('Authenticated User:', req.user);
+
     const { title, description } = req.body;
     const teacherId = req.user._id;
-    const subject = await Subject.create({ title, description, teacherId });
+
+    const subject = await Subject.create({
+      title,
+      description,
+      teacherId,
+      createdBy: teacherId,
+      createdByRole: 'teacher',
+    });
+
     res.status(201).json({ success: true, message: 'Subject created successfully', data: subject });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Error creating subject', error: error.message });
+    console.error('CREATE SUBJECT ERROR:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
 };
 
