@@ -20,7 +20,14 @@ router.put('/chapters/:id', teacherController.updateChapter);
 router.delete('/chapters/:id', teacherController.deleteChapter);
 
 router.get('/materials/:chapterId', teacherController.getMaterials);
-router.post('/materials', teacherController.createMaterial);
+router.post('/materials', (req, res, next) => {
+  req.upload(req, res, (err) => {
+    if (err) {
+      return res.status(400).json({ success: false, message: 'File upload error: ' + err.message });
+    }
+    next();
+  });
+}, teacherController.createMaterial);
 router.delete('/materials/:id', teacherController.deleteMaterial);
 
 router.get('/assignments', teacherController.getAssignments);
@@ -37,6 +44,12 @@ router.post('/quizzes', teacherController.createQuiz);
 router.put('/quizzes/:id', teacherController.updateQuiz);
 router.delete('/quizzes/:id', teacherController.deleteQuiz);
 router.put('/quizzes/:id/publish', teacherController.publishQuiz);
+
+// ---- Announcement routes ----
+router.get('/announcements', teacherController.getAnnouncements);
+router.post('/announcements', teacherController.createAnnouncement);
+router.put('/announcements/:id', teacherController.updateAnnouncement);
+router.delete('/announcements/:id', teacherController.deleteAnnouncement);
 
 router.get('/dashboard', teacherController.getDashboardStats);
 

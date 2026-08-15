@@ -6,6 +6,8 @@ import {
   ChevronDownIcon, ChevronRightIcon, CalendarIcon,
   ArrowPathIcon, SparklesIcon, ArrowTrendingUpIcon,
   ArrowTrendingDownIcon, XMarkIcon, ClockIcon,
+  DocumentPlusIcon, CheckCircleIcon, Square3Stack3DIcon, BellIcon,
+  ArrowUpTrayIcon, QuestionMarkCircleIcon,
 } from '@heroicons/react/24/outline';
 import { teacherApi } from '../api/teacherApi';
 
@@ -31,6 +33,8 @@ const TeacherDashboard = () => {
   const [assignments, setAssignments] = useState([]);
   const [quizzes, setQuizzes] = useState([]);
   const [attendanceData, setAttendanceData] = useState([]);
+  const [announcements, setAnnouncements] = useState([]);
+  const [materials, setMaterials] = useState({});
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -64,6 +68,7 @@ const TeacherDashboard = () => {
       fetchAssignments();
       fetchQuizzes();
       fetchAttendance();
+      fetchAnnouncements();
     }
   }, [user]);
 
@@ -79,42 +84,70 @@ const TeacherDashboard = () => {
     try {
       const res = await teacherApi.getDashboard();
       if (res.success) setDashboardData(res.data);
-    } catch (error) { showToast('Failed to load dashboard', 'error'); }
+    } catch (error) { 
+      const msg = error.response?.data?.message || error.message || 'Failed to load dashboard';
+      showToast(msg, 'error'); 
+    }
   };
 
   const fetchSubjects = async () => {
     try {
       const res = await teacherApi.getSubjects();
       if (res.success) setSubjects(res.data);
-    } catch (error) { showToast('Failed to load subjects', 'error'); }
+    } catch (error) { 
+      const msg = error.response?.data?.message || error.message || 'Failed to load subjects';
+      showToast(msg, 'error'); 
+    }
   };
 
   const fetchChapters = async (subjectId) => {
     try {
       const res = await teacherApi.getChapters(subjectId);
       if (res.success) setChapters(prev => ({ ...prev, [subjectId]: res.data }));
-    } catch (error) { showToast('Failed to load chapters', 'error'); }
+    } catch (error) { 
+      const msg = error.response?.data?.message || error.message || 'Failed to load chapters';
+      showToast(msg, 'error'); 
+    }
   };
 
   const fetchAssignments = async () => {
     try {
       const res = await teacherApi.getAssignments();
       if (res.success) setAssignments(res.data);
-    } catch (error) { showToast('Failed to load assignments', 'error'); }
+    } catch (error) { 
+      const msg = error.response?.data?.message || error.message || 'Failed to load assignments';
+      showToast(msg, 'error'); 
+    }
   };
 
   const fetchQuizzes = async () => {
     try {
       const res = await teacherApi.getQuizzes();
       if (res.success) setQuizzes(res.data);
-    } catch (error) { showToast('Failed to load quizzes', 'error'); }
+    } catch (error) { 
+      const msg = error.response?.data?.message || error.message || 'Failed to load quizzes';
+      showToast(msg, 'error'); 
+    }
   };
 
   const fetchAttendance = async () => {
     try {
       const res = await teacherApi.getAttendance({});
       if (res.success) setAttendanceData(res.data);
-    } catch (error) { showToast('Failed to load attendance', 'error'); }
+    } catch (error) { 
+      const msg = error.response?.data?.message || error.message || 'Failed to load attendance';
+      showToast(msg, 'error'); 
+    }
+  };
+
+  const fetchAnnouncements = async () => {
+    try {
+      const res = await teacherApi.getAnnouncements();
+      if (res.success) setAnnouncements(res.data);
+    } catch (error) { 
+      const msg = error.response?.data?.message || error.message || 'Failed to load announcements';
+      showToast(msg, 'error'); 
+    }
   };
 
   // --- Toast helper ---
@@ -160,7 +193,10 @@ const TeacherDashboard = () => {
       } else {
         showToast(res.message || 'Error', 'error');
       }
-    } catch (err) { showToast('Server error', 'error'); }
+    } catch (err) { 
+      const msg = err.response?.data?.message || err.message || 'Server error';
+      showToast(msg, 'error'); 
+    }
     setFormLoading(false);
   };
 
@@ -188,7 +224,10 @@ const TeacherDashboard = () => {
       } else {
         showToast(res.message || 'Error', 'error');
       }
-    } catch (err) { showToast('Server error', 'error'); }
+    } catch (err) { 
+      const msg = err.response?.data?.message || err.message || 'Server error';
+      showToast(msg, 'error'); 
+    }
     setFormLoading(false);
   };
 
@@ -209,6 +248,9 @@ const TeacherDashboard = () => {
         fetchMaterials(chapterId);
         closeModal();
       } else {
+      const msg = err.response?.data?.message || err.message || 'Server error';
+      showToast(msg, 'error'); 
+   
         showToast(res.message || 'Error uploading', 'error');
       }
     } catch (err) { showToast('Server error', 'error'); }
@@ -219,10 +261,11 @@ const TeacherDashboard = () => {
     try {
       const res = await teacherApi.getMaterials(chapterId);
       if (res.success) setMaterials(prev => ({ ...prev, [chapterId]: res.data }));
-    } catch (error) { showToast('Failed to load materials', 'error'); }
+    } catch (error) { 
+      const msg = error.response?.data?.message || error.message || 'Failed to load materials';
+      showToast(msg, 'error'); 
+    }
   };
-
-  const [materials, setMaterials] = useState({});
 
   const handleAssignmentSubmit = async (e) => {
     e.preventDefault();
@@ -248,6 +291,9 @@ const TeacherDashboard = () => {
         fetchAssignments();
         closeModal();
       } else {
+      const msg = err.response?.data?.message || err.message || 'Server error';
+      showToast(msg, 'error'); 
+   
         showToast(res.message || 'Error', 'error');
       }
     } catch (err) { showToast('Server error', 'error'); }
@@ -320,6 +366,7 @@ const TeacherDashboard = () => {
       else if (type === 'material') res = await teacherApi.deleteMaterial(id);
       else if (type === 'assignment') res = await teacherApi.deleteAssignment(id);
       else if (type === 'quiz') res = await teacherApi.deleteQuiz(id);
+      else if (type === 'announcement') res = await teacherApi.deleteAnnouncement(id);
       if (res.success) {
         showToast('Deleted successfully!', 'success');
         if (type === 'subject') fetchSubjects();
@@ -327,6 +374,7 @@ const TeacherDashboard = () => {
         else if (type === 'material') { /* refresh materials */ }
         else if (type === 'assignment') fetchAssignments();
         else if (type === 'quiz') fetchQuizzes();
+        else if (type === 'announcement') fetchAnnouncements();
       } else {
         showToast(res.message || 'Error deleting', 'error');
       }
@@ -343,6 +391,35 @@ const TeacherDashboard = () => {
         showToast(res.message || 'Error publishing', 'error');
       }
     } catch (err) { showToast('Server error', 'error'); }
+  };
+
+  const handleAnnouncementSubmit = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const payload = {
+      title: formData.get('title'),
+      content: formData.get('content'),
+      subjectId: formData.get('subjectId'),
+      priority: formData.get('priority') || 'Medium',
+      published: true,
+    };
+    setFormLoading(true);
+    try {
+      let res;
+      if (editingId) {
+        res = await teacherApi.updateAnnouncement(editingId, payload);
+      } else {
+        res = await teacherApi.createAnnouncement(payload);
+      }
+      if (res.success) {
+        showToast(editingId ? 'Announcement updated!' : 'Announcement created!', 'success');
+        fetchAnnouncements();
+        closeModal();
+      } else {
+        showToast(res.message || 'Error', 'error');
+      }
+    } catch (err) { showToast('Server error', 'error'); }
+    setFormLoading(false);
   };
 
   const handleLogout = () => {
@@ -402,12 +479,14 @@ const TeacherDashboard = () => {
   );
 
   // ======================== QUICK ACTION CARD ========================
-  const ActionCard = ({ icon, label, onClick }) => (
+  const ActionCard = ({ icon: Icon, label, onClick }) => (
     <button
       onClick={onClick}
       className="bg-white border border-gray-200 rounded-2xl p-4 text-center hover:shadow-lg transition-all duration-200 hover:border-blue-300 hover:-translate-y-1"
     >
-      <div className="text-4xl mb-1">{icon}</div>
+      <div className="mb-2 flex justify-center">
+        {Icon && <Icon className="h-6 w-6 text-blue-600" />}
+      </div>
       <p className="text-sm font-medium text-gray-700">{label}</p>
     </button>
   );
@@ -534,12 +613,13 @@ const TeacherDashboard = () => {
       <div className="mt-8">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <ActionCard icon="�" label="Add Subject" onClick={() => openModal('subject')} />
-          <ActionCard icon="📘" label="Add Chapter" onClick={() => openModal('chapter')} />
-          <ActionCard icon="📋" label="Take Attendance" onClick={() => openModal('attendance')} />
-          <ActionCard icon="📝" label="New Assignment" onClick={() => openModal('assignment')} />
-          <ActionCard icon="📤" label="Upload Material" onClick={() => openModal('material')} />
-          <ActionCard icon="📊" label="Create Quiz" onClick={() => openModal('quiz')} />
+          <ActionCard icon={BookOpenIcon} label="Add Subject" onClick={() => openModal('subject')} />
+          <ActionCard icon={DocumentTextIcon} label="Add Chapter" onClick={() => openModal('chapter')} />
+          <ActionCard icon={CheckCircleIcon} label="Take Attendance" onClick={() => openModal('attendance')} />
+          <ActionCard icon={DocumentPlusIcon} label="New Assignment" onClick={() => openModal('assignment')} />
+          <ActionCard icon={ArrowUpTrayIcon} label="Upload Material" onClick={() => openModal('material')} />
+          <ActionCard icon={QuestionMarkCircleIcon} label="Create Quiz" onClick={() => openModal('quiz')} />
+          <ActionCard icon={BellIcon} label="Announcement" onClick={() => openModal('announcement')} />
         </div>
       </div>
 
@@ -785,6 +865,197 @@ const TeacherDashboard = () => {
     </div>
   );
 
+  // ======================== ASSIGNMENTS VIEW ========================
+  const AssignmentsView = () => (
+    <div>
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Assignments</h1>
+          <p className="text-gray-500 mt-1">Create and manage assignments for your subjects</p>
+        </div>
+        <button
+          className="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition flex items-center gap-2"
+          onClick={() => openModal('assignment')}
+        >
+          <PlusIcon className="h-5 w-5" /> New Assignment
+        </button>
+      </div>
+      {assignments.length === 0 ? (
+        <div className="bg-white rounded-2xl p-8 text-center border border-gray-100">
+          <p className="text-gray-400">No assignments yet. Click the button above to create one.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {assignments.map(assignment => (
+            <div key={assignment._id} className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-md transition-shadow">
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-gray-900">{assignment.title}</h3>
+                  <p className="text-sm text-gray-600 line-clamp-2">{assignment.description}</p>
+                </div>
+                <div className="flex space-x-2 ml-3">
+                  <button
+                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    onClick={() => openModal('assignment', assignment, assignment._id)}
+                  >
+                    <PencilIcon className="h-4 w-4" />
+                  </button>
+                  <button
+                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    onClick={() => handleDelete('assignment', assignment._id)}
+                  >
+                    <TrashIcon className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-2 text-sm text-gray-500">
+                <p><strong>Type:</strong> {assignment.type}</p>
+                <p><strong>Deadline:</strong> {new Date(assignment.deadline).toLocaleDateString()}</p>
+                {assignment.chapterId && <p><strong>Chapter:</strong> {assignment.chapterId.title}</p>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  // ======================== QUIZZES VIEW ========================
+  const QuizzesView = () => (
+    <div>
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Quizzes</h1>
+          <p className="text-gray-500 mt-1">Create and manage quizzes for your subjects</p>
+        </div>
+        <button
+          className="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition flex items-center gap-2"
+          onClick={() => openModal('quiz')}
+        >
+          <PlusIcon className="h-5 w-5" /> Create Quiz
+        </button>
+      </div>
+      {quizzes.length === 0 ? (
+        <div className="bg-white rounded-2xl p-8 text-center border border-gray-100">
+          <p className="text-gray-400">No quizzes yet. Click the button above to create one.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {quizzes.map(quiz => (
+            <div key={quiz._id} className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-md transition-shadow">
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="text-lg font-semibold text-gray-900">{quiz.title}</h3>
+                    {quiz.published ? (
+                      <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full font-medium">Published</span>
+                    ) : (
+                      <span className="text-xs px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full font-medium">Draft</span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-600 line-clamp-2">{quiz.description}</p>
+                </div>
+                <div className="flex space-x-2 ml-3">
+                  <button
+                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    onClick={() => openModal('quiz', quiz, quiz._id)}
+                  >
+                    <PencilIcon className="h-4 w-4" />
+                  </button>
+                  <button
+                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    onClick={() => handleDelete('quiz', quiz._id)}
+                  >
+                    <TrashIcon className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-2 text-sm text-gray-500">
+                <p><strong>Questions:</strong> {quiz.questions?.length || 0}</p>
+                <p><strong>Time Limit:</strong> {quiz.timeLimit} minutes</p>
+                <p><strong>Deadline:</strong> {new Date(quiz.deadline).toLocaleDateString()}</p>
+                {quiz.chapterId && <p><strong>Chapter:</strong> {quiz.chapterId.title}</p>}
+              </div>
+              {!quiz.published && (
+                <button
+                  className="mt-3 w-full bg-blue-100 text-blue-600 py-2 rounded-lg hover:bg-blue-200 transition text-sm font-medium"
+                  onClick={() => handlePublishQuiz(quiz._id)}
+                >
+                  Publish Quiz
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  // ======================== ANNOUNCEMENTS VIEW ========================
+  const AnnouncementsView = () => (
+    <div>
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Announcements</h1>
+          <p className="text-gray-500 mt-1">Create and manage announcements for your subjects</p>
+        </div>
+        <button
+          className="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition flex items-center gap-2"
+          onClick={() => openModal('announcement')}
+        >
+          <PlusIcon className="h-5 w-5" /> Create Announcement
+        </button>
+      </div>
+      {announcements.length === 0 ? (
+        <div className="bg-white rounded-2xl p-8 text-center border border-gray-100">
+          <p className="text-gray-400">No announcements yet. Click the button above to create one.</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {announcements.map(announcement => (
+            <div key={announcement._id} className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-md transition-shadow">
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h3 className="text-lg font-semibold text-gray-900">{announcement.title}</h3>
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                      announcement.priority === 'High' ? 'bg-red-100 text-red-700' :
+                      announcement.priority === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
+                      'bg-green-100 text-green-700'
+                    }`}>
+                      {announcement.priority} Priority
+                    </span>
+                  </div>
+                  <p className="text-gray-600 text-sm mb-2">{announcement.content}</p>
+                  {announcement.subjectId && (
+                    <p className="text-xs text-gray-500">Subject: {announcement.subjectId.title}</p>
+                  )}
+                  <p className="text-xs text-gray-400 mt-1">
+                    {new Date(announcement.createdAt).toLocaleDateString()} at {new Date(announcement.createdAt).toLocaleTimeString()}
+                  </p>
+                </div>
+                <div className="flex space-x-2">
+                  <button
+                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    onClick={() => openModal('announcement', announcement, announcement._id)}
+                  >
+                    <PencilIcon className="h-5 w-5" />
+                  </button>
+                  <button
+                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    onClick={() => handleDelete('announcement', announcement._id)}
+                  >
+                    <TrashIcon className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
   // ======================== SIDEBAR ========================
   const Sidebar = () => {
     const navItems = [
@@ -793,6 +1064,7 @@ const TeacherDashboard = () => {
       { id: 'assignments', label: 'Assignments', icon: ClipboardDocumentListIcon },
       { id: 'quizzes', label: 'Quizzes', icon: ChartBarIcon },
       { id: 'attendance', label: 'Attendance', icon: UsersIcon },
+      { id: 'announcements', label: 'Announcements', icon: BellIcon },
     ];
     return (
       <aside className="w-64 bg-white shadow-lg flex flex-col fixed h-full z-30 border-r border-gray-100">
@@ -853,6 +1125,7 @@ const TeacherDashboard = () => {
         case 'assignment': return editingId ? 'Edit Assignment' : 'Create Assignment';
         case 'quiz': return editingId ? 'Edit Quiz' : 'Create Quiz';
         case 'attendance': return 'Mark Attendance';
+        case 'announcement': return editingId ? 'Edit Announcement' : 'Create Announcement';
         default: return '';
       }
     };
@@ -960,6 +1233,25 @@ const TeacherDashboard = () => {
               </button>
             </form>
           );
+        case 'announcement':
+          return (
+            <form onSubmit={handleAnnouncementSubmit} className="space-y-4">
+              <input type="text" name="title" placeholder="Announcement Title" defaultValue={modalData.title || ''} className="w-full border rounded-xl px-4 py-2" required />
+              <textarea name="content" placeholder="Announcement Content" defaultValue={modalData.content || ''} className="w-full border rounded-xl px-4 py-2" rows="4" required />
+              <select name="subjectId" className="w-full border rounded-xl px-4 py-2" required defaultValue={modalData.subjectId || ''}>
+                <option value="">Select Subject</option>
+                {subjects.map(s => <option key={s._id} value={s._id}>{s.title}</option>)}
+              </select>
+              <select name="priority" className="w-full border rounded-xl px-4 py-2" defaultValue={modalData.priority || 'Medium'}>
+                <option value="Low">Low Priority</option>
+                <option value="Medium">Medium Priority</option>
+                <option value="High">High Priority</option>
+              </select>
+              <button type="submit" disabled={formLoading} className="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition">
+                {formLoading ? 'Saving...' : (editingId ? 'Update Announcement' : 'Create Announcement')}
+              </button>
+            </form>
+          );
         default: return null;
       }
     };
@@ -994,9 +1286,10 @@ const TeacherDashboard = () => {
         )}
         {activeTab === 'dashboard' && <DashboardView />}
         {activeTab === 'subjects' && <SubjectsView />}
-        {activeTab === 'assignments' && <SimpleView title="Assignments" description="Create and manage assignments" addButton="New Assignment" addAction={() => openModal('assignment')} />}
-        {activeTab === 'quizzes' && <SimpleView title="Quizzes" description="Create and manage quizzes" addButton="Create Quiz" addAction={() => openModal('quiz')} />}
+        {activeTab === 'assignments' && <AssignmentsView />}
+        {activeTab === 'quizzes' && <QuizzesView />}
         {activeTab === 'attendance' && <SimpleView title="Attendance" description="Manage attendance records" addButton="Mark Attendance" addAction={() => openModal('attendance')} />}
+        {activeTab === 'announcements' && <AnnouncementsView />}
         <Modal />
       </main>
 

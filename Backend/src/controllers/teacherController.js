@@ -4,11 +4,12 @@ const Material = require('../models/Material');
 const Assignment = require('../models/Assignment');
 const Quiz = require('../models/Quiz');
 const Attendance = require('../models/Attendance');
+const Announcement = require('../models/Announcement');
 const User = require('../models/User');
 
 exports.getSubjects = async (req, res) => {
   try {
-    const subjects = await Subject.find({ teacherId: req.user.id });
+    const subjects = await Subject.find({ teacherId: req.user._id });
     res.status(200).json({ success: true, data: subjects });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error fetching subjects', error: error.message });
@@ -17,7 +18,7 @@ exports.getSubjects = async (req, res) => {
 
 exports.getSubject = async (req, res) => {
   try {
-    const subject = await Subject.findOne({ _id: req.params.id, teacherId: req.user.id });
+    const subject = await Subject.findOne({ _id: req.params.id, teacherId: req.user._id });
     if (!subject) return res.status(404).json({ success: false, message: 'Subject not found' });
     res.status(200).json({ success: true, data: subject });
   } catch (error) {
@@ -28,7 +29,7 @@ exports.getSubject = async (req, res) => {
 exports.createSubject = async (req, res) => {
   try {
     const { title, description } = req.body;
-    const teacherId = req.user.id;
+    const teacherId = req.user._id;
     const subject = await Subject.create({ title, description, teacherId });
     res.status(201).json({ success: true, message: 'Subject created successfully', data: subject });
   } catch (error) {
@@ -41,7 +42,7 @@ exports.updateSubject = async (req, res) => {
     const { id } = req.params;
     const { title, description } = req.body;
     const subject = await Subject.findOneAndUpdate(
-      { _id: id, teacherId: req.user.id },
+      { _id: id, teacherId: req.user._id },
       { title, description },
       { new: true, runValidators: true }
     );
@@ -55,7 +56,7 @@ exports.updateSubject = async (req, res) => {
 exports.deleteSubject = async (req, res) => {
   try {
     const { id } = req.params;
-    const subject = await Subject.findOneAndDelete({ _id: id, teacherId: req.user.id });
+    const subject = await Subject.findOneAndDelete({ _id: id, teacherId: req.user._id });
     if (!subject) return res.status(404).json({ success: false, message: 'Subject not found' });
     res.status(200).json({ success: true, message: 'Subject deleted successfully' });
   } catch (error) {
@@ -78,7 +79,7 @@ exports.getChapters = async (req, res) => {
 exports.createChapter = async (req, res) => {
   try {
     const { title, content, order, subjectId } = req.body;
-    const teacherId = req.user.id;
+    const teacherId = req.user._id;
     const subject = await Subject.findOne({ _id: subjectId, teacherId });
     if (!subject) return res.status(404).json({ success: false, message: 'Subject not found or unauthorized' });
     const chapter = await Chapter.create({ title, content, order, subjectId });
@@ -94,7 +95,7 @@ exports.updateChapter = async (req, res) => {
     const { title, content, order } = req.body;
     const chapter = await Chapter.findById(id).populate('subjectId');
     if (!chapter) return res.status(404).json({ success: false, message: 'Chapter not found' });
-    if (chapter.subjectId.teacherId.toString() !== req.user.id) {
+    if (chapter.subjectId.teacherId.toString() !== req.user._id.toString()) {
       return res.status(403).json({ success: false, message: 'Unauthorized' });
     }
     const updated = await Chapter.findByIdAndUpdate(id, { title, content, order }, { new: true, runValidators: true });
@@ -109,7 +110,7 @@ exports.deleteChapter = async (req, res) => {
     const { id } = req.params;
     const chapter = await Chapter.findById(id).populate('subjectId');
     if (!chapter) return res.status(404).json({ success: false, message: 'Chapter not found' });
-    if (chapter.subjectId.teacherId.toString() !== req.user.id) {
+    if (chapter.subjectId.teacherId.toString() !== req.user._id.toString()) {
       return res.status(403).json({ success: false, message: 'Unauthorized' });
     }
     await Chapter.findByIdAndDelete(id);
@@ -133,7 +134,7 @@ exports.getMaterials = async (req, res) => {
 exports.createMaterial = async (req, res) => {
   try {
     const { title, description, type, chapterId } = req.body;
-    const teacherId = req.user.id;
+    const teacherId = req.user._id;
     const fileUrl = req.file ? `/uploads/${req.file.filename}` : '';
     const chapter = await Chapter.findById(chapterId).populate('subjectId');
     if (!chapter) return res.status(404).json({ success: false, message: 'Chapter not found' });
@@ -150,7 +151,7 @@ exports.createMaterial = async (req, res) => {
 exports.deleteMaterial = async (req, res) => {
   try {
     const { id } = req.params;
-    const material = await Material.findOneAndDelete({ _id: id, teacherId: req.user.id });
+    const material = await Material.findOneAndDelete({ _id: id, teacherId: req.user._id });
     if (!material) return res.status(404).json({ success: false, message: 'Material not found' });
     res.status(200).json({ success: true, message: 'Material deleted successfully' });
   } catch (error) {
@@ -162,7 +163,7 @@ exports.deleteMaterial = async (req, res) => {
 //  ASSIGNMENT CRUD
 exports.getAssignments = async (req, res) => {
   try {
-    const assignments = await Assignment.find({ teacherId: req.user.id }).populate('chapterId', 'title');
+    const assignments = await Assignment.find({ teacherId: req.user._id }).populate('chapterId', 'title');
     res.status(200).json({ success: true, data: assignments });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error fetching assignments', error: error.message });
@@ -172,7 +173,7 @@ exports.getAssignments = async (req, res) => {
 exports.createAssignment = async (req, res) => {
   try {
     const { title, description, type, deadline, chapterId, referenceFiles } = req.body;
-    const teacherId = req.user.id;
+    const teacherId = req.user._id;
     const chapter = await Chapter.findById(chapterId).populate('subjectId');
     if (!chapter) return res.status(404).json({ success: false, message: 'Chapter not found' });
     if (chapter.subjectId.teacherId.toString() !== teacherId) {
@@ -193,7 +194,7 @@ exports.updateAssignment = async (req, res) => {
     const { id } = req.params;
     const { title, description, type, deadline, referenceFiles } = req.body;
     const assignment = await Assignment.findOneAndUpdate(
-      { _id: id, teacherId: req.user.id },
+      { _id: id, teacherId: req.user._id },
       { title, description, type, deadline, referenceFiles },
       { new: true, runValidators: true }
     );
@@ -207,7 +208,7 @@ exports.updateAssignment = async (req, res) => {
 exports.deleteAssignment = async (req, res) => {
   try {
     const { id } = req.params;
-    const assignment = await Assignment.findOneAndDelete({ _id: id, teacherId: req.user.id });
+    const assignment = await Assignment.findOneAndDelete({ _id: id, teacherId: req.user._id });
     if (!assignment) return res.status(404).json({ success: false, message: 'Assignment not found' });
     res.status(200).json({ success: true, message: 'Assignment deleted successfully' });
   } catch (error) {
@@ -219,7 +220,7 @@ exports.deleteAssignment = async (req, res) => {
 exports.getAttendance = async (req, res) => {
   try {
     const { subjectId, date } = req.query;
-    const query = { teacherId: req.user.id };
+    const query = { teacherId: req.user._id };
     if (subjectId) query.subjectId = subjectId;
     if (date) query.date = new Date(date);
     const attendance = await Attendance.find(query)
@@ -234,7 +235,7 @@ exports.getAttendance = async (req, res) => {
 exports.markAttendance = async (req, res) => {
   try {
     const { studentId, subjectId, status, date } = req.body;
-    const teacherId = req.user.id;
+    const teacherId = req.user._id;
     const subject = await Subject.findOne({ _id: subjectId, teacherId });
     if (!subject) return res.status(404).json({ success: false, message: 'Subject not found or unauthorized' });
 
@@ -282,7 +283,7 @@ exports.getAttendanceStats = async (req, res) => {
 //  DASHBOARD STATS
 exports.getDashboardStats = async (req, res) => {
   try {
-    const teacherId = req.user.id;
+    const teacherId = req.user._id;
     const totalSubjects = await Subject.countDocuments({ teacherId });
     const totalAssignments = await Assignment.countDocuments({ teacherId });
     const totalQuizzes = await Quiz.countDocuments({ teacherId });
@@ -327,7 +328,7 @@ exports.getDashboardStats = async (req, res) => {
 //  QUIZ CRUD 
 exports.getQuizzes = async (req, res) => {
   try {
-    const quizzes = await Quiz.find({ teacherId: req.user.id }).populate('chapterId', 'title');
+    const quizzes = await Quiz.find({ teacherId: req.user._id }).populate('chapterId', 'title');
     res.status(200).json({ success: true, data: quizzes });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error fetching quizzes', error: error.message });
@@ -337,7 +338,7 @@ exports.getQuizzes = async (req, res) => {
 exports.createQuiz = async (req, res) => {
   try {
     const { title, description, timeLimit, deadline, questions, chapterId } = req.body;
-    const teacherId = req.user.id;
+    const teacherId = req.user._id;
     const chapter = await Chapter.findById(chapterId).populate('subjectId');
     if (!chapter) return res.status(404).json({ success: false, message: 'Chapter not found' });
     if (chapter.subjectId.teacherId.toString() !== teacherId) {
@@ -357,7 +358,7 @@ exports.publishQuiz = async (req, res) => {
   try {
     const { id } = req.params;
     const quiz = await Quiz.findOneAndUpdate(
-      { _id: id, teacherId: req.user.id },
+      { _id: id, teacherId: req.user._id },
       { published: true },
       { new: true }
     );
@@ -373,7 +374,7 @@ exports.updateQuiz = async (req, res) => {
     const { id } = req.params;
     const { title, description, timeLimit, deadline, questions } = req.body;
     const quiz = await Quiz.findOneAndUpdate(
-      { _id: id, teacherId: req.user.id },
+      { _id: id, teacherId: req.user._id },
       { title, description, timeLimit, deadline, questions },
       { new: true, runValidators: true }
     );
@@ -387,10 +388,77 @@ exports.updateQuiz = async (req, res) => {
 exports.deleteQuiz = async (req, res) => {
   try {
     const { id } = req.params;
-    const quiz = await Quiz.findOneAndDelete({ _id: id, teacherId: req.user.id });
+    const quiz = await Quiz.findOneAndDelete({ _id: id, teacherId: req.user._id });
     if (!quiz) return res.status(404).json({ success: false, message: 'Quiz not found' });
     res.status(200).json({ success: true, message: 'Quiz deleted' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error deleting quiz', error: error.message });
+  }
+};
+
+//  ANNOUNCEMENT CRUD
+exports.getAnnouncements = async (req, res) => {
+  try {
+    const { subjectId } = req.query;
+    const query = { teacherId: req.user._id };
+    if (subjectId) query.subjectId = subjectId;
+    const announcements = await Announcement.find(query)
+      .populate('subjectId', 'title')
+      .sort({ createdAt: -1 });
+    res.status(200).json({ success: true, data: announcements });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error fetching announcements', error: error.message });
+  }
+};
+
+exports.createAnnouncement = async (req, res) => {
+  try {
+    const { title, content, subjectId, priority, published } = req.body;
+    const teacherId = req.user._id;
+    
+    const subject = await Subject.findOne({ _id: subjectId, teacherId });
+    if (!subject) return res.status(404).json({ success: false, message: 'Subject not found or unauthorized' });
+    
+    const announcement = await Announcement.create({
+      title,
+      content,
+      subjectId,
+      teacherId,
+      priority: priority || 'Medium',
+      published: published !== undefined ? published : true,
+    });
+    
+    res.status(201).json({ success: true, message: 'Announcement created successfully', data: announcement });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error creating announcement', error: error.message });
+  }
+};
+
+exports.updateAnnouncement = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, content, priority, published } = req.body;
+    
+    const announcement = await Announcement.findOneAndUpdate(
+      { _id: id, teacherId: req.user._id },
+      { title, content, priority, published },
+      { new: true, runValidators: true }
+    );
+    
+    if (!announcement) return res.status(404).json({ success: false, message: 'Announcement not found' });
+    res.status(200).json({ success: true, message: 'Announcement updated successfully', data: announcement });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error updating announcement', error: error.message });
+  }
+};
+
+exports.deleteAnnouncement = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const announcement = await Announcement.findOneAndDelete({ _id: id, teacherId: req.user._id });
+    if (!announcement) return res.status(404).json({ success: false, message: 'Announcement not found' });
+    res.status(200).json({ success: true, message: 'Announcement deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error deleting announcement', error: error.message });
   }
 };
