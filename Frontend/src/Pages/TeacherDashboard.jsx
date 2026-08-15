@@ -842,7 +842,7 @@ const TeacherDashboard = () => {
     </div>
   );
 
-  // ======================== SIMPLE VIEWS ========================
+  //  SIMPLE VIEWS 
   const SimpleView = ({ title, description, addButton, addAction }) => (
     <div>
       <div className="flex justify-between items-center mb-8">
