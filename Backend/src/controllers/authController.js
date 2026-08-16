@@ -1,16 +1,17 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');  // ✅ 1. यो पहिले नै थपिएको हुनुपर्छ
+const bcrypt = require('bcryptjs');
+
+const normalizeRole = (role = '') => String(role).trim().toUpperCase();
 
 const generateToken = (user) => {
   return jwt.sign(
-    { id: user._id, email: user.email, role: user.role },
+    { id: user._id, email: user.email, role: normalizeRole(user.role) },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRY || '7d' }
   );
 };
 
-// Register (यथावत)
 exports.register = async (req, res) => {
   try {
     const { fullName, email, password, birthday, gender } = req.body;
@@ -39,7 +40,7 @@ exports.register = async (req, res) => {
         id: user._id,
         fullName: user.fullName,
         email: user.email,
-        role: user.role,
+        role: normalizeRole(user.role),
       },
       accessToken: token,
     });
@@ -49,61 +50,55 @@ exports.register = async (req, res) => {
   }
 };
 
-// ✅ Login (डिबग लाइनहरू थपिएको)
 exports.login = async (req, res) => {
   try {
-    // 🔍 डिबग 1: हेरौं कि frontend बाट के आयो
     console.log('\n📨 Login request body:', req.body);
 
     const { email, password } = req.body;
 
-    // 🔍 डिबग 2: यदि email वा password missing भए
     if (!email || !password) {
-      console.log('❌ Email or password missing!');
+      console.log('Email or password missing!');
       return res.status(400).json({ message: 'Email and password are required.' });
     }
 
-    // Find user (forcefully password select गरौं)
     const user = await User.findOne({ email }).select('+password');
 
     if (!user) {
-      console.log('❌ User not found for email:', email);
+      console.log('User not found for email:', email);
       return res.status(400).json({ message: 'Invalid credentials.' });
     }
 
-    console.log('✅ User found:', user.email);
-    console.log('🔑 Stored hash:', user.password);
+    console.log('User found:', user.email);
+    console.log('Stored hash:', user.password);
 
-    // Check password (direct bcrypt.compare)
     const isMatch = await bcrypt.compare(password, user.password);
-    console.log('🔐 Password match?', isMatch);
+    console.log('Password match?', isMatch);
 
     if (!isMatch) {
-      console.log('❌ Password does NOT match');
+      console.log('Password does NOT match');
       return res.status(400).json({ message: 'Invalid credentials.' });
     }
 
-    // Generate token
     const token = generateToken(user);
+    const normalizedRole = normalizeRole(user.role);
 
-    console.log('✅ Login successful for:', user.email);
+    console.log('Login successful for:', user.email);
     res.json({
       message: 'Login successful.',
       user: {
         id: user._id,
         fullName: user.fullName,
         email: user.email,
-        role: user.role,
+        role: normalizedRole,
       },
       accessToken: token,
     });
   } catch (error) {
-    console.error('❌ Login error (catch):', error);
+    console.error('Login error (catch):', error);
     res.status(500).json({ message: 'Server error during login.' });
   }
 };
 
-// Send Reset OTP (यथावत)
 exports.sendResetOTP = async (req, res) => {
   try {
     const { email } = req.body;
@@ -121,7 +116,7 @@ exports.sendResetOTP = async (req, res) => {
     user.resetOTPExpiry = Date.now() + 10 * 60 * 1000;
     await user.save();
 
-    console.log(`🔑 OTP for ${email}: ${otp}`);
+    console.log(`OTP for ${email}: ${otp}`);
     res.json({ message: 'OTP sent. Check server console for the OTP.' });
   } catch (error) {
     console.error('Send OTP error:', error);
@@ -129,7 +124,6 @@ exports.sendResetOTP = async (req, res) => {
   }
 };
 
-// Reset Password (यथावत)
 exports.resetPassword = async (req, res) => {
   try {
     const { email, otp, newPassword } = req.body;

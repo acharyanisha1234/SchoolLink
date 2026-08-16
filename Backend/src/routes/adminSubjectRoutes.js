@@ -119,6 +119,9 @@ router.post('/', async (req, res) => {
     }
 
     if (!teacherUser || teacherUser.role !== 'teacher') {
+    // Check if teacher exists and is a teacher
+    const teacher = await User.findById(teacherId);
+    if (!teacher || String(teacher.role).toUpperCase() !== 'TEACHER') {
       return res.status(400).json({
         success: false,
         message: 'Invalid teacher selected'
@@ -202,6 +205,8 @@ router.put('/:id', async (req, res) => {
       }
 
       if (!teacherUser || teacherUser.role !== 'teacher') {
+      const teacher = await User.findById(teacherId);
+      if (!teacher || String(teacher.role).toUpperCase() !== 'TEACHER') {
         return res.status(400).json({
           success: false,
           message: 'Invalid teacher selected'
@@ -294,7 +299,7 @@ router.patch('/:id/assign-teacher', async (req, res) => {
     }
     
     const teacher = await User.findById(teacherId);
-    if (!teacher || teacher.role !== 'teacher') {
+    if (!teacher || String(teacher.role).toUpperCase() !== 'TEACHER') {
       return res.status(400).json({
         success: false,
         message: 'Invalid teacher selected'

@@ -3,6 +3,8 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const http = require('http');
+const multer = require('multer');
+const path = require('path');
 
 const User = require('./src/models/User');
 
@@ -17,6 +19,32 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static('uploads'));
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
+  fileFilter: (req, file, cb) => {
+    // Accept any file type for now
+    cb(null, true);
+  }
+});
+
+// Make upload middleware available globally
+app.use((req, res, next) => {
+  req.upload = upload.single('file');
+  next();
+});
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/schoollink';
 mongoose.connect(MONGO_URI)

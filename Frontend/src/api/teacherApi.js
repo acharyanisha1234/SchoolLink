@@ -35,6 +35,10 @@ export const teacherApi = {
     fetch(`${API_URL}/api/teacher/subjects`, { headers: getHeaders() })
       .then(handleResponse),
 
+  getStudentsForSubject: (subjectId) =>
+    fetch(`${API_URL}/api/teacher/students?subjectId=${subjectId}`, { headers: getHeaders() })
+      .then(handleResponse),
+
   createSubject: (data) =>
     fetch(`${API_URL}/api/teacher/subjects`, {
       method: 'POST',
@@ -148,7 +152,7 @@ export const teacherApi = {
 
   publishQuiz: (id) =>
     fetch(`${API_URL}/api/teacher/quizzes/${id}/publish`, {
-      method: 'PATCH',
+      method: 'PUT',
       headers: getHeaders(),
     }).then(handleResponse),
 
@@ -168,4 +172,30 @@ export const teacherApi = {
   getAttendanceStats: (subjectId) =>
     fetch(`${API_URL}/api/teacher/attendance/stats/${subjectId}`, { headers: getHeaders() })
       .then(handleResponse),
+
+  getAnnouncements: (subjectId) => {
+    const query = subjectId ? `?subjectId=${subjectId}` : '';
+    return fetch(`${API_URL}/api/teacher/announcements${query}`, { headers: getHeaders() })
+      .then(handleResponse);
+  },
+
+  createAnnouncement: (data) =>
+    fetch(`${API_URL}/api/teacher/announcements`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    }).then(handleResponse),
+
+  updateAnnouncement: (id, data) =>
+    fetch(`${API_URL}/api/teacher/announcements/${id}`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    }).then(handleResponse),
+
+  deleteAnnouncement: (id) =>
+    fetch(`${API_URL}/api/teacher/announcements/${id}`, {
+      method: 'DELETE',
+      headers: getHeaders(),
+    }).then(handleResponse),
 };

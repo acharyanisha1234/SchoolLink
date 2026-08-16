@@ -6,6 +6,8 @@ import {
   ChevronDownIcon, ChevronRightIcon, CalendarIcon,
   ArrowPathIcon, SparklesIcon, ArrowTrendingUpIcon,
   ArrowTrendingDownIcon, XMarkIcon, ClockIcon,
+  DocumentPlusIcon, CheckCircleIcon, Square3Stack3DIcon, BellIcon,
+  ArrowUpTrayIcon, QuestionMarkCircleIcon,
 } from '@heroicons/react/24/outline';
 import { teacherApi } from '../api/teacherApi';
 
@@ -23,6 +25,7 @@ const TeacherDashboard = () => {
   const [file, setFile] = useState(null);
   const [formLoading, setFormLoading] = useState(false);
   const [toast, setToast] = useState({ message: '', type: '' });
+  const [formSubjectId, setFormSubjectId] = useState('');
 
   // Data states
   const [dashboardData, setDashboardData] = useState({});
@@ -31,6 +34,10 @@ const TeacherDashboard = () => {
   const [assignments, setAssignments] = useState([]);
   const [quizzes, setQuizzes] = useState([]);
   const [attendanceData, setAttendanceData] = useState([]);
+  const [announcements, setAnnouncements] = useState([]);
+  const [materials, setMaterials] = useState({});
+  const [attendanceStudents, setAttendanceStudents] = useState([]);
+  const [attendanceSelection, setAttendanceSelection] = useState({ subjectId: '', date: new Date().toISOString().split('T')[0], students: {} });
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -51,19 +58,20 @@ const TeacherDashboard = () => {
   // Redirect if not TEACHER
   useEffect(() => {
     if (!user) return;
-    if (user.role !== 'TEACHER') {
+    if (String(user.role || '').toUpperCase() !== 'TEACHER') {
       navigate('/');
     }
   }, [user, navigate]);
 
   // Fetch data
   useEffect(() => {
-    if (user && user.role === 'TEACHER') {
+    if (user && String(user.role || '').toUpperCase() === 'TEACHER') {
       fetchDashboard();
       fetchSubjects();
       fetchAssignments();
       fetchQuizzes();
       fetchAttendance();
+      fetchAnnouncements();
     }
   }, [user]);
 
@@ -74,50 +82,108 @@ const TeacherDashboard = () => {
     }
   }, [expandedSubject]);
 
+  useEffect(() => {
+    if (formSubjectId && !chapters[formSubjectId]) {
+      fetchChapters(formSubjectId);
+    }
+  }, [formSubjectId, chapters]);
+
   // --- API Functions ---
   const fetchDashboard = async () => {
     try {
       const res = await teacherApi.getDashboard();
       if (res.success) setDashboardData(res.data);
-    } catch (error) { showToast('Failed to load dashboard', 'error'); }
+    } catch (error) { 
+      const msg = error.response?.data?.message || error.message || 'Failed to load dashboard';
+      showToast(msg, 'error'); 
+    }
   };
 
   const fetchSubjects = async () => {
     try {
       const res = await teacherApi.getSubjects();
       if (res.success) setSubjects(res.data);
-    } catch (error) { showToast('Failed to load subjects', 'error'); }
+    } catch (error) { 
+      const msg = error.response?.data?.message || error.message || 'Failed to load subjects';
+      showToast(msg, 'error'); 
+    }
   };
 
   const fetchChapters = async (subjectId) => {
     try {
       const res = await teacherApi.getChapters(subjectId);
       if (res.success) setChapters(prev => ({ ...prev, [subjectId]: res.data }));
-    } catch (error) { showToast('Failed to load chapters', 'error'); }
+    } catch (error) { 
+      const msg = error.response?.data?.message || error.message || 'Failed to load chapters';
+      showToast(msg, 'error'); 
+    }
   };
 
   const fetchAssignments = async () => {
     try {
       const res = await teacherApi.getAssignments();
       if (res.success) setAssignments(res.data);
-    } catch (error) { showToast('Failed to load assignments', 'error'); }
+    } catch (error) { 
+      const msg = error.response?.data?.message || error.message || 'Failed to load assignments';
+      showToast(msg, 'error'); 
+    }
   };
 
   const fetchQuizzes = async () => {
     try {
       const res = await teacherApi.getQuizzes();
       if (res.success) setQuizzes(res.data);
-    } catch (error) { showToast('Failed to load quizzes', 'error'); }
+    } catch (error) { 
+      const msg = error.response?.data?.message || error.message || 'Failed to load quizzes';
+      showToast(msg, 'error'); 
+    }
   };
 
   const fetchAttendance = async () => {
     try {
       const res = await teacherApi.getAttendance({});
       if (res.success) setAttendanceData(res.data);
-    } catch (error) { showToast('Failed to load attendance', 'error'); }
+    } catch (error) { 
+      const msg = error.response?.data?.message || error.message || 'Failed to load attendance';
+      showToast(msg, 'error'); 
+    }
   };
 
-  // --- Toast helper ---
+  const loadStudentsForAttendance = async (subjectId) => {
+    if (!subjectId) {
+      setAttendanceStudents([]);
+      setAttendanceSelection(prev => ({ ...prev, subjectId, students: {} }));
+      return;
+    }
+
+    try {
+      const res = await teacherApi.getStudentsForSubject(subjectId);
+      if (res.success) {
+        const mapped = {};
+        res.data.forEach(student => {
+          mapped[student._id] = 'Present';
+        });
+        setAttendanceStudents(res.data);
+        setAttendanceSelection(prev => ({ ...prev, subjectId, students: mapped }));
+      }
+    } catch (error) {
+      const msg = error.message || 'Failed to load students';
+      showToast(msg, 'error');
+      setAttendanceStudents([]);
+    }
+  };
+
+  const fetchAnnouncements = async () => {
+    try {
+      const res = await teacherApi.getAnnouncements();
+      if (res.success) setAnnouncements(res.data);
+    } catch (error) { 
+      const msg = error.response?.data?.message || error.message || 'Failed to load announcements';
+      showToast(msg, 'error'); 
+    }
+  };
+
+  //  Toast helper
   const showToast = (message, type = 'info') => {
     setToast({ message, type });
     setTimeout(() => setToast({ message: '', type: '' }), 3000);
@@ -129,6 +195,7 @@ const TeacherDashboard = () => {
     setModalData(data);
     setEditingId(id);
     setFile(null);
+    setFormSubjectId(data.subjectId || '');
     setShowModal(true);
   };
 
@@ -137,10 +204,11 @@ const TeacherDashboard = () => {
     setModalData({});
     setEditingId(null);
     setFile(null);
+    setFormSubjectId('');
     setFormLoading(false);
   };
 
-  // --- CRUD Handlers ---
+  // CRUD Handlers 
   const handleSubjectSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
@@ -160,18 +228,28 @@ const TeacherDashboard = () => {
       } else {
         showToast(res.message || 'Error', 'error');
       }
-    } catch (err) { showToast('Server error', 'error'); }
+    } catch (err) { 
+      const msg = err.response?.data?.message || err.message || 'Server error';
+      showToast(msg, 'error'); 
+    }
     setFormLoading(false);
   };
 
   const handleChapterSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
+    const subjectId = formData.get('subjectId');
+
+    if (!subjectId || String(subjectId).trim() === '') {
+      showToast('Please select a subject before creating a chapter.', 'error');
+      return;
+    }
+
     const payload = {
       title: formData.get('title'),
       content: formData.get('content') || '',
       order: parseInt(formData.get('order')) || 0,
-      subjectId: formData.get('subjectId'),
+      subjectId,
     };
     setFormLoading(true);
     try {
@@ -188,7 +266,10 @@ const TeacherDashboard = () => {
       } else {
         showToast(res.message || 'Error', 'error');
       }
-    } catch (err) { showToast('Server error', 'error'); }
+    } catch (err) { 
+      const msg = err.response?.data?.message || err.message || 'Server error';
+      showToast(msg, 'error'); 
+    }
     setFormLoading(false);
   };
 
@@ -211,7 +292,10 @@ const TeacherDashboard = () => {
       } else {
         showToast(res.message || 'Error uploading', 'error');
       }
-    } catch (err) { showToast('Server error', 'error'); }
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Server error';
+      showToast(msg, 'error');
+    }
     setFormLoading(false);
   };
 
@@ -219,10 +303,11 @@ const TeacherDashboard = () => {
     try {
       const res = await teacherApi.getMaterials(chapterId);
       if (res.success) setMaterials(prev => ({ ...prev, [chapterId]: res.data }));
-    } catch (error) { showToast('Failed to load materials', 'error'); }
+    } catch (error) { 
+      const msg = error.response?.data?.message || error.message || 'Failed to load materials';
+      showToast(msg, 'error'); 
+    }
   };
-
-  const [materials, setMaterials] = useState({});
 
   const handleAssignmentSubmit = async (e) => {
     e.preventDefault();
@@ -250,7 +335,10 @@ const TeacherDashboard = () => {
       } else {
         showToast(res.message || 'Error', 'error');
       }
-    } catch (err) { showToast('Server error', 'error'); }
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Server error';
+      showToast(msg, 'error');
+    }
     setFormLoading(false);
   };
 
@@ -284,31 +372,46 @@ const TeacherDashboard = () => {
       } else {
         showToast(res.message || 'Error', 'error');
       }
-    } catch (err) { showToast('Server error', 'error'); }
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Server error';
+      showToast(msg, 'error');
+    }
     setFormLoading(false);
   };
 
   const handleAttendanceSubmit = async (e) => {
     e.preventDefault();
-    const formData = new FormData(e.target);
-    const payload = {
-      studentId: formData.get('studentId'),
-      subjectId: formData.get('subjectId'),
-      status: formData.get('status'),
-      date: formData.get('date') || undefined,
-    };
+    if (!attendanceSelection.subjectId) {
+      showToast('Please select a subject first', 'error');
+      return;
+    }
+
+    const studentEntries = attendanceStudents.filter(student => attendanceSelection.students[student._id]);
+    if (!studentEntries.length) {
+      showToast('No students found for this subject', 'error');
+      return;
+    }
+
     setFormLoading(true);
     try {
-      const res = await teacherApi.markAttendance(payload);
-      if (res.success) {
-        showToast('Attendance marked!', 'success');
-        fetchAttendance();
-        closeModal();
-      } else {
-        showToast(res.message || 'Error', 'error');
-      }
-    } catch (err) { showToast('Server error', 'error'); }
-    setFormLoading(false);
+      const submissions = studentEntries.map(student => ({
+        studentId: student._id,
+        subjectId: attendanceSelection.subjectId,
+        status: attendanceSelection.students[student._id] || 'Present',
+        date: attendanceSelection.date || new Date().toISOString().split('T')[0],
+      }));
+
+      const requests = submissions.map(item => teacherApi.markAttendance(item));
+      await Promise.all(requests);
+      showToast('Attendance saved successfully!', 'success');
+      fetchAttendance();
+      closeModal();
+    } catch (err) {
+      const msg = err.message || 'Failed to save attendance';
+      showToast(msg, 'error');
+    } finally {
+      setFormLoading(false);
+    }
   };
 
   const handleDelete = async (type, id) => {
@@ -320,6 +423,7 @@ const TeacherDashboard = () => {
       else if (type === 'material') res = await teacherApi.deleteMaterial(id);
       else if (type === 'assignment') res = await teacherApi.deleteAssignment(id);
       else if (type === 'quiz') res = await teacherApi.deleteQuiz(id);
+      else if (type === 'announcement') res = await teacherApi.deleteAnnouncement(id);
       if (res.success) {
         showToast('Deleted successfully!', 'success');
         if (type === 'subject') fetchSubjects();
@@ -327,10 +431,14 @@ const TeacherDashboard = () => {
         else if (type === 'material') { /* refresh materials */ }
         else if (type === 'assignment') fetchAssignments();
         else if (type === 'quiz') fetchQuizzes();
+        else if (type === 'announcement') fetchAnnouncements();
       } else {
         showToast(res.message || 'Error deleting', 'error');
       }
-    } catch (err) { showToast('Server error', 'error'); }
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Server error';
+      showToast(msg, 'error');
+    }
   };
 
   const handlePublishQuiz = async (id) => {
@@ -342,7 +450,42 @@ const TeacherDashboard = () => {
       } else {
         showToast(res.message || 'Error publishing', 'error');
       }
-    } catch (err) { showToast('Server error', 'error'); }
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Server error';
+      showToast(msg, 'error');
+    }
+  };
+
+  const handleAnnouncementSubmit = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const payload = {
+      title: formData.get('title'),
+      content: formData.get('content'),
+      subjectId: formData.get('subjectId'),
+      priority: formData.get('priority') || 'Medium',
+      published: true,
+    };
+    setFormLoading(true);
+    try {
+      let res;
+      if (editingId) {
+        res = await teacherApi.updateAnnouncement(editingId, payload);
+      } else {
+        res = await teacherApi.createAnnouncement(payload);
+      }
+      if (res.success) {
+        showToast(editingId ? 'Announcement updated!' : 'Announcement created!', 'success');
+        fetchAnnouncements();
+        closeModal();
+      } else {
+        showToast(res.message || 'Error', 'error');
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Server error';
+      showToast(msg, 'error');
+    }
+    setFormLoading(false);
   };
 
   const handleLogout = () => {
@@ -380,9 +523,9 @@ const TeacherDashboard = () => {
     { subject: 'CS', pending: 4, submitted: 28 },
   ];
 
-  // ======================== STAT CARD COMPONENT ========================
+  //  STAT CARD COMPONENT 
   const StatCard = ({ title, value, subtitle, icon, color, trend, trendUp }) => (
-    <div className={`bg-gradient-to-br ${color} rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-shadow duration-300`}>
+    <div className={`bg-linear-to-br ${color} rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-shadow duration-300`}>
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm font-medium text-white/80">{title}</p>
@@ -401,18 +544,20 @@ const TeacherDashboard = () => {
     </div>
   );
 
-  // ======================== QUICK ACTION CARD ========================
-  const ActionCard = ({ icon, label, onClick }) => (
+  //  QUICK ACTION CARD 
+  const ActionCard = ({ icon: Icon, label, onClick }) => (
     <button
       onClick={onClick}
       className="bg-white border border-gray-200 rounded-2xl p-4 text-center hover:shadow-lg transition-all duration-200 hover:border-blue-300 hover:-translate-y-1"
     >
-      <div className="text-4xl mb-1">{icon}</div>
+      <div className="mb-2 flex justify-center">
+        {Icon && <Icon className="h-6 w-6 text-blue-600" />}
+      </div>
       <p className="text-sm font-medium text-gray-700">{label}</p>
     </button>
   );
 
-  // ======================== SCHEDULE ITEM ========================
+  // SCHEDULE ITEM 
   const ScheduleItem = ({ time, subject, room, classInfo, status }) => {
     const statusColors = {
       completed: 'bg-green-100 text-green-700',
@@ -438,7 +583,7 @@ const TeacherDashboard = () => {
     );
   };
 
-  // ======================== GOAL ITEM ========================
+  // GOAL ITEM 
   const GoalItem = ({ label, current, total }) => {
     const percentage = Math.min(Math.round((current / total) * 100), 100);
     const isComplete = percentage >= 100;
@@ -458,7 +603,7 @@ const TeacherDashboard = () => {
     );
   };
 
-  // ======================== REVIEW CARD ========================
+  //  REVIEW CARD 
   const ReviewCard = ({ title, classInfo, count, onClick }) => (
     <div
       className="bg-gray-50 rounded-2xl p-5 border border-gray-100 hover:border-blue-300 transition-all duration-200 cursor-pointer hover:shadow-md"
@@ -473,7 +618,7 @@ const TeacherDashboard = () => {
     </div>
   );
 
-  // ======================== DASHBOARD VIEW ========================
+  //  DASHBOARD VIEW 
   const DashboardView = () => (
     <div>
       <div className="mb-8 flex justify-between items-start">
@@ -484,7 +629,7 @@ const TeacherDashboard = () => {
           <p className="text-gray-500 mt-1">Welcome back, {user?.fullName?.split(' ')[0] || 'Teacher'}!</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center text-white font-bold shadow-md">
+          <div className="w-10 h-10 bg-linear-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center text-white font-bold shadow-md">
             {user?.fullName?.charAt(0) || 'T'}
           </div>
         </div>
@@ -534,14 +679,13 @@ const TeacherDashboard = () => {
       <div className="mt-8">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <ActionCard icon="📋" label="Take Attendance" onClick={() => openModal('attendance')} />
-          <ActionCard icon="📤" label="Upload Material" onClick={() => openModal('material')} />
-          <ActionCard icon="📝" label="New Assignment" onClick={() => openModal('assignment')} />
-          <ActionCard icon="📊" label="Create Quiz" onClick={() => openModal('quiz')} />
-          <ActionCard icon="📈" label="Publish Result" onClick={() => showToast('Publish Result feature coming soon!', 'info')} />
-          <ActionCard icon="💬" label="Start Discussion" onClick={() => showToast('Start Discussion feature coming soon!', 'info')} />
-          <ActionCard icon="📅" label="Schedule Event" onClick={() => showToast('Schedule Event feature coming soon!', 'info')} />
-          <ActionCard icon="📊" label="View Analytics" onClick={() => showToast('View Analytics feature coming soon!', 'info')} />
+          <ActionCard icon={BookOpenIcon} label="Add Subject" onClick={() => openModal('subject')} />
+          <ActionCard icon={DocumentTextIcon} label="Add Chapter" onClick={() => openModal('chapter')} />
+          <ActionCard icon={CheckCircleIcon} label="Take Attendance" onClick={() => openModal('attendance')} />
+          <ActionCard icon={DocumentPlusIcon} label="New Assignment" onClick={() => openModal('assignment')} />
+          <ActionCard icon={ArrowUpTrayIcon} label="Upload Material" onClick={() => openModal('material')} />
+          <ActionCard icon={QuestionMarkCircleIcon} label="Create Quiz" onClick={() => openModal('quiz')} />
+          <ActionCard icon={BellIcon} label="Announcement" onClick={() => openModal('announcement')} />
         </div>
       </div>
 
@@ -668,7 +812,7 @@ const TeacherDashboard = () => {
     </div>
   );
 
-  // ======================== SUBJECTS VIEW ========================
+  //  SUBJECTS VIEW 
   const SubjectsView = () => (
     <div>
       <div className="flex justify-between items-center mb-8">
@@ -764,7 +908,7 @@ const TeacherDashboard = () => {
     </div>
   );
 
-  // ======================== SIMPLE VIEWS ========================
+  //  SIMPLE VIEWS 
   const SimpleView = ({ title, description, addButton, addAction }) => (
     <div>
       <div className="flex justify-between items-center mb-8">
@@ -787,6 +931,197 @@ const TeacherDashboard = () => {
     </div>
   );
 
+  // ======================== ASSIGNMENTS VIEW ========================
+  const AssignmentsView = () => (
+    <div>
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Assignments</h1>
+          <p className="text-gray-500 mt-1">Create and manage assignments for your subjects</p>
+        </div>
+        <button
+          className="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition flex items-center gap-2"
+          onClick={() => openModal('assignment')}
+        >
+          <PlusIcon className="h-5 w-5" /> New Assignment
+        </button>
+      </div>
+      {assignments.length === 0 ? (
+        <div className="bg-white rounded-2xl p-8 text-center border border-gray-100">
+          <p className="text-gray-400">No assignments yet. Click the button above to create one.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {assignments.map(assignment => (
+            <div key={assignment._id} className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-md transition-shadow">
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-gray-900">{assignment.title}</h3>
+                  <p className="text-sm text-gray-600 line-clamp-2">{assignment.description}</p>
+                </div>
+                <div className="flex space-x-2 ml-3">
+                  <button
+                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    onClick={() => openModal('assignment', assignment, assignment._id)}
+                  >
+                    <PencilIcon className="h-4 w-4" />
+                  </button>
+                  <button
+                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    onClick={() => handleDelete('assignment', assignment._id)}
+                  >
+                    <TrashIcon className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-2 text-sm text-gray-500">
+                <p><strong>Type:</strong> {assignment.type}</p>
+                <p><strong>Deadline:</strong> {new Date(assignment.deadline).toLocaleDateString()}</p>
+                {assignment.chapterId && <p><strong>Chapter:</strong> {assignment.chapterId.title}</p>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  //  QUIZZES VIEW 
+  const QuizzesView = () => (
+    <div>
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Quizzes</h1>
+          <p className="text-gray-500 mt-1">Create and manage quizzes for your subjects</p>
+        </div>
+        <button
+          className="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition flex items-center gap-2"
+          onClick={() => openModal('quiz')}
+        >
+          <PlusIcon className="h-5 w-5" /> Create Quiz
+        </button>
+      </div>
+      {quizzes.length === 0 ? (
+        <div className="bg-white rounded-2xl p-8 text-center border border-gray-100">
+          <p className="text-gray-400">No quizzes yet. Click the button above to create one.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {quizzes.map(quiz => (
+            <div key={quiz._id} className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-md transition-shadow">
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="text-lg font-semibold text-gray-900">{quiz.title}</h3>
+                    {quiz.published ? (
+                      <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full font-medium">Published</span>
+                    ) : (
+                      <span className="text-xs px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full font-medium">Draft</span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-600 line-clamp-2">{quiz.description}</p>
+                </div>
+                <div className="flex space-x-2 ml-3">
+                  <button
+                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    onClick={() => openModal('quiz', quiz, quiz._id)}
+                  >
+                    <PencilIcon className="h-4 w-4" />
+                  </button>
+                  <button
+                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    onClick={() => handleDelete('quiz', quiz._id)}
+                  >
+                    <TrashIcon className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-2 text-sm text-gray-500">
+                <p><strong>Questions:</strong> {quiz.questions?.length || 0}</p>
+                <p><strong>Time Limit:</strong> {quiz.timeLimit} minutes</p>
+                <p><strong>Deadline:</strong> {new Date(quiz.deadline).toLocaleDateString()}</p>
+                {quiz.chapterId && <p><strong>Chapter:</strong> {quiz.chapterId.title}</p>}
+              </div>
+              {!quiz.published && (
+                <button
+                  className="mt-3 w-full bg-blue-100 text-blue-600 py-2 rounded-lg hover:bg-blue-200 transition text-sm font-medium"
+                  onClick={() => handlePublishQuiz(quiz._id)}
+                >
+                  Publish Quiz
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  // ======================== ANNOUNCEMENTS VIEW ========================
+  const AnnouncementsView = () => (
+    <div>
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Announcements</h1>
+          <p className="text-gray-500 mt-1">Create and manage announcements for your subjects</p>
+        </div>
+        <button
+          className="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition flex items-center gap-2"
+          onClick={() => openModal('announcement')}
+        >
+          <PlusIcon className="h-5 w-5" /> Create Announcement
+        </button>
+      </div>
+      {announcements.length === 0 ? (
+        <div className="bg-white rounded-2xl p-8 text-center border border-gray-100">
+          <p className="text-gray-400">No announcements yet. Click the button above to create one.</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {announcements.map(announcement => (
+            <div key={announcement._id} className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-md transition-shadow">
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h3 className="text-lg font-semibold text-gray-900">{announcement.title}</h3>
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                      announcement.priority === 'High' ? 'bg-red-100 text-red-700' :
+                      announcement.priority === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
+                      'bg-green-100 text-green-700'
+                    }`}>
+                      {announcement.priority} Priority
+                    </span>
+                  </div>
+                  <p className="text-gray-600 text-sm mb-2">{announcement.content}</p>
+                  {announcement.subjectId && (
+                    <p className="text-xs text-gray-500">Subject: {announcement.subjectId.title}</p>
+                  )}
+                  <p className="text-xs text-gray-400 mt-1">
+                    {new Date(announcement.createdAt).toLocaleDateString()} at {new Date(announcement.createdAt).toLocaleTimeString()}
+                  </p>
+                </div>
+                <div className="flex space-x-2">
+                  <button
+                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    onClick={() => openModal('announcement', announcement, announcement._id)}
+                  >
+                    <PencilIcon className="h-5 w-5" />
+                  </button>
+                  <button
+                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    onClick={() => handleDelete('announcement', announcement._id)}
+                  >
+                    <TrashIcon className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
   // ======================== SIDEBAR ========================
   const Sidebar = () => {
     const navItems = [
@@ -795,6 +1130,7 @@ const TeacherDashboard = () => {
       { id: 'assignments', label: 'Assignments', icon: ClipboardDocumentListIcon },
       { id: 'quizzes', label: 'Quizzes', icon: ChartBarIcon },
       { id: 'attendance', label: 'Attendance', icon: UsersIcon },
+      { id: 'announcements', label: 'Announcements', icon: BellIcon },
     ];
     return (
       <aside className="w-64 bg-white shadow-lg flex flex-col fixed h-full z-30 border-r border-gray-100">
@@ -804,7 +1140,7 @@ const TeacherDashboard = () => {
         </div>
         <div className="p-5 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md">
+            <div className="w-12 h-12 bg-linear-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md">
               {user?.fullName?.charAt(0) || 'T'}
             </div>
             <div>
@@ -855,6 +1191,7 @@ const TeacherDashboard = () => {
         case 'assignment': return editingId ? 'Edit Assignment' : 'Create Assignment';
         case 'quiz': return editingId ? 'Edit Quiz' : 'Create Quiz';
         case 'attendance': return 'Mark Attendance';
+        case 'announcement': return editingId ? 'Edit Announcement' : 'Create Announcement';
         default: return '';
       }
     };
@@ -874,18 +1211,32 @@ const TeacherDashboard = () => {
         case 'chapter':
           return (
             <form onSubmit={handleChapterSubmit} className="space-y-4">
+              <select
+                name="subjectId"
+                className="w-full border rounded-xl px-4 py-2"
+                value={modalData.subjectId || formSubjectId || ''}
+                onChange={(e) => setFormSubjectId(e.target.value)}
+                required
+              >
+                <option value="">Select Subject</option>
+                {subjects.map(s => <option key={s._id} value={s._id}>{s.title}</option>)}
+              </select>
               <input type="text" name="title" placeholder="Chapter Title" defaultValue={modalData.title || ''} className="w-full border rounded-xl px-4 py-2" required />
               <textarea name="content" placeholder="Content (optional)" defaultValue={modalData.content || ''} className="w-full border rounded-xl px-4 py-2" rows="3" />
               <input type="number" name="order" placeholder="Order" defaultValue={modalData.order || 0} className="w-full border rounded-xl px-4 py-2" />
-              <input type="hidden" name="subjectId" value={modalData.subjectId || ''} />
-              <button type="submit" disabled={formLoading} className="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition">
+              <button type="submit" disabled={formLoading || !(modalData.subjectId || formSubjectId)} className="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
                 {formLoading ? 'Saving...' : (editingId ? 'Update Chapter' : 'Add Chapter')}
               </button>
             </form>
           );
-        case 'material':
+        case 'material': {
+          const chapterOptions = formSubjectId ? (chapters[formSubjectId] || []) : Object.values(chapters).flat();
           return (
             <form onSubmit={handleMaterialSubmit} className="space-y-4">
+              <select value={formSubjectId} onChange={(e) => setFormSubjectId(e.target.value)} className="w-full border rounded-xl px-4 py-2" required>
+                <option value="">Select Subject</option>
+                {subjects.map(s => <option key={s._id} value={s._id}>{s.title}</option>)}
+              </select>
               <input type="text" name="title" placeholder="Material Title" defaultValue={modalData.title || ''} className="w-full border rounded-xl px-4 py-2" required />
               <textarea name="description" placeholder="Description" defaultValue={modalData.description || ''} className="w-full border rounded-xl px-4 py-2" rows="3" />
               <select name="type" className="w-full border rounded-xl px-4 py-2">
@@ -896,19 +1247,25 @@ const TeacherDashboard = () => {
                 <option value="Document">Document</option>
                 <option value="Other">Other</option>
               </select>
-              <select name="chapterId" className="w-full border rounded-xl px-4 py-2" required>
+              <select name="chapterId" className="w-full border rounded-xl px-4 py-2" required value={modalData.chapterId || ''}>
                 <option value="">Select Chapter</option>
-                {Object.values(chapters).flat().map(ch => <option key={ch._id} value={ch._id}>{ch.title}</option>)}
+                {chapterOptions.map(ch => <option key={ch._id} value={ch._id}>{ch.title}</option>)}
               </select>
               <input type="file" onChange={(e) => setFile(e.target.files[0])} className="w-full border rounded-xl px-4 py-2" required />
-              <button type="submit" disabled={formLoading} className="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition">
+              <button type="submit" disabled={formLoading || !formSubjectId} className="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
                 {formLoading ? 'Uploading...' : 'Upload Material'}
               </button>
             </form>
           );
-        case 'assignment':
+        }
+        case 'assignment': {
+          const chapterOptions = formSubjectId ? (chapters[formSubjectId] || []) : Object.values(chapters).flat();
           return (
             <form onSubmit={handleAssignmentSubmit} className="space-y-4">
+              <select value={formSubjectId} onChange={(e) => setFormSubjectId(e.target.value)} className="w-full border rounded-xl px-4 py-2" required>
+                <option value="">Select Subject</option>
+                {subjects.map(s => <option key={s._id} value={s._id}>{s.title}</option>)}
+              </select>
               <input type="text" name="title" placeholder="Assignment Title" defaultValue={modalData.title || ''} className="w-full border rounded-xl px-4 py-2" required />
               <textarea name="description" placeholder="Description" defaultValue={modalData.description || ''} className="w-full border rounded-xl px-4 py-2" rows="3" required />
               <select name="type" className="w-full border rounded-xl px-4 py-2">
@@ -917,48 +1274,112 @@ const TeacherDashboard = () => {
                 <option value="Task">Task</option>
               </select>
               <input type="date" name="deadline" defaultValue={modalData.deadline ? modalData.deadline.split('T')[0] : ''} className="w-full border rounded-xl px-4 py-2" required />
-              <select name="chapterId" className="w-full border rounded-xl px-4 py-2" required>
+              <select name="chapterId" className="w-full border rounded-xl px-4 py-2" required value={modalData.chapterId || ''}>
                 <option value="">Select Chapter</option>
-                {Object.values(chapters).flat().map(ch => <option key={ch._id} value={ch._id}>{ch.title}</option>)}
+                {chapterOptions.map(ch => <option key={ch._id} value={ch._id}>{ch.title}</option>)}
               </select>
-              <button type="submit" disabled={formLoading} className="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition">
+              <button type="submit" disabled={formLoading || !formSubjectId} className="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
                 {formLoading ? 'Saving...' : (editingId ? 'Update Assignment' : 'Create Assignment')}
               </button>
             </form>
           );
-        case 'quiz':
+        }
+        case 'quiz': {
+          const chapterOptions = formSubjectId ? (chapters[formSubjectId] || []) : Object.values(chapters).flat();
           return (
             <form onSubmit={handleQuizSubmit} className="space-y-4">
+              <select value={formSubjectId} onChange={(e) => setFormSubjectId(e.target.value)} className="w-full border rounded-xl px-4 py-2" required>
+                <option value="">Select Subject</option>
+                {subjects.map(s => <option key={s._id} value={s._id}>{s.title}</option>)}
+              </select>
               <input type="text" name="title" placeholder="Quiz Title" defaultValue={modalData.title || ''} className="w-full border rounded-xl px-4 py-2" required />
               <textarea name="description" placeholder="Description" defaultValue={modalData.description || ''} className="w-full border rounded-xl px-4 py-2" rows="3" />
               <input type="number" name="timeLimit" placeholder="Time Limit (minutes)" defaultValue={modalData.timeLimit || 30} className="w-full border rounded-xl px-4 py-2" />
               <input type="date" name="deadline" defaultValue={modalData.deadline ? modalData.deadline.split('T')[0] : ''} className="w-full border rounded-xl px-4 py-2" required />
-              <select name="chapterId" className="w-full border rounded-xl px-4 py-2" required>
+              <select name="chapterId" className="w-full border rounded-xl px-4 py-2" required value={modalData.chapterId || ''}>
                 <option value="">Select Chapter</option>
-                {Object.values(chapters).flat().map(ch => <option key={ch._id} value={ch._id}>{ch.title}</option>)}
+                {chapterOptions.map(ch => <option key={ch._id} value={ch._id}>{ch.title}</option>)}
               </select>
               <textarea name="questions" placeholder='Questions as JSON: [{"question":"...","options":["a","b","c"],"correctAnswer":0}]' defaultValue={JSON.stringify(modalData.questions || [])} className="w-full border rounded-xl px-4 py-2" rows="4" />
-              <button type="submit" disabled={formLoading} className="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition">
+              <button type="submit" disabled={formLoading || !formSubjectId} className="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
                 {formLoading ? 'Saving...' : (editingId ? 'Update Quiz' : 'Create Quiz')}
               </button>
             </form>
           );
+        }
         case 'attendance':
           return (
             <form onSubmit={handleAttendanceSubmit} className="space-y-4">
-              <input type="text" name="studentId" placeholder="Student ID" className="w-full border rounded-xl px-4 py-2" required />
-              <select name="subjectId" className="w-full border rounded-xl px-4 py-2" required>
+              <select
+                name="subjectId"
+                className="w-full border rounded-xl px-4 py-2"
+                value={attendanceSelection.subjectId}
+                onChange={(e) => {
+                  const subjectId = e.target.value;
+                  setAttendanceSelection(prev => ({ ...prev, subjectId, date: prev.date || new Date().toISOString().split('T')[0] }));
+                  loadStudentsForAttendance(subjectId);
+                }}
+                required
+              >
                 <option value="">Select Subject</option>
                 {subjects.map(s => <option key={s._id} value={s._id}>{s.title}</option>)}
               </select>
-              <select name="status" className="w-full border rounded-xl px-4 py-2" required>
-                <option value="Present">Present</option>
-                <option value="Absent">Absent</option>
-                <option value="Late">Late</option>
+              <input
+                type="date"
+                name="date"
+                value={attendanceSelection.date}
+                onChange={(e) => setAttendanceSelection(prev => ({ ...prev, date: e.target.value }))}
+                className="w-full border rounded-xl px-4 py-2"
+              />
+              {attendanceStudents.length > 0 ? (
+                <div className="space-y-3 max-h-80 overflow-y-auto border rounded-xl p-3">
+                  {attendanceStudents.map(student => (
+                    <div key={student._id} className="flex items-center justify-between gap-3 border-b last:border-b-0 pb-2 last:pb-0">
+                      <div>
+                        <p className="font-medium text-gray-800">{student.fullName}</p>
+                        <p className="text-xs text-gray-500">{student.rollNumber || 'Roll N/A'} · {student.className || 'Class N/A'}</p>
+                      </div>
+                      <select
+                        value={attendanceSelection.students[student._id] || 'Present'}
+                        onChange={(e) => setAttendanceSelection(prev => ({
+                          ...prev,
+                          students: { ...prev.students, [student._id]: e.target.value }
+                        }))}
+                        className="border rounded-lg px-2 py-1 text-sm"
+                      >
+                        <option value="Present">Present</option>
+                        <option value="Absent">Absent</option>
+                        <option value="Late">Late</option>
+                      </select>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-gray-200 p-3 text-sm text-gray-500">
+                  {attendanceSelection.subjectId ? 'Loading students...' : 'Select a subject to load students'}
+                </div>
+              )}
+              <button type="submit" disabled={formLoading || !attendanceSelection.subjectId} className="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                {formLoading ? 'Saving...' : 'Save Attendance'}
+              </button>
+            </form>
+          );
+        case 'announcement':
+          return (
+            <form onSubmit={handleAnnouncementSubmit} className="space-y-4">
+              <select name="subjectId" className="w-full border rounded-xl px-4 py-2" required defaultValue={modalData.subjectId || formSubjectId || ''} onChange={(e) => setFormSubjectId(e.target.value)}>
+                <option value="">Select Subject</option>
+                {subjects.map(s => <option key={s._id} value={s._id}>{s.title}</option>)}
               </select>
-              <input type="date" name="date" className="w-full border rounded-xl px-4 py-2" />
-              <button type="submit" disabled={formLoading} className="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition">
-                {formLoading ? 'Saving...' : 'Mark Attendance'}
+              <input type="text" name="title" placeholder="Announcement Title" defaultValue={modalData.title || ''} className="w-full border rounded-xl px-4 py-2" required />
+              <textarea name="content" placeholder="Announcement Content" defaultValue={modalData.content || ''} className="w-full border rounded-xl px-4 py-2" rows="4" required />
+              <select name="priority" className="w-full border rounded-xl px-4 py-2" defaultValue={modalData.priority || 'Medium'}>
+                <option value="Low">Low Priority</option>
+                <option value="Medium">Medium Priority</option>
+                <option value="High">High Priority</option>
+              </select>
+              <button type="submit" disabled={formLoading || !formSubjectId} className="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                {formLoading ? 'Saving...' : (editingId ? 'Update Announcement' : 'Create Announcement')}
               </button>
             </form>
           );
@@ -996,9 +1417,59 @@ const TeacherDashboard = () => {
         )}
         {activeTab === 'dashboard' && <DashboardView />}
         {activeTab === 'subjects' && <SubjectsView />}
-        {activeTab === 'assignments' && <SimpleView title="Assignments" description="Create and manage assignments" addButton="New Assignment" addAction={() => openModal('assignment')} />}
-        {activeTab === 'quizzes' && <SimpleView title="Quizzes" description="Create and manage quizzes" addButton="Create Quiz" addAction={() => openModal('quiz')} />}
-        {activeTab === 'attendance' && <SimpleView title="Attendance" description="Manage attendance records" addButton="Mark Attendance" addAction={() => openModal('attendance')} />}
+        {activeTab === 'assignments' && <AssignmentsView />}
+        {activeTab === 'quizzes' && <QuizzesView />}
+        {activeTab === 'attendance' && (
+          <div>
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Attendance</h1>
+                <p className="text-gray-500 mt-1">Record and review daily attendance for your classes</p>
+              </div>
+              <button
+                className="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition flex items-center gap-2"
+                onClick={() => openModal('attendance')}
+              >
+                <PlusIcon className="h-5 w-5" /> Mark Attendance
+              </button>
+            </div>
+            {attendanceData.length === 0 ? (
+              <div className="bg-white rounded-2xl p-8 text-center border border-gray-100">
+                <p className="text-gray-400">No attendance records yet. Mark class attendance to get started.</p>
+              </div>
+            ) : (
+              <div className="bg-white rounded-2xl border border-gray-100 p-4 overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-gray-600 border-b">
+                      <th className="py-3 px-2">Student</th>
+                      <th className="py-3 px-2">Subject</th>
+                      <th className="py-3 px-2">Date</th>
+                      <th className="py-3 px-2">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {attendanceData.map(record => (
+                      <tr key={record._id} className="border-b last:border-b-0">
+                        <td className="py-3 px-2">{record.studentId?.fullName || 'Student'}</td>
+                        <td className="py-3 px-2">{record.subjectId?.title || 'Subject'}</td>
+                        <td className="py-3 px-2">{new Date(record.date).toLocaleDateString()}</td>
+                        <td className="py-3 px-2">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            record.status === 'Present' ? 'bg-green-100 text-green-700' :
+                            record.status === 'Absent' ? 'bg-red-100 text-red-700' :
+                            'bg-yellow-100 text-yellow-700'}
+                          `}>{record.status}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+        {activeTab === 'announcements' && <AnnouncementsView />}
         <Modal />
       </main>
 
