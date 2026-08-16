@@ -1,5 +1,5 @@
-// src/Pages/TeacherDashboard.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   ArrowRightOnRectangleIcon,
   UsersIcon,
@@ -24,14 +24,13 @@ import {
   PaperClipIcon,
   CalendarIcon,
   EyeIcon,
-  ArrowDownTrayIcon,      // ✅ Fixed: was DownloadIcon
+  ArrowDownTrayIcon,
   ArrowUpTrayIcon,
   ChevronDownIcon,
   ChevronRightIcon,
 } from '@heroicons/react/24/outline';
 import TeacherSidebar from './TeacherSidebar';
 
-// ─── Helper Components ──────────────────────────────────────
 const Modal = ({ isOpen, onClose, title, children }) => {
   if (!isOpen) return null;
   return (
@@ -53,6 +52,18 @@ const Input = ({ label, ...props }) => (
     <input
       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
       {...props}
+    />
+  </div>
+);
+
+const FileInput = ({ label, onFileChange, accept = ".pdf,.ppt,.pptx,.doc,.docx,.jpg,.jpeg,.png" }) => (
+  <div className="mb-4">
+    <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+    <input
+      type="file"
+      accept={accept}
+      onChange={onFileChange}
+      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
     />
   </div>
 );
@@ -85,12 +96,25 @@ const Select = ({ label, options, ...props }) => (
   </div>
 );
 
-// ─── Main TeacherDashboard ──────────────────────────────────
 const TeacherDashboard = ({ onLogout }) => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
 
-  // ─── STATE FOR EACH MODULE ──────────────────────────────
-  // Subjects & Chapters
+  const [userEmail, setUserEmail] = useState('teacher@school.com');
+  const [userName, setUserName] = useState('Teacher');
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const user = JSON.parse(storedUser);
+        if (user.email) setUserEmail(user.email);
+        if (user.name) setUserName(user.name);
+      } catch (e) {}
+    }
+  }, []);
+
+  const STUDENTS = ['Binoj Acharya', 'Smita Poudel', 'Dilasha Thapa', 'Nisha Acharya'];
+
   const [subjects, setSubjects] = useState([
     { id: 1, name: 'Mathematics', chapters: ['Algebra', 'Geometry', 'Trigonometry'] },
     { id: 2, name: 'Science', chapters: ['Physics', 'Chemistry', 'Biology'] },
@@ -100,45 +124,49 @@ const TeacherDashboard = ({ onLogout }) => {
   const [subjectForm, setSubjectForm] = useState({ name: '', chapters: [] });
   const [newChapter, setNewChapter] = useState('');
 
-  // Learning Materials
   const [materials, setMaterials] = useState([
-    { id: 1, title: 'Algebra Notes', type: 'PDF', chapter: 'Algebra', subject: 'Mathematics', uploaded: '2026-08-15' },
-    { id: 2, title: 'Physics PPT', type: 'PPT', chapter: 'Physics', subject: 'Science', uploaded: '2026-08-14' },
+    { id: 1, title: 'Algebra Notes', type: 'PDF', chapter: 'Algebra', subject: 'Mathematics', uploaded: '2026-08-15', fileName: 'algebra_notes.pdf', fileSize: '2.4 MB' },
+    { id: 2, title: 'Physics PPT', type: 'PPT', chapter: 'Physics', subject: 'Science', uploaded: '2026-08-14', fileName: 'physics_ch1.pptx', fileSize: '5.1 MB' },
   ]);
   const [showMaterialModal, setShowMaterialModal] = useState(false);
-  const [materialForm, setMaterialForm] = useState({ title: '', type: 'PDF', chapter: '', subject: '', file: '' });
+  const [materialForm, setMaterialForm] = useState({ title: '', type: 'PDF', chapter: '', subject: '', file: null, fileName: '' });
+  const [materialFile, setMaterialFile] = useState(null);
+  const [showMaterialPreviewModal, setShowMaterialPreviewModal] = useState(false);
+  const [selectedMaterial, setSelectedMaterial] = useState(null);
 
-  // Tasks & Assignments
   const [tasks, setTasks] = useState([
     { id: 1, title: 'Chapter 5 Homework', subject: 'Mathematics', deadline: '2026-08-20', description: 'Solve all odd problems', status: 'Active' },
     { id: 2, title: 'Lab Report', subject: 'Science', deadline: '2026-08-25', description: 'Write a report on the experiment', status: 'Active' },
   ]);
   const [showTaskModal, setShowTaskModal] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
   const [taskForm, setTaskForm] = useState({ title: '', subject: '', deadline: '', description: '', status: 'Active' });
 
-  // Homework Submissions (for teacher view)
   const [submissions, setSubmissions] = useState([
-    { id: 1, student: 'John Doe', task: 'Chapter 5 Homework', subject: 'Mathematics', submitted: '2026-08-18', status: 'Pending' },
-    { id: 2, student: 'Jane Smith', task: 'Lab Report', subject: 'Science', submitted: '2026-08-19', status: 'Submitted' },
+    { id: 1, student: 'Binoj Acharya', task: 'Chapter 5 Homework', subject: 'Mathematics', submitted: '2026-08-18', status: 'Submitted', file: 'binoj_hw.pdf' },
+    { id: 2, student: 'Smita Poudel', task: 'Lab Report', subject: 'Science', submitted: '2026-08-19', status: 'Submitted', file: 'smita_lab.pdf' },
+    { id: 3, student: 'Dilasha Thapa', task: 'Chapter 5 Homework', subject: 'Mathematics', submitted: '2026-08-20', status: 'Late', file: 'dilasha_hw.pdf' },
+    { id: 4, student: 'Nisha Acharya', task: 'Lab Report', subject: 'Science', submitted: '2026-08-21', status: 'Submitted', file: 'nisha_lab.pdf' },
   ]);
+  const [showHomeworkDetailModal, setShowHomeworkDetailModal] = useState(false);
+  const [selectedSubmission, setSelectedSubmission] = useState(null);
 
-  // Assignment Reviews
   const [reviews, setReviews] = useState([
-    { id: 1, student: 'John Doe', task: 'Chapter 5 Homework', feedback: 'Good work, but need more detail.', reviewed: true },
-    { id: 2, student: 'Alice Brown', task: 'Lab Report', feedback: '', reviewed: false },
+    { id: 1, student: 'Binoj Acharya', task: 'Chapter 5 Homework', feedback: 'Good work, but need more detail.', reviewed: true },
+    { id: 2, student: 'Dilasha Thapa', task: 'Lab Report', feedback: '', reviewed: false },
+    { id: 3, student: 'Smita Poudel', task: 'Chapter 5 Homework', feedback: 'Excellent!', reviewed: true },
   ]);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [reviewForm, setReviewForm] = useState({ id: null, feedback: '' });
 
-  // Quizzes
   const [quizzes, setQuizzes] = useState([
     { id: 1, title: 'Algebra Quiz', subject: 'Mathematics', deadline: '2026-08-22', timeLimit: 30, published: true },
     { id: 2, title: 'Physics Quiz', subject: 'Science', deadline: '2026-08-28', timeLimit: 20, published: false },
   ]);
   const [showQuizModal, setShowQuizModal] = useState(false);
+  const [editingQuiz, setEditingQuiz] = useState(null);
   const [quizForm, setQuizForm] = useState({ title: '', subject: '', deadline: '', timeLimit: 30, published: false, questions: [] });
 
-  // Attendance
   const [attendanceRecords, setAttendanceRecords] = useState([
     { date: '2026-08-16', class: '10-A', present: 28, absent: 2, late: 1 },
     { date: '2026-08-15', class: '10-A', present: 26, absent: 3, late: 2 },
@@ -146,15 +174,15 @@ const TeacherDashboard = ({ onLogout }) => {
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
   const [attendanceForm, setAttendanceForm] = useState({ date: '', class: '', present: 0, absent: 0, late: 0 });
 
-  // Grades
   const [grades, setGrades] = useState([
-    { id: 1, student: 'John Doe', subject: 'Mathematics', marks: 85, grade: 'A', remark: 'Excellent' },
-    { id: 2, student: 'Jane Smith', subject: 'Mathematics', marks: 72, grade: 'B', remark: '' },
+    { id: 1, student: 'Binoj Acharya', subject: 'Mathematics', marks: 85, grade: 'A', remark: 'Excellent' },
+    { id: 2, student: 'Smita Poudel', subject: 'Mathematics', marks: 72, grade: 'B', remark: '' },
+    { id: 3, student: 'Dilasha Thapa', subject: 'Science', marks: 90, grade: 'A', remark: 'Outstanding' },
+    { id: 4, student: 'Nisha Acharya', subject: 'Science', marks: 65, grade: 'C', remark: 'Needs improvement' },
   ]);
   const [showGradeModal, setShowGradeModal] = useState(false);
   const [gradeForm, setGradeForm] = useState({ student: '', subject: '', marks: '', grade: '', remark: '' });
 
-  // Announcements
   const [announcements, setAnnouncements] = useState([
     { id: 1, title: 'Mid-term exams', content: 'Exams start from 1st September.', date: '2026-08-16' },
     { id: 2, title: 'Science fair', content: 'Submit projects by 25th August.', date: '2026-08-15' },
@@ -162,8 +190,13 @@ const TeacherDashboard = ({ onLogout }) => {
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
   const [announcementForm, setAnnouncementForm] = useState({ title: '', content: '', date: '' });
 
-  // ─── HANDLERS ──────────────────────────────────────────────
-  // Subjects
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    if (onLogout) onLogout();
+    navigate('/');
+  };
+
   const handleAddSubject = () => {
     if (editingSubject) {
       setSubjects(subjects.map(s => s.id === editingSubject.id ? { ...s, name: subjectForm.name, chapters: subjectForm.chapters } : s));
@@ -197,29 +230,81 @@ const TeacherDashboard = ({ onLogout }) => {
     setSubjectForm({ ...subjectForm, chapters: updated });
   };
 
-  // Materials
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setMaterialFile(file);
+      setMaterialForm({
+        ...materialForm,
+        file: file,
+        fileName: file.name,
+        fileSize: (file.size / (1024 * 1024)).toFixed(2) + ' MB',
+      });
+    }
+  };
+
   const handleAddMaterial = () => {
-    setMaterials([...materials, { id: Date.now(), ...materialForm, uploaded: new Date().toISOString().split('T')[0] }]);
+    setMaterials([
+      ...materials,
+      {
+        id: Date.now(),
+        title: materialForm.title,
+        type: materialForm.type,
+        chapter: materialForm.chapter,
+        subject: materialForm.subject,
+        uploaded: new Date().toISOString().split('T')[0],
+        fileName: materialForm.file ? materialForm.file.name : materialForm.fileName || 'No file',
+        fileSize: materialForm.file ? (materialForm.file.size / (1024 * 1024)).toFixed(2) + ' MB' : 'N/A',
+      },
+    ]);
     setShowMaterialModal(false);
-    setMaterialForm({ title: '', type: 'PDF', chapter: '', subject: '', file: '' });
+    setMaterialForm({ title: '', type: 'PDF', chapter: '', subject: '', file: null, fileName: '' });
+    setMaterialFile(null);
   };
 
   const handleDeleteMaterial = (id) => {
     setMaterials(materials.filter(m => m.id !== id));
   };
 
-  // Tasks
+  const handleDownloadMaterial = (fileName) => {
+    alert(`Downloading file: ${fileName} (simulated)`);
+  };
+
+  const handlePreviewMaterial = (material) => {
+    setSelectedMaterial(material);
+    setShowMaterialPreviewModal(true);
+  };
+
   const handleAddTask = () => {
-    setTasks([...tasks, { id: Date.now(), ...taskForm }]);
+    if (editingTask) {
+      setTasks(tasks.map(t => t.id === editingTask.id ? { ...t, ...taskForm } : t));
+    } else {
+      setTasks([...tasks, { id: Date.now(), ...taskForm }]);
+    }
     setShowTaskModal(false);
     setTaskForm({ title: '', subject: '', deadline: '', description: '', status: 'Active' });
+    setEditingTask(null);
   };
 
   const handleDeleteTask = (id) => {
     setTasks(tasks.filter(t => t.id !== id));
   };
 
-  // Reviews
+  const handleEditTask = (task) => {
+    setEditingTask(task);
+    setTaskForm({ title: task.title, subject: task.subject, deadline: task.deadline, description: task.description, status: task.status });
+    setShowTaskModal(true);
+  };
+
+  const handleOpenHomeworkDetail = (submission) => {
+    setSelectedSubmission(submission);
+    setShowHomeworkDetailModal(true);
+  };
+
+  const handleDownloadFile = (filename) => {
+    alert(`Downloading file: ${filename} (simulated)`);
+  };
+
   const handleReviewSubmit = () => {
     setReviews(reviews.map(r => r.id === reviewForm.id ? { ...r, feedback: reviewForm.feedback, reviewed: true } : r));
     setShowReviewModal(false);
@@ -232,25 +317,33 @@ const TeacherDashboard = ({ onLogout }) => {
     setShowReviewModal(true);
   };
 
-  // Quizzes
   const handleAddQuiz = () => {
-    setQuizzes([...quizzes, { id: Date.now(), ...quizForm }]);
+    if (editingQuiz) {
+      setQuizzes(quizzes.map(q => q.id === editingQuiz.id ? { ...q, ...quizForm } : q));
+    } else {
+      setQuizzes([...quizzes, { id: Date.now(), ...quizForm }]);
+    }
     setShowQuizModal(false);
     setQuizForm({ title: '', subject: '', deadline: '', timeLimit: 30, published: false, questions: [] });
+    setEditingQuiz(null);
   };
 
   const handleDeleteQuiz = (id) => {
     setQuizzes(quizzes.filter(q => q.id !== id));
   };
 
-  // Attendance
+  const handleEditQuiz = (quiz) => {
+    setEditingQuiz(quiz);
+    setQuizForm({ title: quiz.title, subject: quiz.subject, deadline: quiz.deadline, timeLimit: quiz.timeLimit, published: quiz.published, questions: quiz.questions || [] });
+    setShowQuizModal(true);
+  };
+
   const handleAddAttendance = () => {
     setAttendanceRecords([...attendanceRecords, { ...attendanceForm }]);
     setShowAttendanceModal(false);
     setAttendanceForm({ date: '', class: '', present: 0, absent: 0, late: 0 });
   };
 
-  // Grades
   const handleAddGrade = () => {
     setGrades([...grades, { id: Date.now(), ...gradeForm }]);
     setShowGradeModal(false);
@@ -261,7 +354,6 @@ const TeacherDashboard = ({ onLogout }) => {
     setGrades(grades.filter(g => g.id !== id));
   };
 
-  // Announcements
   const handleAddAnnouncement = () => {
     if (announcementForm.title && announcementForm.content) {
       setAnnouncements([...announcements, { id: Date.now(), ...announcementForm, date: new Date().toISOString().split('T')[0] }]);
@@ -274,8 +366,6 @@ const TeacherDashboard = ({ onLogout }) => {
     setAnnouncements(announcements.filter(a => a.id !== id));
   };
 
-  // ─── RENDER FUNCTIONS FOR EACH TAB ─────────────────────
-
   const renderDashboard = () => (
     <>
       <div className="mb-8 flex justify-between items-center">
@@ -284,7 +374,7 @@ const TeacherDashboard = ({ onLogout }) => {
           <p className="text-gray-600 mt-1">Welcome back! Here's your teaching summary.</p>
         </div>
         <button
-          onClick={onLogout}
+          onClick={handleLogout}
           className="flex items-center space-x-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200 font-medium"
         >
           <ArrowRightOnRectangleIcon className="h-5 w-5" />
@@ -297,8 +387,8 @@ const TeacherDashboard = ({ onLogout }) => {
         <StatCard icon={CheckCircleIcon} label="Total Tasks Created" value={tasks.length} color="text-green-600" bgColor="bg-green-100" />
         <StatCard icon={BookOpenIcon} label="Assigned Subjects" value={subjects.length} color="text-purple-600" bgColor="bg-purple-100" />
         <StatCard icon={DocumentTextIcon} label="Materials Uploaded" value={materials.length} color="text-yellow-600" bgColor="bg-yellow-100" />
-        <StatCard icon={UserGroupIcon} label="Recent Submissions" value={submissions.filter(s => s.status === 'Submitted').length} color="text-pink-600" bgColor="bg-pink-100" />
-        <StatCard icon={PencilSquareIcon} label="Pending Reviews" value={reviews.filter(r => !r.reviewed).length} color="text-indigo-600" bgColor="bg-indigo-100" />
+        <StatCard icon={UserGroupIcon} label="Recent Submissions" value={submissions.filter(s => s.status === 'Submitted' || s.status === 'Late').length} color="text-pink-600" bgColor="bg-pink-100" />
+        <StatCard icon={CheckCircleIcon} label="Total Submissions" value={submissions.length} color="text-indigo-600" bgColor="bg-indigo-100" />
         <StatCard icon={ClockIcon} label="Upcoming Deadlines" value="3" color="text-red-600" bgColor="bg-red-100" />
         <StatCard icon={UsersIcon} label="Attendance Summary" value="92%" color="text-orange-600" bgColor="bg-orange-100" />
       </div>
@@ -435,6 +525,7 @@ const TeacherDashboard = ({ onLogout }) => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Subject</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Chapter</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">File</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Uploaded</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
             </tr>
@@ -446,15 +537,31 @@ const TeacherDashboard = ({ onLogout }) => {
                 <td className="px-6 py-4 text-sm text-gray-600">{material.type}</td>
                 <td className="px-6 py-4 text-sm text-gray-600">{material.subject}</td>
                 <td className="px-6 py-4 text-sm text-gray-600">{material.chapter}</td>
+                <td className="px-6 py-4 text-sm text-gray-600">
+                  <span className="flex items-center">
+                    <PaperClipIcon className="h-4 w-4 mr-1 text-gray-400" />
+                    <span className="truncate max-w-[120px]">{material.fileName || 'No file'}</span>
+                    {material.fileSize && <span className="text-xs text-gray-400 ml-1">({material.fileSize})</span>}
+                  </span>
+                </td>
                 <td className="px-6 py-4 text-sm text-gray-600">{material.uploaded}</td>
                 <td className="px-6 py-4 text-right space-x-2">
-                  <button className="text-blue-500 hover:text-blue-700"><EyeIcon className="h-5 w-5 inline" /></button>
-                  <button onClick={() => handleDeleteMaterial(material.id)} className="text-red-500 hover:text-red-700"><TrashIcon className="h-5 w-5 inline" /></button>
+                  <button onClick={() => handlePreviewMaterial(material)} className="text-blue-500 hover:text-blue-700">
+                    <EyeIcon className="h-5 w-5 inline" />
+                  </button>
+                  {material.fileName && material.fileName !== 'No file' && (
+                    <button onClick={() => handleDownloadMaterial(material.fileName)} className="text-indigo-500 hover:text-indigo-700">
+                      <ArrowDownTrayIcon className="h-5 w-5 inline" />
+                    </button>
+                  )}
+                  <button onClick={() => handleDeleteMaterial(material.id)} className="text-red-500 hover:text-red-700">
+                    <TrashIcon className="h-5 w-5 inline" />
+                  </button>
                 </td>
               </tr>
             ))}
             {materials.length === 0 && (
-              <tr><td colSpan="6" className="px-6 py-4 text-center text-gray-400">No materials uploaded yet.</td></tr>
+              <tr><td colSpan="7" className="px-6 py-4 text-center text-gray-400">No materials uploaded yet.</td></tr>
             )}
           </tbody>
         </table>
@@ -475,8 +582,38 @@ const TeacherDashboard = ({ onLogout }) => {
           onChange={(e) => setMaterialForm({ ...materialForm, subject: e.target.value })}
         />
         <Input label="Chapter" value={materialForm.chapter} onChange={(e) => setMaterialForm({ ...materialForm, chapter: e.target.value })} />
-        <Input label="File (mock)" value={materialForm.file} onChange={(e) => setMaterialForm({ ...materialForm, file: e.target.value })} placeholder="File name or link" />
+        <FileInput label="Upload File (PDF, PPT, DOC, Image)" onFileChange={handleFileChange} />
+        {materialFile && (
+          <div className="text-sm text-gray-600 mb-4 flex items-center">
+            <PaperClipIcon className="h-4 w-4 mr-1" />
+            <span>{materialFile.name} ({(materialFile.size / (1024 * 1024)).toFixed(2)} MB)</span>
+          </div>
+        )}
         <button onClick={handleAddMaterial} className="w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Upload</button>
+      </Modal>
+
+      <Modal isOpen={showMaterialPreviewModal} onClose={() => setShowMaterialPreviewModal(false)} title="Material Preview">
+        {selectedMaterial && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div><span className="font-medium">Title:</span> {selectedMaterial.title}</div>
+              <div><span className="font-medium">Type:</span> {selectedMaterial.type}</div>
+              <div><span className="font-medium">Subject:</span> {selectedMaterial.subject}</div>
+              <div><span className="font-medium">Chapter:</span> {selectedMaterial.chapter}</div>
+              <div><span className="font-medium">Uploaded:</span> {selectedMaterial.uploaded}</div>
+              <div><span className="font-medium">File:</span> {selectedMaterial.fileName}</div>
+              {selectedMaterial.fileSize && <div><span className="font-medium">Size:</span> {selectedMaterial.fileSize}</div>}
+            </div>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowMaterialPreviewModal(false)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );
@@ -486,7 +623,7 @@ const TeacherDashboard = ({ onLogout }) => {
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-800">Tasks & Assignments</h2>
         <button
-          onClick={() => setShowTaskModal(true)}
+          onClick={() => { setEditingTask(null); setTaskForm({ title: '', subject: '', deadline: '', description: '', status: 'Active' }); setShowTaskModal(true); }}
           className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
         >
           <PlusIcon className="h-5 w-5" />
@@ -512,15 +649,19 @@ const TeacherDashboard = ({ onLogout }) => {
               Deadline: {task.deadline}
             </div>
             <div className="mt-4 flex space-x-2">
-              <button className="text-blue-500 hover:text-blue-700"><PencilIcon className="h-5 w-5" /></button>
-              <button onClick={() => handleDeleteTask(task.id)} className="text-red-500 hover:text-red-700"><TrashIcon className="h-5 w-5" /></button>
+              <button onClick={() => handleEditTask(task)} className="text-blue-500 hover:text-blue-700">
+                <PencilIcon className="h-5 w-5" />
+              </button>
+              <button onClick={() => handleDeleteTask(task.id)} className="text-red-500 hover:text-red-700">
+                <TrashIcon className="h-5 w-5" />
+              </button>
             </div>
           </div>
         ))}
         {tasks.length === 0 && <div className="col-span-2 text-center py-12 text-gray-400">No tasks created yet.</div>}
       </div>
 
-      <Modal isOpen={showTaskModal} onClose={() => setShowTaskModal(false)} title="Create New Task">
+      <Modal isOpen={showTaskModal} onClose={() => setShowTaskModal(false)} title={editingTask ? 'Edit Task' : 'Create New Task'}>
         <Input label="Task Title" value={taskForm.title} onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })} />
         <Select
           label="Subject"
@@ -530,7 +671,9 @@ const TeacherDashboard = ({ onLogout }) => {
         />
         <Input label="Deadline" type="date" value={taskForm.deadline} onChange={(e) => setTaskForm({ ...taskForm, deadline: e.target.value })} />
         <Textarea label="Description" value={taskForm.description} onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })} />
-        <button onClick={handleAddTask} className="w-full py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">Create Task</button>
+        <button onClick={handleAddTask} className="w-full py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+          {editingTask ? 'Update Task' : 'Create Task'}
+        </button>
       </Modal>
     </div>
   );
@@ -538,6 +681,7 @@ const TeacherDashboard = ({ onLogout }) => {
   const renderHomework = () => (
     <div>
       <h2 className="text-2xl font-bold text-gray-800 mb-6">Homework Submissions</h2>
+
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <table className="w-full">
           <thead className="bg-gray-50">
@@ -558,12 +702,19 @@ const TeacherDashboard = ({ onLogout }) => {
                 <td className="px-6 py-4 text-sm text-gray-600">{sub.subject}</td>
                 <td className="px-6 py-4 text-sm text-gray-600">{sub.submitted}</td>
                 <td className="px-6 py-4 text-sm">
-                  <span className={`px-2 py-1 rounded-full text-xs ${sub.status === 'Submitted' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                  <span className={`px-2 py-1 rounded-full text-xs ${
+                    sub.status === 'Submitted' ? 'bg-green-100 text-green-800' :
+                    sub.status === 'Late' ? 'bg-red-100 text-red-800' :
+                    'bg-yellow-100 text-yellow-800'
+                  }`}>
                     {sub.status}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-right">
-                  <button className="text-blue-500 hover:text-blue-700">
+                <td className="px-6 py-4 text-right space-x-2">
+                  <button onClick={() => handleOpenHomeworkDetail(sub)} className="text-blue-500 hover:text-blue-700">
+                    <EyeIcon className="h-5 w-5 inline" />
+                  </button>
+                  <button onClick={() => handleDownloadFile(sub.file)} className="text-indigo-500 hover:text-indigo-700">
                     <ArrowDownTrayIcon className="h-5 w-5 inline" />
                   </button>
                 </td>
@@ -573,6 +724,38 @@ const TeacherDashboard = ({ onLogout }) => {
           </tbody>
         </table>
       </div>
+
+      <Modal isOpen={showHomeworkDetailModal} onClose={() => setShowHomeworkDetailModal(false)} title={`Submission: ${selectedSubmission?.student} - ${selectedSubmission?.task}`}>
+        {selectedSubmission && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div><span className="font-medium">Student:</span> {selectedSubmission.student}</div>
+              <div><span className="font-medium">Task:</span> {selectedSubmission.task}</div>
+              <div><span className="font-medium">Subject:</span> {selectedSubmission.subject}</div>
+              <div><span className="font-medium">Submitted:</span> {selectedSubmission.submitted}</div>
+              <div><span className="font-medium">Status:</span>
+                <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
+                  selectedSubmission.status === 'Submitted' ? 'bg-green-100 text-green-800' :
+                  selectedSubmission.status === 'Late' ? 'bg-red-100 text-red-800' :
+                  'bg-yellow-100 text-yellow-800'
+                }`}>
+                  {selectedSubmission.status}
+                </span>
+              </div>
+              <div><span className="font-medium">File:</span>
+                <button onClick={() => handleDownloadFile(selectedSubmission.file)} className="text-indigo-600 hover:text-indigo-800 underline ml-1">
+                  {selectedSubmission.file}
+                </button>
+              </div>
+            </div>
+            <div className="flex justify-end mt-4">
+              <button onClick={() => setShowHomeworkDetailModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 
@@ -625,7 +808,7 @@ const TeacherDashboard = ({ onLogout }) => {
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-800">Quizzes</h2>
         <button
-          onClick={() => setShowQuizModal(true)}
+          onClick={() => { setEditingQuiz(null); setQuizForm({ title: '', subject: '', deadline: '', timeLimit: 30, published: false, questions: [] }); setShowQuizModal(true); }}
           className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
         >
           <PlusIcon className="h-5 w-5" />
@@ -647,15 +830,19 @@ const TeacherDashboard = ({ onLogout }) => {
             </div>
             <p className="mt-2 text-sm text-gray-600">Deadline: {quiz.deadline} | Time Limit: {quiz.timeLimit} min</p>
             <div className="mt-4 flex space-x-2">
-              <button className="text-blue-500 hover:text-blue-700"><PencilIcon className="h-5 w-5" /></button>
-              <button onClick={() => handleDeleteQuiz(quiz.id)} className="text-red-500 hover:text-red-700"><TrashIcon className="h-5 w-5" /></button>
+              <button onClick={() => handleEditQuiz(quiz)} className="text-blue-500 hover:text-blue-700">
+                <PencilIcon className="h-5 w-5" />
+              </button>
+              <button onClick={() => handleDeleteQuiz(quiz.id)} className="text-red-500 hover:text-red-700">
+                <TrashIcon className="h-5 w-5" />
+              </button>
             </div>
           </div>
         ))}
         {quizzes.length === 0 && <div className="col-span-2 text-center py-12 text-gray-400">No quizzes created yet.</div>}
       </div>
 
-      <Modal isOpen={showQuizModal} onClose={() => setShowQuizModal(false)} title="Create New Quiz">
+      <Modal isOpen={showQuizModal} onClose={() => setShowQuizModal(false)} title={editingQuiz ? 'Edit Quiz' : 'Create New Quiz'}>
         <Input label="Quiz Title" value={quizForm.title} onChange={(e) => setQuizForm({ ...quizForm, title: e.target.value })} />
         <Select
           label="Subject"
@@ -669,7 +856,9 @@ const TeacherDashboard = ({ onLogout }) => {
           <input type="checkbox" checked={quizForm.published} onChange={(e) => setQuizForm({ ...quizForm, published: e.target.checked })} className="mr-2" />
           <label className="text-sm text-gray-700">Publish immediately</label>
         </div>
-        <button onClick={handleAddQuiz} className="w-full py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Create Quiz</button>
+        <button onClick={handleAddQuiz} className="w-full py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+          {editingQuiz ? 'Update Quiz' : 'Create Quiz'}
+        </button>
       </Modal>
     </div>
   );
@@ -772,7 +961,12 @@ const TeacherDashboard = ({ onLogout }) => {
       </div>
 
       <Modal isOpen={showGradeModal} onClose={() => setShowGradeModal(false)} title="Add Grade">
-        <Input label="Student" value={gradeForm.student} onChange={(e) => setGradeForm({ ...gradeForm, student: e.target.value })} />
+        <Select
+          label="Student"
+          options={STUDENTS.map(s => ({ value: s, label: s }))}
+          value={gradeForm.student}
+          onChange={(e) => setGradeForm({ ...gradeForm, student: e.target.value })}
+        />
         <Select
           label="Subject"
           options={subjects.map(s => ({ value: s.name, label: s.name }))}
@@ -826,10 +1020,14 @@ const TeacherDashboard = ({ onLogout }) => {
     </div>
   );
 
-  // ─── MAIN RENDER ──────────────────────────────────────────
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <TeacherSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <TeacherSidebar 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab} 
+        userEmail={userEmail}
+        userName={userName}
+      />
       <div className="ml-64 flex-1 p-8">
         {activeTab === 'dashboard' && renderDashboard()}
         {activeTab === 'subjects' && renderSubjects()}
@@ -846,7 +1044,6 @@ const TeacherDashboard = ({ onLogout }) => {
   );
 };
 
-// ─── Stat Card (reusable) ──────────────────────────────────
 const StatCard = ({ icon: Icon, label, value, color, bgColor }) => (
   <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
     <div className="flex items-center justify-between">
@@ -861,13 +1058,12 @@ const StatCard = ({ icon: Icon, label, value, color, bgColor }) => (
   </div>
 );
 
-// ─── Mock Recent Activities ───────────────────────────────
 const recentActivities = [
-  { message: 'John Doe submitted homework for Mathematics', time: '2 min ago' },
+  { message: 'Binoj Acharya submitted homework for Mathematics', time: '2 min ago' },
   { message: 'New assignment created: Chapter 5 Quiz', time: '15 min ago' },
-  { message: 'Sarah Lee reviewed 3 pending assignments', time: '1 hour ago' },
+  { message: 'Smita Poudel reviewed 3 pending assignments', time: '1 hour ago' },
   { message: 'Attendance marked for Class 10-A', time: '3 hours ago' },
-  { message: 'Learning material uploaded: PPT - Algebra', time: '5 hours ago' },
+  { message: 'Learning material uploaded: PPT - Algebra by Dilasha Thapa', time: '5 hours ago' },
 ];
 
 export default TeacherDashboard;
