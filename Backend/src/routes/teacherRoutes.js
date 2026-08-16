@@ -10,6 +10,7 @@ router.use(authorize('TEACHER'));
 // ---- Your existing routes (unchanged) ----
 router.get('/subjects', teacherController.getSubjects);
 router.get('/subjects/:id', teacherController.getSubject);
+router.get('/students', teacherController.getStudentsForSubject);
 router.post('/subjects', teacherController.createSubject);
 router.put('/subjects/:id', teacherController.updateSubject);
 router.delete('/subjects/:id', teacherController.deleteSubject);
