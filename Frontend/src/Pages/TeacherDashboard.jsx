@@ -25,6 +25,7 @@ const TeacherDashboard = () => {
   const [file, setFile] = useState(null);
   const [formLoading, setFormLoading] = useState(false);
   const [toast, setToast] = useState({ message: '', type: '' });
+  const [formSubjectId, setFormSubjectId] = useState('');
 
   // Data states
   const [dashboardData, setDashboardData] = useState({});
@@ -35,6 +36,8 @@ const TeacherDashboard = () => {
   const [attendanceData, setAttendanceData] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
   const [materials, setMaterials] = useState({});
+  const [attendanceStudents, setAttendanceStudents] = useState([]);
+  const [attendanceSelection, setAttendanceSelection] = useState({ subjectId: '', date: new Date().toISOString().split('T')[0], students: {} });
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -78,6 +81,12 @@ const TeacherDashboard = () => {
       fetchChapters(expandedSubject);
     }
   }, [expandedSubject]);
+
+  useEffect(() => {
+    if (formSubjectId && !chapters[formSubjectId]) {
+      fetchChapters(formSubjectId);
+    }
+  }, [formSubjectId, chapters]);
 
   // --- API Functions ---
   const fetchDashboard = async () => {
@@ -140,6 +149,30 @@ const TeacherDashboard = () => {
     }
   };
 
+  const loadStudentsForAttendance = async (subjectId) => {
+    if (!subjectId) {
+      setAttendanceStudents([]);
+      setAttendanceSelection(prev => ({ ...prev, subjectId, students: {} }));
+      return;
+    }
+
+    try {
+      const res = await teacherApi.getStudentsForSubject(subjectId);
+      if (res.success) {
+        const mapped = {};
+        res.data.forEach(student => {
+          mapped[student._id] = 'Present';
+        });
+        setAttendanceStudents(res.data);
+        setAttendanceSelection(prev => ({ ...prev, subjectId, students: mapped }));
+      }
+    } catch (error) {
+      const msg = error.message || 'Failed to load students';
+      showToast(msg, 'error');
+      setAttendanceStudents([]);
+    }
+  };
+
   const fetchAnnouncements = async () => {
     try {
       const res = await teacherApi.getAnnouncements();
@@ -162,6 +195,7 @@ const TeacherDashboard = () => {
     setModalData(data);
     setEditingId(id);
     setFile(null);
+    setFormSubjectId(data.subjectId || '');
     setShowModal(true);
   };
 
@@ -170,6 +204,7 @@ const TeacherDashboard = () => {
     setModalData({});
     setEditingId(null);
     setFile(null);
+    setFormSubjectId('');
     setFormLoading(false);
   };
 
@@ -203,11 +238,18 @@ const TeacherDashboard = () => {
   const handleChapterSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
+    const subjectId = formData.get('subjectId');
+
+    if (!subjectId || String(subjectId).trim() === '') {
+      showToast('Please select a subject before creating a chapter.', 'error');
+      return;
+    }
+
     const payload = {
       title: formData.get('title'),
       content: formData.get('content') || '',
       order: parseInt(formData.get('order')) || 0,
-      subjectId: formData.get('subjectId'),
+      subjectId,
     };
     setFormLoading(true);
     try {
@@ -248,12 +290,12 @@ const TeacherDashboard = () => {
         fetchMaterials(chapterId);
         closeModal();
       } else {
-      const msg = err.response?.data?.message || err.message || 'Server error';
-      showToast(msg, 'error'); 
-   
         showToast(res.message || 'Error uploading', 'error');
       }
-    } catch (err) { showToast('Server error', 'error'); }
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Server error';
+      showToast(msg, 'error');
+    }
     setFormLoading(false);
   };
 
@@ -291,12 +333,12 @@ const TeacherDashboard = () => {
         fetchAssignments();
         closeModal();
       } else {
-      const msg = err.response?.data?.message || err.message || 'Server error';
-      showToast(msg, 'error'); 
-   
         showToast(res.message || 'Error', 'error');
       }
-    } catch (err) { showToast('Server error', 'error'); }
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Server error';
+      showToast(msg, 'error');
+    }
     setFormLoading(false);
   };
 
@@ -330,31 +372,46 @@ const TeacherDashboard = () => {
       } else {
         showToast(res.message || 'Error', 'error');
       }
-    } catch (err) { showToast('Server error', 'error'); }
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Server error';
+      showToast(msg, 'error');
+    }
     setFormLoading(false);
   };
 
   const handleAttendanceSubmit = async (e) => {
     e.preventDefault();
-    const formData = new FormData(e.target);
-    const payload = {
-      studentId: formData.get('studentId'),
-      subjectId: formData.get('subjectId'),
-      status: formData.get('status'),
-      date: formData.get('date') || undefined,
-    };
+    if (!attendanceSelection.subjectId) {
+      showToast('Please select a subject first', 'error');
+      return;
+    }
+
+    const studentEntries = attendanceStudents.filter(student => attendanceSelection.students[student._id]);
+    if (!studentEntries.length) {
+      showToast('No students found for this subject', 'error');
+      return;
+    }
+
     setFormLoading(true);
     try {
-      const res = await teacherApi.markAttendance(payload);
-      if (res.success) {
-        showToast('Attendance marked!', 'success');
-        fetchAttendance();
-        closeModal();
-      } else {
-        showToast(res.message || 'Error', 'error');
-      }
-    } catch (err) { showToast('Server error', 'error'); }
-    setFormLoading(false);
+      const submissions = studentEntries.map(student => ({
+        studentId: student._id,
+        subjectId: attendanceSelection.subjectId,
+        status: attendanceSelection.students[student._id] || 'Present',
+        date: attendanceSelection.date || new Date().toISOString().split('T')[0],
+      }));
+
+      const requests = submissions.map(item => teacherApi.markAttendance(item));
+      await Promise.all(requests);
+      showToast('Attendance saved successfully!', 'success');
+      fetchAttendance();
+      closeModal();
+    } catch (err) {
+      const msg = err.message || 'Failed to save attendance';
+      showToast(msg, 'error');
+    } finally {
+      setFormLoading(false);
+    }
   };
 
   const handleDelete = async (type, id) => {
@@ -378,7 +435,10 @@ const TeacherDashboard = () => {
       } else {
         showToast(res.message || 'Error deleting', 'error');
       }
-    } catch (err) { showToast('Server error', 'error'); }
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Server error';
+      showToast(msg, 'error');
+    }
   };
 
   const handlePublishQuiz = async (id) => {
@@ -390,7 +450,10 @@ const TeacherDashboard = () => {
       } else {
         showToast(res.message || 'Error publishing', 'error');
       }
-    } catch (err) { showToast('Server error', 'error'); }
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Server error';
+      showToast(msg, 'error');
+    }
   };
 
   const handleAnnouncementSubmit = async (e) => {
@@ -418,7 +481,10 @@ const TeacherDashboard = () => {
       } else {
         showToast(res.message || 'Error', 'error');
       }
-    } catch (err) { showToast('Server error', 'error'); }
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Server error';
+      showToast(msg, 'error');
+    }
     setFormLoading(false);
   };
 
@@ -1145,18 +1211,32 @@ const TeacherDashboard = () => {
         case 'chapter':
           return (
             <form onSubmit={handleChapterSubmit} className="space-y-4">
+              <select
+                name="subjectId"
+                className="w-full border rounded-xl px-4 py-2"
+                value={modalData.subjectId || formSubjectId || ''}
+                onChange={(e) => setFormSubjectId(e.target.value)}
+                required
+              >
+                <option value="">Select Subject</option>
+                {subjects.map(s => <option key={s._id} value={s._id}>{s.title}</option>)}
+              </select>
               <input type="text" name="title" placeholder="Chapter Title" defaultValue={modalData.title || ''} className="w-full border rounded-xl px-4 py-2" required />
               <textarea name="content" placeholder="Content (optional)" defaultValue={modalData.content || ''} className="w-full border rounded-xl px-4 py-2" rows="3" />
               <input type="number" name="order" placeholder="Order" defaultValue={modalData.order || 0} className="w-full border rounded-xl px-4 py-2" />
-              <input type="hidden" name="subjectId" value={modalData.subjectId || ''} />
-              <button type="submit" disabled={formLoading} className="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition">
+              <button type="submit" disabled={formLoading || !(modalData.subjectId || formSubjectId)} className="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
                 {formLoading ? 'Saving...' : (editingId ? 'Update Chapter' : 'Add Chapter')}
               </button>
             </form>
           );
-        case 'material':
+        case 'material': {
+          const chapterOptions = formSubjectId ? (chapters[formSubjectId] || []) : Object.values(chapters).flat();
           return (
             <form onSubmit={handleMaterialSubmit} className="space-y-4">
+              <select value={formSubjectId} onChange={(e) => setFormSubjectId(e.target.value)} className="w-full border rounded-xl px-4 py-2" required>
+                <option value="">Select Subject</option>
+                {subjects.map(s => <option key={s._id} value={s._id}>{s.title}</option>)}
+              </select>
               <input type="text" name="title" placeholder="Material Title" defaultValue={modalData.title || ''} className="w-full border rounded-xl px-4 py-2" required />
               <textarea name="description" placeholder="Description" defaultValue={modalData.description || ''} className="w-full border rounded-xl px-4 py-2" rows="3" />
               <select name="type" className="w-full border rounded-xl px-4 py-2">
@@ -1167,19 +1247,25 @@ const TeacherDashboard = () => {
                 <option value="Document">Document</option>
                 <option value="Other">Other</option>
               </select>
-              <select name="chapterId" className="w-full border rounded-xl px-4 py-2" required>
+              <select name="chapterId" className="w-full border rounded-xl px-4 py-2" required value={modalData.chapterId || ''}>
                 <option value="">Select Chapter</option>
-                {Object.values(chapters).flat().map(ch => <option key={ch._id} value={ch._id}>{ch.title}</option>)}
+                {chapterOptions.map(ch => <option key={ch._id} value={ch._id}>{ch.title}</option>)}
               </select>
               <input type="file" onChange={(e) => setFile(e.target.files[0])} className="w-full border rounded-xl px-4 py-2" required />
-              <button type="submit" disabled={formLoading} className="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition">
+              <button type="submit" disabled={formLoading || !formSubjectId} className="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
                 {formLoading ? 'Uploading...' : 'Upload Material'}
               </button>
             </form>
           );
-        case 'assignment':
+        }
+        case 'assignment': {
+          const chapterOptions = formSubjectId ? (chapters[formSubjectId] || []) : Object.values(chapters).flat();
           return (
             <form onSubmit={handleAssignmentSubmit} className="space-y-4">
+              <select value={formSubjectId} onChange={(e) => setFormSubjectId(e.target.value)} className="w-full border rounded-xl px-4 py-2" required>
+                <option value="">Select Subject</option>
+                {subjects.map(s => <option key={s._id} value={s._id}>{s.title}</option>)}
+              </select>
               <input type="text" name="title" placeholder="Assignment Title" defaultValue={modalData.title || ''} className="w-full border rounded-xl px-4 py-2" required />
               <textarea name="description" placeholder="Description" defaultValue={modalData.description || ''} className="w-full border rounded-xl px-4 py-2" rows="3" required />
               <select name="type" className="w-full border rounded-xl px-4 py-2">
@@ -1188,66 +1274,111 @@ const TeacherDashboard = () => {
                 <option value="Task">Task</option>
               </select>
               <input type="date" name="deadline" defaultValue={modalData.deadline ? modalData.deadline.split('T')[0] : ''} className="w-full border rounded-xl px-4 py-2" required />
-              <select name="chapterId" className="w-full border rounded-xl px-4 py-2" required>
+              <select name="chapterId" className="w-full border rounded-xl px-4 py-2" required value={modalData.chapterId || ''}>
                 <option value="">Select Chapter</option>
-                {Object.values(chapters).flat().map(ch => <option key={ch._id} value={ch._id}>{ch.title}</option>)}
+                {chapterOptions.map(ch => <option key={ch._id} value={ch._id}>{ch.title}</option>)}
               </select>
-              <button type="submit" disabled={formLoading} className="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition">
+              <button type="submit" disabled={formLoading || !formSubjectId} className="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
                 {formLoading ? 'Saving...' : (editingId ? 'Update Assignment' : 'Create Assignment')}
               </button>
             </form>
           );
-        case 'quiz':
+        }
+        case 'quiz': {
+          const chapterOptions = formSubjectId ? (chapters[formSubjectId] || []) : Object.values(chapters).flat();
           return (
             <form onSubmit={handleQuizSubmit} className="space-y-4">
+              <select value={formSubjectId} onChange={(e) => setFormSubjectId(e.target.value)} className="w-full border rounded-xl px-4 py-2" required>
+                <option value="">Select Subject</option>
+                {subjects.map(s => <option key={s._id} value={s._id}>{s.title}</option>)}
+              </select>
               <input type="text" name="title" placeholder="Quiz Title" defaultValue={modalData.title || ''} className="w-full border rounded-xl px-4 py-2" required />
               <textarea name="description" placeholder="Description" defaultValue={modalData.description || ''} className="w-full border rounded-xl px-4 py-2" rows="3" />
               <input type="number" name="timeLimit" placeholder="Time Limit (minutes)" defaultValue={modalData.timeLimit || 30} className="w-full border rounded-xl px-4 py-2" />
               <input type="date" name="deadline" defaultValue={modalData.deadline ? modalData.deadline.split('T')[0] : ''} className="w-full border rounded-xl px-4 py-2" required />
-              <select name="chapterId" className="w-full border rounded-xl px-4 py-2" required>
+              <select name="chapterId" className="w-full border rounded-xl px-4 py-2" required value={modalData.chapterId || ''}>
                 <option value="">Select Chapter</option>
-                {Object.values(chapters).flat().map(ch => <option key={ch._id} value={ch._id}>{ch.title}</option>)}
+                {chapterOptions.map(ch => <option key={ch._id} value={ch._id}>{ch.title}</option>)}
               </select>
               <textarea name="questions" placeholder='Questions as JSON: [{"question":"...","options":["a","b","c"],"correctAnswer":0}]' defaultValue={JSON.stringify(modalData.questions || [])} className="w-full border rounded-xl px-4 py-2" rows="4" />
-              <button type="submit" disabled={formLoading} className="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition">
+              <button type="submit" disabled={formLoading || !formSubjectId} className="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
                 {formLoading ? 'Saving...' : (editingId ? 'Update Quiz' : 'Create Quiz')}
               </button>
             </form>
           );
+        }
         case 'attendance':
           return (
             <form onSubmit={handleAttendanceSubmit} className="space-y-4">
-              <input type="text" name="studentId" placeholder="Student ID" className="w-full border rounded-xl px-4 py-2" required />
-              <select name="subjectId" className="w-full border rounded-xl px-4 py-2" required>
+              <select
+                name="subjectId"
+                className="w-full border rounded-xl px-4 py-2"
+                value={attendanceSelection.subjectId}
+                onChange={(e) => {
+                  const subjectId = e.target.value;
+                  setAttendanceSelection(prev => ({ ...prev, subjectId, date: prev.date || new Date().toISOString().split('T')[0] }));
+                  loadStudentsForAttendance(subjectId);
+                }}
+                required
+              >
                 <option value="">Select Subject</option>
                 {subjects.map(s => <option key={s._id} value={s._id}>{s.title}</option>)}
               </select>
-              <select name="status" className="w-full border rounded-xl px-4 py-2" required>
-                <option value="Present">Present</option>
-                <option value="Absent">Absent</option>
-                <option value="Late">Late</option>
-              </select>
-              <input type="date" name="date" className="w-full border rounded-xl px-4 py-2" />
-              <button type="submit" disabled={formLoading} className="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition">
-                {formLoading ? 'Saving...' : 'Mark Attendance'}
+              <input
+                type="date"
+                name="date"
+                value={attendanceSelection.date}
+                onChange={(e) => setAttendanceSelection(prev => ({ ...prev, date: e.target.value }))}
+                className="w-full border rounded-xl px-4 py-2"
+              />
+              {attendanceStudents.length > 0 ? (
+                <div className="space-y-3 max-h-80 overflow-y-auto border rounded-xl p-3">
+                  {attendanceStudents.map(student => (
+                    <div key={student._id} className="flex items-center justify-between gap-3 border-b last:border-b-0 pb-2 last:pb-0">
+                      <div>
+                        <p className="font-medium text-gray-800">{student.fullName}</p>
+                        <p className="text-xs text-gray-500">{student.rollNumber || 'Roll N/A'} · {student.className || 'Class N/A'}</p>
+                      </div>
+                      <select
+                        value={attendanceSelection.students[student._id] || 'Present'}
+                        onChange={(e) => setAttendanceSelection(prev => ({
+                          ...prev,
+                          students: { ...prev.students, [student._id]: e.target.value }
+                        }))}
+                        className="border rounded-lg px-2 py-1 text-sm"
+                      >
+                        <option value="Present">Present</option>
+                        <option value="Absent">Absent</option>
+                        <option value="Late">Late</option>
+                      </select>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-gray-200 p-3 text-sm text-gray-500">
+                  {attendanceSelection.subjectId ? 'Loading students...' : 'Select a subject to load students'}
+                </div>
+              )}
+              <button type="submit" disabled={formLoading || !attendanceSelection.subjectId} className="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                {formLoading ? 'Saving...' : 'Save Attendance'}
               </button>
             </form>
           );
         case 'announcement':
           return (
             <form onSubmit={handleAnnouncementSubmit} className="space-y-4">
-              <input type="text" name="title" placeholder="Announcement Title" defaultValue={modalData.title || ''} className="w-full border rounded-xl px-4 py-2" required />
-              <textarea name="content" placeholder="Announcement Content" defaultValue={modalData.content || ''} className="w-full border rounded-xl px-4 py-2" rows="4" required />
-              <select name="subjectId" className="w-full border rounded-xl px-4 py-2" required defaultValue={modalData.subjectId || ''}>
+              <select name="subjectId" className="w-full border rounded-xl px-4 py-2" required defaultValue={modalData.subjectId || formSubjectId || ''} onChange={(e) => setFormSubjectId(e.target.value)}>
                 <option value="">Select Subject</option>
                 {subjects.map(s => <option key={s._id} value={s._id}>{s.title}</option>)}
               </select>
+              <input type="text" name="title" placeholder="Announcement Title" defaultValue={modalData.title || ''} className="w-full border rounded-xl px-4 py-2" required />
+              <textarea name="content" placeholder="Announcement Content" defaultValue={modalData.content || ''} className="w-full border rounded-xl px-4 py-2" rows="4" required />
               <select name="priority" className="w-full border rounded-xl px-4 py-2" defaultValue={modalData.priority || 'Medium'}>
                 <option value="Low">Low Priority</option>
                 <option value="Medium">Medium Priority</option>
                 <option value="High">High Priority</option>
               </select>
-              <button type="submit" disabled={formLoading} className="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition">
+              <button type="submit" disabled={formLoading || !formSubjectId} className="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
                 {formLoading ? 'Saving...' : (editingId ? 'Update Announcement' : 'Create Announcement')}
               </button>
             </form>
@@ -1288,7 +1419,56 @@ const TeacherDashboard = () => {
         {activeTab === 'subjects' && <SubjectsView />}
         {activeTab === 'assignments' && <AssignmentsView />}
         {activeTab === 'quizzes' && <QuizzesView />}
-        {activeTab === 'attendance' && <SimpleView title="Attendance" description="Manage attendance records" addButton="Mark Attendance" addAction={() => openModal('attendance')} />}
+        {activeTab === 'attendance' && (
+          <div>
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Attendance</h1>
+                <p className="text-gray-500 mt-1">Record and review daily attendance for your classes</p>
+              </div>
+              <button
+                className="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition flex items-center gap-2"
+                onClick={() => openModal('attendance')}
+              >
+                <PlusIcon className="h-5 w-5" /> Mark Attendance
+              </button>
+            </div>
+            {attendanceData.length === 0 ? (
+              <div className="bg-white rounded-2xl p-8 text-center border border-gray-100">
+                <p className="text-gray-400">No attendance records yet. Mark class attendance to get started.</p>
+              </div>
+            ) : (
+              <div className="bg-white rounded-2xl border border-gray-100 p-4 overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-gray-600 border-b">
+                      <th className="py-3 px-2">Student</th>
+                      <th className="py-3 px-2">Subject</th>
+                      <th className="py-3 px-2">Date</th>
+                      <th className="py-3 px-2">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {attendanceData.map(record => (
+                      <tr key={record._id} className="border-b last:border-b-0">
+                        <td className="py-3 px-2">{record.studentId?.fullName || 'Student'}</td>
+                        <td className="py-3 px-2">{record.subjectId?.title || 'Subject'}</td>
+                        <td className="py-3 px-2">{new Date(record.date).toLocaleDateString()}</td>
+                        <td className="py-3 px-2">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            record.status === 'Present' ? 'bg-green-100 text-green-700' :
+                            record.status === 'Absent' ? 'bg-red-100 text-red-700' :
+                            'bg-yellow-100 text-yellow-700'}
+                          `}>{record.status}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
         {activeTab === 'announcements' && <AnnouncementsView />}
         <Modal />
       </main>

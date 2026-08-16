@@ -35,6 +35,10 @@ export const teacherApi = {
     fetch(`${API_URL}/api/teacher/subjects`, { headers: getHeaders() })
       .then(handleResponse),
 
+  getStudentsForSubject: (subjectId) =>
+    fetch(`${API_URL}/api/teacher/students?subjectId=${subjectId}`, { headers: getHeaders() })
+      .then(handleResponse),
+
   createSubject: (data) =>
     fetch(`${API_URL}/api/teacher/subjects`, {
       method: 'POST',
