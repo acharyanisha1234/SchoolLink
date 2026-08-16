@@ -21,6 +21,7 @@ exports.createStudent = async (req, res) => {
       parentName,
       parentPhone,
       parentEmail,
+      studentId,
     } = req.body;
 
     // Validate required fields
@@ -81,6 +82,7 @@ exports.createStudent = async (req, res) => {
     // Create student
     const student = new Student({
       userId: user._id,
+      studentId: studentId || undefined,
       fullName,
       email,
       rollNumber,
@@ -106,6 +108,7 @@ exports.createStudent = async (req, res) => {
       data: {
         student: {
           id: student._id,
+          studentId: student.studentId,
           fullName: student.fullName,
           email: student.email,
           rollNumber: student.rollNumber,

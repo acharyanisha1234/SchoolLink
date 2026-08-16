@@ -125,6 +125,15 @@ try {
   console.warn('Admin Subject routes not found:', err.message);
 }
 
+// Announcement routes
+try {
+  const adminAnnouncementRoutes = require('./src/routes/adminAnnouncementRoutes');
+  app.use('/api/announcements', adminAnnouncementRoutes);
+  console.log('Announcement routes loaded');
+} catch (err) {
+  console.warn('Announcement routes not found:', err.message);
+}
+
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,

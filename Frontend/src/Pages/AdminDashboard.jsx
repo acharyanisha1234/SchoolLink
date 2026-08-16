@@ -44,6 +44,8 @@ const Modal = ({
   announcementFormData,
   handleInputChange,
   loading,
+  teachersList,
+  isEditMode,
 }) => {
   if (!showAddModal) return null;
 
@@ -470,10 +472,13 @@ const Modal = ({
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select Teacher</option>
-                  {teachersList.length > 0 ? (
+                  {teachersList && teachersList.length > 0 ? (
                     teachersList.map((teacher) => (
-                      <option key={teacher._id} value={teacher._id}>
-                        {teacher.name} ({teacher.email})
+                      <option
+                        key={teacher._id}
+                        value={teacher.userId?._id || teacher.userId || teacher._id}
+                      >
+                        {teacher.name || teacher.fullName || teacher.userId?.fullName} ({teacher.email || teacher.userId?.email})
                       </option>
                     ))
                   ) : (
@@ -515,20 +520,36 @@ const Modal = ({
 
           {/* Announcement Form */}
           {modalType === 'announcement' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Content *
-              </label>
-              <textarea
-                rows="4"
-                name="announcementContent"
-                value={formData.announcementContent || ''}
-                onChange={handleInputChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Write announcement content..."
-              />
-            </div>
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Title *
+                </label>
+                <input
+                  type="text"
+                  name="title"
+                  value={formData.title || ''}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter announcement title"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Content *
+                </label>
+                <textarea
+                  rows="4"
+                  name="announcementContent"
+                  value={formData.announcementContent || ''}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Write announcement content..."
+                />
+              </div>
+            </>
           )}
 
           <button
@@ -613,9 +634,10 @@ const AdminDashboard = () => {
 });
 
   const [announcementFormData, setAnnouncementFormData] = useState({
+    title: '',
     announcementContent: ''
   });
-
+  const [announcementsList, setAnnouncementsList] = useState([]);
 
   const API_URL = 'http://localhost:5000/api';
 
@@ -638,6 +660,17 @@ const AdminDashboard = () => {
     setShowLogoutConfirm(false);
   };
 
+  // ============ TOKEN CHECK ============
+  // ✅ YEHA ADD GARNE - Existing useEffects ko mathi ya tala
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    console.log('Current token:', token);
+    
+    if (!token) {
+      navigate('/login');
+    }
+  }, [navigate]);
+  
   // Fetch students and teachers on component mount
   useEffect(() => {
     if (activeTab === 'students') {
@@ -652,9 +685,12 @@ const AdminDashboard = () => {
       fetchTeachers();
     }
     if (activeTab === 'subjects') {
-    fetchSubjects();
-    fetchTeachers(); 
-  }
+      fetchSubjects();
+      fetchTeachers(); 
+    }
+    if (activeTab === 'announcements') {
+      fetchAnnouncements();
+    }
   }, [activeTab]);
 
   // ============ STUDENT API CALLS ============
@@ -1056,26 +1092,100 @@ const handleDeleteSubject = async (subjectId) => {
   setEditingSubjectId(null);
 };
 
+  // ============ ANNOUNCEMENT API CALLS ============
+  const fetchAnnouncements = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/announcements`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setAnnouncementsList(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching announcements:', error);
+    }
+  };
+
   // ============ HANDLE ADD ANNOUNCEMENT ============
     const handleAddAnnouncement = async (e) => {
     e.preventDefault();
     setLoading(true);
     
     try {
-      if (!announcementFormData.announcementContent) {
-        alert('Please enter announcement content');
+      const token = localStorage.getItem('token');
+
+      if (!announcementFormData.title || !announcementFormData.announcementContent) {
+        alert('Please enter both title and content');
         setLoading(false);
         return;
       }
 
-      alert('Announcement feature coming soon!');
-      closeModal();
-      setAnnouncementFormData({ announcementContent: '' });
+      const response = await fetch(`${API_URL}/announcements`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title: announcementFormData.title,
+          message: announcementFormData.announcementContent,
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert('Announcement posted successfully!');
+        closeModal();
+        setAnnouncementFormData({ title: '', announcementContent: '' });
+        fetchAnnouncements();
+      } else {
+        alert(data.message || 'Error posting announcement');
+      }
     } catch (error) {
       console.error('Error:', error);
       alert('Error posting announcement');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEditAnnouncement = (announcement) => {
+    setAnnouncementFormData({
+      title: announcement.title || '',
+      announcementContent: announcement.message || '',
+    });
+    setModalType('announcement');
+    setShowAddModal(true);
+  };
+
+  const handleDeleteAnnouncement = async (announcementId) => {
+    if (!window.confirm('Are you sure you want to delete this announcement?')) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/announcements/${announcementId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert('Announcement deleted successfully');
+        fetchAnnouncements();
+      } else {
+        alert(data.message || 'Error deleting announcement');
+      }
+    } catch (error) {
+      console.error('Error deleting announcement:', error);
+      alert('Error deleting announcement');
     }
   };
 
@@ -1545,28 +1655,36 @@ const handleDeleteSubject = async (subjectId) => {
       </div>
 
       <div className="space-y-4">
-        {announcements.map((announcement) => (
-          <div key={announcement.id} className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow">
+        {announcementsList.length > 0 ? announcementsList.map((announcement) => (
+          <div key={announcement._id} className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow">
             <div className="flex justify-between items-start">
               <div className="flex-1">
                 <div className="flex items-center space-x-3">
                   <MegaphoneIcon className="h-5 w-5 text-blue-600" />
                   <h3 className="text-lg font-semibold text-gray-900">{announcement.title}</h3>
                 </div>
-                <p className="mt-2 text-sm text-gray-600">{announcement.content}</p>
-                <p className="mt-2 text-xs text-gray-500">Posted on: {announcement.date}</p>
+                <p className="mt-2 text-sm text-gray-600">{announcement.message}</p>
+                <p className="mt-2 text-xs text-gray-500">Posted on: {new Date(announcement.createdAt).toLocaleDateString()}</p>
               </div>
               <div className="flex space-x-2 ml-4">
-                <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                <button
+                  onClick={() => handleEditAnnouncement(announcement)}
+                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                >
                   <PencilIcon className="h-5 w-5" />
                 </button>
-                <button className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                <button
+                  onClick={() => handleDeleteAnnouncement(announcement._id)}
+                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                >
                   <TrashIcon className="h-5 w-5" />
                 </button>
               </div>
             </div>
           </div>
-        ))}
+        )) : (
+          <div className="bg-white rounded-xl shadow-sm p-6 text-gray-500">No announcements found.</div>
+        )}
       </div>
     </div>
   );
@@ -1632,6 +1750,8 @@ const handleDeleteSubject = async (subjectId) => {
       announcementFormData={announcementFormData}
       handleInputChange={handleInputChange}
       loading={loading}
+      teachersList={teachersList} 
+      isEditMode={isEditMode}
     />
   </div>
 );

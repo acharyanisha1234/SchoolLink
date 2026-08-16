@@ -1,10 +1,18 @@
 const mongoose = require('mongoose');
 
+const generateStudentId = () => `STU-${Date.now().toString().slice(-8)}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+
 const studentSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
+  },
+  studentId: {
+    type: String,
+    unique: true,
+    sparse: true,
+    default: generateStudentId,
   },
   fullName: {
     type: String,
@@ -66,6 +74,16 @@ const studentSchema = new mongoose.Schema({
   },
 }, {
   timestamps: true,
+});
+
+studentSchema.pre('save', async function() {
+  if (!this.studentId) {
+    let candidate = generateStudentId();
+    while (await mongoose.models.Student.exists({ studentId: candidate })) {
+      candidate = generateStudentId();
+    }
+    this.studentId = candidate;
+  }
 });
 
 // Compound index for unique roll number

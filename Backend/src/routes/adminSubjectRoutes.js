@@ -13,6 +13,8 @@ router.use(authorize('ADMIN'));
 // ============================================
 router.get('/', async (req, res) => {
   try {
+     console.log('Admin user:', req.user); // Debug log
+
     const subjects = await Subject.find()
       .populate('teacherId', 'name email')
       .populate('createdBy', 'name email')
@@ -31,6 +33,8 @@ router.get('/', async (req, res) => {
     });
   }
 });
+
+
 
 // ============================================
 // GET SINGLE SUBJECT
@@ -101,6 +105,20 @@ router.post('/', async (req, res) => {
       }
     }
     
+    // Accept either the linked User id or the Teacher profile id; this keeps the
+    // existing dropdown values working without changing the admin UI.
+    let resolvedTeacherId = teacherId;
+    let teacherUser = await User.findById(teacherId);
+
+    if (!teacherUser) {
+      const teacherProfile = await require('../models/Teacher').findById(teacherId);
+      if (teacherProfile && teacherProfile.userId) {
+        resolvedTeacherId = teacherProfile.userId;
+        teacherUser = await User.findById(resolvedTeacherId);
+      }
+    }
+
+    if (!teacherUser || teacherUser.role !== 'teacher') {
     // Check if teacher exists and is a teacher
     const teacher = await User.findById(teacherId);
     if (!teacher || String(teacher.role).toUpperCase() !== 'TEACHER') {
@@ -113,7 +131,7 @@ router.post('/', async (req, res) => {
     const subject = new Subject({
       title,
       description: description || '',
-      teacherId,
+      teacherId: resolvedTeacherId,
       code: code || null,
       class: className,
       status: status || 'Active',
@@ -175,6 +193,18 @@ router.put('/:id', async (req, res) => {
     
     // Check if teacher exists (if teacherId is being updated)
     if (teacherId && teacherId !== subject.teacherId.toString()) {
+      let resolvedTeacherId = teacherId;
+      let teacherUser = await User.findById(teacherId);
+
+      if (!teacherUser) {
+        const teacherProfile = await require('../models/Teacher').findById(teacherId);
+        if (teacherProfile && teacherProfile.userId) {
+          resolvedTeacherId = teacherProfile.userId;
+          teacherUser = await User.findById(resolvedTeacherId);
+        }
+      }
+
+      if (!teacherUser || teacherUser.role !== 'teacher') {
       const teacher = await User.findById(teacherId);
       if (!teacher || String(teacher.role).toUpperCase() !== 'TEACHER') {
         return res.status(400).json({
@@ -182,6 +212,7 @@ router.put('/:id', async (req, res) => {
           message: 'Invalid teacher selected'
         });
       }
+      teacherId = resolvedTeacherId;
     }
     
     // Update fields
