@@ -15,8 +15,7 @@ const getHeaders = () => {
 const handleResponse = async (response) => {
   const data = await response.json();
   if (!response.ok) {
-    // If unauthorized, clear localStorage and redirect to login
-    if (response.status === 401 || response.status === 403) {
+    if (response.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/';
@@ -39,52 +38,8 @@ export const teacherApi = {
     fetch(`${API_URL}/api/teacher/students?subjectId=${subjectId}`, { headers: getHeaders() })
       .then(handleResponse),
 
-  createSubject: (data) =>
-    fetch(`${API_URL}/api/teacher/subjects`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data),
-    }).then(handleResponse),
-
-  updateSubject: (id, data) =>
-    fetch(`${API_URL}/api/teacher/subjects/${id}`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify(data),
-    }).then(handleResponse),
-
-  deleteSubject: (id) =>
-    fetch(`${API_URL}/api/teacher/subjects/${id}`, {
-      method: 'DELETE',
-      headers: getHeaders(),
-    }).then(handleResponse),
-
-  getChapters: (subjectId) =>
-    fetch(`${API_URL}/api/teacher/chapters/${subjectId}`, { headers: getHeaders() })
-      .then(handleResponse),
-
-  createChapter: (data) =>
-    fetch(`${API_URL}/api/teacher/chapters`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data),
-    }).then(handleResponse),
-
-  updateChapter: (id, data) =>
-    fetch(`${API_URL}/api/teacher/chapters/${id}`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify(data),
-    }).then(handleResponse),
-
-  deleteChapter: (id) =>
-    fetch(`${API_URL}/api/teacher/chapters/${id}`, {
-      method: 'DELETE',
-      headers: getHeaders(),
-    }).then(handleResponse),
-
-  getMaterials: (chapterId) =>
-    fetch(`${API_URL}/api/teacher/materials/${chapterId}`, { headers: getHeaders() })
+  getMaterials: (subjectId) =>
+    fetch(`${API_URL}/api/teacher/materials/${subjectId}`, { headers: getHeaders() })
       .then(handleResponse),
 
   createMaterial: (formData) => {

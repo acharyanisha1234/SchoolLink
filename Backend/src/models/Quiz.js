@@ -31,10 +31,16 @@ const quizSchema = new mongoose.Schema({
     correctAnswer: { type: Number, required: true },     // Index (0‑based) of the correct option
   }],
 
-  // Reference to the chapter this quiz belongs to
+  // Reference to the chapter this quiz belongs to (optional)
   chapterId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Chapter',
+    required: false,
+  },
+  // Reference to the subject this quiz belongs to
+  subjectId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Subject',
     required: true,
   },
 

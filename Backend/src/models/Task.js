@@ -25,6 +25,11 @@ const assignmentSchema = new mongoose.Schema({
   chapterId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Chapter',
+    required: false,
+  },
+  subjectId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Subject',
     required: true,
   },
   teacherId: {

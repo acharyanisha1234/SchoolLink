@@ -3,24 +3,16 @@ const router = express.Router();
 const teacherController = require('../controllers/teacherController');
 const { protect, authorize } = require('../middleware/auth');
 
-// ---- Protect all teacher routes ----
+// Protect all teacher routes
 router.use(protect);
 router.use(authorize('TEACHER'));
 
-// ---- Your existing routes (unchanged) ----
+// Teacher-only subject access: Admin assigns subjects to teachers.
 router.get('/subjects', teacherController.getSubjects);
 router.get('/subjects/:id', teacherController.getSubject);
 router.get('/students', teacherController.getStudentsForSubject);
-router.post('/subjects', teacherController.createSubject);
-router.put('/subjects/:id', teacherController.updateSubject);
-router.delete('/subjects/:id', teacherController.deleteSubject);
 
-router.get('/chapters/:subjectId', teacherController.getChapters);
-router.post('/chapters', teacherController.createChapter);
-router.put('/chapters/:id', teacherController.updateChapter);
-router.delete('/chapters/:id', teacherController.deleteChapter);
-
-router.get('/materials/:chapterId', teacherController.getMaterials);
+router.get('/materials/:subjectId', teacherController.getMaterials);
 router.post('/materials', (req, res, next) => {
   req.upload(req, res, (err) => {
     if (err) {

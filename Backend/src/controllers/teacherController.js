@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const Subject = require('../models/Subject');
-const Chapter = require('../models/Chapter');
 const Material = require('../models/Material');
 const Assignment = require('../models/Assignment');
 const Quiz = require('../models/Quiz');
@@ -59,131 +58,35 @@ exports.getSubject = async (req, res) => {
 };
 
 exports.createSubject = async (req, res) => {
-  try {
-    console.log('Create Subject Request Body:', req.body);
-    console.log('Authenticated User:', req.user);
-
-    const { title, description } = req.body;
-    const teacherId = req.user._id;
-
-    const subject = await Subject.create({
-      title,
-      description,
-      teacherId,
-      createdBy: teacherId,
-      createdByRole: 'teacher',
-    });
-
-    res.status(201).json({ success: true, message: 'Subject created successfully', data: subject });
-  } catch (error) {
-    console.error('Teacher Module Error:', error);
-    return res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
+  return res.status(403).json({
+    success: false,
+    message: 'Teachers cannot create subjects. Please contact the admin to assign a subject.'
+  });
 };
 
 exports.updateSubject = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { title, description } = req.body;
-    const subject = await Subject.findOneAndUpdate(
-      { _id: id, teacherId: req.user._id },
-      { title, description },
-      { new: true, runValidators: true }
-    );
-    if (!subject) return res.status(404).json({ success: false, message: 'Subject not found' });
-    res.status(200).json({ success: true, message: 'Subject updated successfully', data: subject });
-  } catch (error) {
-    console.error('Teacher Module Error:', error);
-    res.status(500).json({ success: false, message: 'Error updating subject', error: error.message });
-  }
+  return res.status(403).json({
+    success: false,
+    message: 'Teachers cannot edit subjects. Please contact the admin for subject updates.'
+  });
 };
 
 exports.deleteSubject = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const subject = await Subject.findOneAndDelete({ _id: id, teacherId: req.user._id });
-    if (!subject) return res.status(404).json({ success: false, message: 'Subject not found' });
-    res.status(200).json({ success: true, message: 'Subject deleted successfully' });
-  } catch (error) {
-    console.error('Teacher Module Error:', error);
-    res.status(500).json({ success: false, message: 'Error deleting subject', error: error.message });
-  }
-};
-
-//  CHAPTER CRUD
-
-exports.getChapters = async (req, res) => {
-  try {
-    const { subjectId } = req.params;
-    const chapters = await Chapter.find({ subjectId }).sort('order');
-    res.status(200).json({ success: true, data: chapters });
-  } catch (error) {
-    console.error('Teacher Module Error:', error);
-    res.status(500).json({ success: false, message: 'Error fetching chapters', error: error.message });
-  }
-};
-
-exports.createChapter = async (req, res) => {
-  try {
-    const { title, content, order, subjectId } = req.body;
-    const teacherId = req.user._id;
-
-    if (!subjectId || !mongoose.Types.ObjectId.isValid(subjectId)) {
-      return res.status(400).json({ success: false, message: 'Please select a valid subject before creating a chapter.' });
-    }
-
-    const subject = await Subject.findOne({ _id: subjectId, teacherId });
-    if (!subject) return res.status(404).json({ success: false, message: 'Subject not found or unauthorized' });
-
-    const chapter = await Chapter.create({ title, content, order, subjectId });
-    res.status(201).json({ success: true, message: 'Chapter created successfully', data: chapter });
-  } catch (error) {
-    console.error('Teacher Module Error:', error);
-    res.status(500).json({ success: false, message: 'Error creating chapter', error: error.message });
-  }
-};
-
-exports.updateChapter = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { title, content, order } = req.body;
-    const chapter = await Chapter.findById(id).populate('subjectId');
-    if (!chapter) return res.status(404).json({ success: false, message: 'Chapter not found' });
-    if (chapter.subjectId.teacherId.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ success: false, message: 'Unauthorized' });
-    }
-    const updated = await Chapter.findByIdAndUpdate(id, { title, content, order }, { new: true, runValidators: true });
-    res.status(200).json({ success: true, message: 'Chapter updated successfully', data: updated });
-  } catch (error) {
-    console.error('Teacher Module Error:', error);
-    res.status(500).json({ success: false, message: 'Error updating chapter', error: error.message });
-  }
-};
-
-exports.deleteChapter = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const chapter = await Chapter.findById(id).populate('subjectId');
-    if (!chapter) return res.status(404).json({ success: false, message: 'Chapter not found' });
-    if (chapter.subjectId.teacherId.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ success: false, message: 'Unauthorized' });
-    }
-    await Chapter.findByIdAndDelete(id);
-    res.status(200).json({ success: true, message: 'Chapter deleted successfully' });
-  } catch (error) {
-    console.error('Teacher Module Error:', error);
-    res.status(500).json({ success: false, message: 'Error deleting chapter', error: error.message });
-  }
+  return res.status(403).json({
+    success: false,
+    message: 'Teachers cannot delete subjects. Please contact the admin for subject removal.'
+  });
 };
 
 //  MATERIAL CRUD
 exports.getMaterials = async (req, res) => {
   try {
-    const { chapterId } = req.params;
-    const materials = await Material.find({ chapterId });
+    const { subjectId } = req.params;
+    const subject = await Subject.findOne({ _id: subjectId, teacherId: req.user._id });
+    if (!subject) {
+      return res.status(403).json({ success: false, message: 'Unauthorized subject access' });
+    }
+    const materials = await Material.find({ subjectId });
     res.status(200).json({ success: true, data: materials });
   } catch (error) {
     console.error('Teacher Module Error:', error);
@@ -193,15 +96,26 @@ exports.getMaterials = async (req, res) => {
 
 exports.createMaterial = async (req, res) => {
   try {
-    const { title, description, type, chapterId } = req.body;
+    const { title, description, type, subjectId } = req.body;
     const teacherId = req.user._id;
-    const fileUrl = req.file ? `/uploads/${req.file.filename}` : '';
-    const chapter = await Chapter.findById(chapterId).populate('subjectId');
-    if (!chapter) return res.status(404).json({ success: false, message: 'Chapter not found' });
-    if (chapter.subjectId.teacherId.toString() !== teacherId) {
-      return res.status(403).json({ success: false, message: 'Unauthorized' });
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'File is required' });
     }
-    const material = await Material.create({ title, description, fileUrl, type, chapterId, teacherId });
+
+    const fileUrl = `/uploads/${req.file.filename}`;
+    
+    const subject = await Subject.findOne({ _id: subjectId, teacherId });
+    if (!subject) return res.status(404).json({ success: false, message: 'Subject not found or unauthorized' });
+    
+    const material = await Material.create({
+      title,
+      description,
+      fileUrl,
+      type: type || 'PDF',
+      subjectId,
+      teacherId
+    });
     res.status(201).json({ success: true, message: 'Material uploaded successfully', data: material });
   } catch (error) {
     console.error('Teacher Module Error:', error);
@@ -225,7 +139,7 @@ exports.deleteMaterial = async (req, res) => {
 //  ASSIGNMENT CRUD
 exports.getAssignments = async (req, res) => {
   try {
-    const assignments = await Assignment.find({ teacherId: req.user._id }).populate('chapterId', 'title');
+    const assignments = await Assignment.find({ teacherId: req.user._id }).populate('subjectId', 'title');
     res.status(200).json({ success: true, data: assignments });
   } catch (error) {
     console.error('Teacher Module Error:', error);
@@ -235,16 +149,18 @@ exports.getAssignments = async (req, res) => {
 
 exports.createAssignment = async (req, res) => {
   try {
-    const { title, description, type, deadline, chapterId, referenceFiles } = req.body;
+    const { title, description, type, deadline, subjectId, referenceFiles } = req.body;
     const teacherId = req.user._id;
-    const chapter = await Chapter.findById(chapterId).populate('subjectId');
-    if (!chapter) return res.status(404).json({ success: false, message: 'Chapter not found' });
-    if (chapter.subjectId.teacherId.toString() !== teacherId) {
-      return res.status(403).json({ success: false, message: 'Unauthorized' });
+
+    if (!title || !description || !deadline || !subjectId) {
+      return res.status(400).json({ success: false, message: 'Title, description, deadline, and subject are required' });
     }
+
+    const subject = await Subject.findOne({ _id: subjectId, teacherId });
+    if (!subject) return res.status(404).json({ success: false, message: 'Subject not found or unauthorized' });
     const assignment = await Assignment.create({
       title, description, type: type || 'Assignment', deadline,
-      referenceFiles: referenceFiles || [], chapterId, teacherId
+      referenceFiles: referenceFiles || [], subjectId, teacherId
     });
     res.status(201).json({ success: true, message: 'Assignment created successfully', data: assignment });
   } catch (error) {
@@ -256,10 +172,13 @@ exports.createAssignment = async (req, res) => {
 exports.updateAssignment = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, type, deadline, referenceFiles } = req.body;
+    const { title, description, type, deadline, referenceFiles, subjectId } = req.body;
+    const updateData = { title, description, type, deadline, referenceFiles };
+    if (subjectId) updateData.subjectId = subjectId;
+    
     const assignment = await Assignment.findOneAndUpdate(
       { _id: id, teacherId: req.user._id },
-      { title, description, type, deadline, referenceFiles },
+      updateData,
       { new: true, runValidators: true }
     );
     if (!assignment) return res.status(404).json({ success: false, message: 'Assignment not found' });
@@ -358,9 +277,16 @@ exports.markAttendance = async (req, res) => {
 exports.getAttendanceStats = async (req, res) => {
   try {
     const { subjectId } = req.params;
-    const present = await Attendance.countDocuments({ subjectId, status: 'Present' });
-    const absent = await Attendance.countDocuments({ subjectId, status: 'Absent' });
-    const late = await Attendance.countDocuments({ subjectId, status: 'Late' });
+    const teacherId = req.user._id;
+
+    const subject = await Subject.findOne({ _id: subjectId, teacherId });
+    if (!subject) {
+      return res.status(403).json({ success: false, message: 'Subject not found or unauthorized' });
+    }
+
+    const present = await Attendance.countDocuments({ subjectId, teacherId, status: 'Present' });
+    const absent = await Attendance.countDocuments({ subjectId, teacherId, status: 'Absent' });
+    const late = await Attendance.countDocuments({ subjectId, teacherId, status: 'Late' });
     const total = present + absent + late;
     res.status(200).json({
       success: true,
@@ -391,12 +317,12 @@ exports.getDashboardStats = async (req, res) => {
     const recentAssignments = await Assignment.find({ teacherId })
       .sort({ createdAt: -1 })
       .limit(5)
-      .populate('chapterId', 'title');
+      .populate('subjectId', 'title');
 
     const recentQuizzes = await Quiz.find({ teacherId })
       .sort({ createdAt: -1 })
       .limit(5)
-      .populate('chapterId', 'title');
+      .populate('subjectId', 'title');
 
     const today = new Date();
     today.setHours(0,0,0,0);
@@ -427,7 +353,7 @@ exports.getDashboardStats = async (req, res) => {
 //  QUIZ CRUD 
 exports.getQuizzes = async (req, res) => {
   try {
-    const quizzes = await Quiz.find({ teacherId: req.user._id }).populate('chapterId', 'title');
+    const quizzes = await Quiz.find({ teacherId: req.user._id }).populate('subjectId', 'title');
     res.status(200).json({ success: true, data: quizzes });
   } catch (error) {
     console.error('Teacher Module Error:', error);
@@ -437,16 +363,18 @@ exports.getQuizzes = async (req, res) => {
 
 exports.createQuiz = async (req, res) => {
   try {
-    const { title, description, timeLimit, deadline, questions, chapterId } = req.body;
+    const { title, description, timeLimit, deadline, questions, subjectId } = req.body;
     const teacherId = req.user._id;
-    const chapter = await Chapter.findById(chapterId).populate('subjectId');
-    if (!chapter) return res.status(404).json({ success: false, message: 'Chapter not found' });
-    if (chapter.subjectId.teacherId.toString() !== teacherId) {
-      return res.status(403).json({ success: false, message: 'Unauthorized' });
+
+    if (!title || !deadline || !subjectId) {
+      return res.status(400).json({ success: false, message: 'Title, deadline, and subject are required' });
     }
+
+    const subject = await Subject.findOne({ _id: subjectId, teacherId });
+    if (!subject) return res.status(404).json({ success: false, message: 'Subject not found or unauthorized' });
     const quiz = await Quiz.create({
       title, description, timeLimit: timeLimit || 30, deadline,
-      questions, chapterId, teacherId, published: false
+      questions: questions || [], subjectId, teacherId, published: false
     });
     res.status(201).json({ success: true, message: 'Quiz created', data: quiz });
   } catch (error) {
@@ -474,10 +402,13 @@ exports.publishQuiz = async (req, res) => {
 exports.updateQuiz = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, timeLimit, deadline, questions } = req.body;
+    const { title, description, timeLimit, deadline, questions, subjectId } = req.body;
+    const updateData = { title, description, timeLimit, deadline, questions };
+    if (subjectId) updateData.subjectId = subjectId;
+    
     const quiz = await Quiz.findOneAndUpdate(
       { _id: id, teacherId: req.user._id },
-      { title, description, timeLimit, deadline, questions },
+      updateData,
       { new: true, runValidators: true }
     );
     if (!quiz) return res.status(404).json({ success: false, message: 'Quiz not found' });
@@ -520,10 +451,18 @@ exports.createAnnouncement = async (req, res) => {
   try {
     const { title, content, subjectId, priority, published } = req.body;
     const teacherId = req.user._id;
-    
+
+    if (!title || !content || !subjectId) {
+      return res.status(400).json({ success: false, message: 'Title, content, and subject are required' });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(subjectId)) {
+      return res.status(400).json({ success: false, message: 'Please select a valid subject.' });
+    }
+
     const subject = await Subject.findOne({ _id: subjectId, teacherId });
     if (!subject) return res.status(404).json({ success: false, message: 'Subject not found or unauthorized' });
-    
+
     const announcement = await Announcement.create({
       title,
       content,
@@ -532,9 +471,10 @@ exports.createAnnouncement = async (req, res) => {
       priority: priority || 'Medium',
       published: published !== undefined ? published : true,
     });
-    
+
     res.status(201).json({ success: true, message: 'Announcement created successfully', data: announcement });
-  } catch (error) {    console.error('Teacher Module Error:', error);    console.error('Teacher Module Error:', error);
+  } catch (error) {
+    console.error('Teacher Module Error:', error);
     res.status(500).json({ success: false, message: 'Error creating announcement', error: error.message });
   }
 };
