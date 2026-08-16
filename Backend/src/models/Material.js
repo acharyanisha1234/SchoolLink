@@ -22,6 +22,12 @@ const materialSchema = new mongoose.Schema({
   chapterId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Chapter',
+    required: false
+  },
+  // Subject where this material belongs
+  subjectId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Subject',
     required: true
   },
 

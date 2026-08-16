@@ -1,11 +1,12 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import LoginPage from "./pages/auth/LoginPage";
-import RegisterPage from "./pages/auth/RegisterPage";
+import LoginPage from "./Pages/auth/LoginPage";
+import RegisterPage from "./Pages/auth/RegisterPage";
 import AdminDashboard from "./Pages/AdminDashboard";
 import ResetPasswordPage from "./Pages/auth/ResetPasswordPage";
 import TeacherDashboard from "./Pages/TeacherDashboard";
 import ProtectedRoute from "./components/ProtectedRoute"; 
+
 
 function App() {
   return (

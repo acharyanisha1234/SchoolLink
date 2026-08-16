@@ -2,10 +2,10 @@ const mongoose = require('mongoose');
 
 // Attendance schema – tracks student attendance for each subject per day
 const attendanceSchema = new mongoose.Schema({
-  // Reference to the student (User with role 'student')
+  // Reference to the student
   studentId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    ref: 'Student',
     required: true,
   },
 
