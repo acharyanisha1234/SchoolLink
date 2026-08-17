@@ -15,7 +15,7 @@ const chapterSchema = new mongoose.Schema({
     default: '',
   },
 
-  // Order/index to sort chapters within a subject
+    // Order/index to sort chapters within a subject
   order: {
     type: Number,
     default: 0,
