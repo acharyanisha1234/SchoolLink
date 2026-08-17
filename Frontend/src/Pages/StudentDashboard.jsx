@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   UsersIcon,
@@ -18,6 +18,8 @@ import {
 } from '@heroicons/react/24/outline';
 import StudentSidebar from '../components/StudentSidebar';
 
+const API_URL = 'http://localhost:5000';
+
 // Stat Card Component
 const StatCard = ({ icon: Icon, label, value, color, bgColor }) => (
   <div className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow">
@@ -36,6 +38,33 @@ const StatCard = ({ icon: Icon, label, value, color, bgColor }) => (
 const StudentDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [announcements, setAnnouncements] = useState([]);
+
+  useEffect(() => {
+    if (activeTab === 'announcements') {
+      const fetchAnnouncements = async () => {
+        const token = localStorage.getItem('token');
+
+        try {
+          const response = await fetch(`${API_URL}/api/announcements`, {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          const data = await response.json();
+          if (data.success) {
+            setAnnouncements(data.data || []);
+          }
+        } catch (error) {
+          console.error('Error fetching announcements:', error);
+        }
+      };
+
+      fetchAnnouncements();
+    }
+  }, [activeTab]);
 
   // Mock data - replace with actual API data later
   const [studentData] = useState({
@@ -275,7 +304,36 @@ const StudentDashboard = () => {
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Announcements</h1>
             <p className="text-gray-600 mt-1">View school and class announcements</p>
-            {/* Add announcements content here */}
+
+            <div className="mt-6 space-y-4">
+              {announcements.length > 0 ? announcements.map((announcement) => (
+                <div key={announcement._id} className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <h2 className="text-xl font-semibold text-gray-900">{announcement.title}</h2>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Posted by: {announcement.createdBy?.fullName || announcement.createdByRole || 'School'}
+                      </p>
+                    </div>
+                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                      {announcement.createdByRole || 'ADMIN'}
+                    </span>
+                  </div>
+
+                  <p className="mt-4 text-sm text-gray-700 whitespace-pre-line">
+                    {announcement.message || announcement.content || 'No content available.'}
+                  </p>
+
+                  <p className="mt-4 text-xs text-gray-500">
+                    {announcement.createdAt ? new Date(announcement.createdAt).toLocaleString() : 'Recently'}
+                  </p>
+                </div>
+              )) : (
+                <div className="bg-white rounded-xl shadow-sm p-6 text-gray-500">
+                  No announcements available.
+                </div>
+              )}
+            </div>
           </div>
         );
       default:
