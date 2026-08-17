@@ -7,9 +7,8 @@ router.use(protect);
 
 router.get('/', announcementController.getAnnouncements);
 
-router.use(authorize('ADMIN'));
-router.post('/', announcementController.createAnnouncement);
-router.put('/:id', announcementController.updateAnnouncement);
-router.delete('/:id', announcementController.deleteAnnouncement);
+router.post('/', authorize('ADMIN', 'TEACHER'), announcementController.createAnnouncement);
+router.put('/:id', authorize('ADMIN', 'TEACHER'), announcementController.updateAnnouncement);
+router.delete('/:id', authorize('ADMIN', 'TEACHER'), announcementController.deleteAnnouncement);
 
 module.exports = router;

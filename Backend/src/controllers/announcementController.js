@@ -1,22 +1,36 @@
 const Announcement = require('../models/Announcement');
 
+const normalizeAnnouncementText = (reqBody = {}) => {
+  const text = typeof reqBody.message === 'string'
+    ? reqBody.message
+    : (typeof reqBody.content === 'string' ? reqBody.content : '');
+
+  return text.trim();
+};
+
 exports.createAnnouncement = async (req, res) => {
   try {
-    const { title, message } = req.body;
+    const { title } = req.body;
+    const content = normalizeAnnouncementText(req.body);
 
-    if (!title || !message) {
+    if (!title || !content) {
       return res.status(400).json({
         success: false,
         message: 'Title and message are required',
       });
     }
 
+    const creatorRole = String(req.user.role || 'ADMIN').toUpperCase();
+
     const announcement = await Announcement.create({
       title,
-      message,
+      message: content,
+      content,
       createdBy: req.user._id,
-      createdByRole: req.user.role,
+      createdByRole: creatorRole,
+      teacherId: creatorRole === 'TEACHER' ? req.user._id : undefined,
       isPublished: true,
+      published: true,
     });
 
     const populated = await Announcement.findById(announcement._id).populate('createdBy', 'fullName email role');
@@ -57,7 +71,8 @@ exports.getAnnouncements = async (req, res) => {
 
 exports.updateAnnouncement = async (req, res) => {
   try {
-    const { title, message } = req.body;
+    const { title } = req.body;
+    const message = normalizeAnnouncementText(req.body);
     const announcement = await Announcement.findById(req.params.id);
 
     if (!announcement) {
@@ -67,8 +82,18 @@ exports.updateAnnouncement = async (req, res) => {
       });
     }
 
+    if (req.user.role === 'TEACHER' && announcement.createdBy && announcement.createdBy.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'You are not allowed to edit this announcement',
+      });
+    }
+
     if (title !== undefined) announcement.title = title;
-    if (message !== undefined) announcement.message = message;
+    if (message) {
+      announcement.message = message;
+      announcement.content = message;
+    }
 
     await announcement.save();
 
@@ -96,6 +121,13 @@ exports.deleteAnnouncement = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Announcement not found',
+      });
+    }
+
+    if (req.user.role === 'TEACHER' && announcement.createdBy && announcement.createdBy.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'You are not allowed to delete this announcement',
       });
     }
 

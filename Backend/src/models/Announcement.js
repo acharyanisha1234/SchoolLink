@@ -7,18 +7,16 @@ const announcementSchema = new mongoose.Schema({
     trim: true,
   },
   message: {
+    type: String,
+    default: '',
+    trim: true,
+  },
   content: {
     type: String,
-    required: true,
+    default: '',
     trim: true,
   },
   createdBy: {
-  subjectId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Subject',
-    required: true,
-  },
-  teacherId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
@@ -28,13 +26,20 @@ const announcementSchema = new mongoose.Schema({
     enum: ['ADMIN', 'TEACHER', 'STUDENT'],
     default: 'ADMIN',
   },
+  subjectId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Subject',
+    default: null,
+  },
+  teacherId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null,
+  },
   isPublished: {
     type: Boolean,
     default: true,
   },
-}, {
-  timestamps: true,
-});
   priority: {
     type: String,
     enum: ['Low', 'Medium', 'High'],
@@ -44,6 +49,8 @@ const announcementSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
-}, { timestamps: true });
+}, {
+  timestamps: true,
+});
 
 module.exports = mongoose.model('Announcement', announcementSchema);
