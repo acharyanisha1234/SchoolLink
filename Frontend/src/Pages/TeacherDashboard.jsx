@@ -1,1492 +1,1069 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  HomeIcon, BookOpenIcon, UsersIcon, ClipboardDocumentListIcon,
-  DocumentTextIcon, ChartBarIcon, PlusIcon, PencilIcon, TrashIcon,
-  ChevronDownIcon, ChevronRightIcon, CalendarIcon,
-  ArrowPathIcon, SparklesIcon, ArrowTrendingUpIcon,
-  ArrowTrendingDownIcon, XMarkIcon, ClockIcon,
-  DocumentPlusIcon, CheckCircleIcon, Square3Stack3DIcon, BellIcon,
-  ArrowUpTrayIcon, QuestionMarkCircleIcon,
+  ArrowRightOnRectangleIcon,
+  UsersIcon,
+  AcademicCapIcon,
+  BookOpenIcon,
+  DocumentTextIcon,
+  ClipboardDocumentIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  MegaphoneIcon,
+  BellIcon,
+  UserPlusIcon,
+  PencilSquareIcon,
+  QuestionMarkCircleIcon,
+  UserGroupIcon,
+  ChartBarIcon,
+  PlusIcon,
+  TrashIcon,
+  PencilIcon,
+  XMarkIcon,
+  FolderIcon,
+  PaperClipIcon,
+  CalendarIcon,
+  EyeIcon,
+  ArrowDownTrayIcon,
+  ArrowUpTrayIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
 } from '@heroicons/react/24/outline';
-import { teacherApi } from '../api/teacherApi';
+import TeacherSidebar from './TeacherSidebar';
 
-const TeacherDashboard = () => {
-  const navigate = useNavigate();
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [expandedSubject, setExpandedSubject] = useState(null);
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [modalType, setModalType] = useState('');
-  const [modalData, setModalData] = useState({});
-  const [editingId, setEditingId] = useState(null);
-  const [file, setFile] = useState(null);
-  const [formLoading, setFormLoading] = useState(false);
-  const [toast, setToast] = useState({ message: '', type: '' });
-  const [formSubjectId, setFormSubjectId] = useState('');
-
-  // Data states
-  const [dashboardData, setDashboardData] = useState({});
-  const [subjects, setSubjects] = useState([]);
-  const [chapters, setChapters] = useState({});
-  const [assignments, setAssignments] = useState([]);
-  const [quizzes, setQuizzes] = useState([]);
-  const [attendanceData, setAttendanceData] = useState([]);
-  const [announcements, setAnnouncements] = useState([]);
-  const [materials, setMaterials] = useState({});
-  const [attendanceStudents, setAttendanceStudents] = useState([]);
-  const [attendanceSelection, setAttendanceSelection] = useState({ subjectId: '', date: new Date().toISOString().split('T')[0], students: {} });
-
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-
-  // Load user
-  useEffect(() => {
-    const userString = localStorage.getItem('user');
-    if (userString) {
-      try {
-        const parsed = JSON.parse(userString);
-        setUser(parsed);
-      } catch (e) {
-        console.error('Error parsing user:', e);
-      }
-    }
-    setLoading(false);
-  }, []);
-
-  // Redirect if not TEACHER
-  useEffect(() => {
-    if (!user) return;
-    if (String(user.role || '').toUpperCase() !== 'TEACHER') {
-      navigate('/');
-    }
-  }, [user, navigate]);
-
-  // Fetch data
-  useEffect(() => {
-    if (user && String(user.role || '').toUpperCase() === 'TEACHER') {
-      fetchDashboard();
-      fetchSubjects();
-      fetchAssignments();
-      fetchQuizzes();
-      fetchAttendance();
-      fetchAnnouncements();
-    }
-  }, [user]);
-
-  // Fetch chapters when subject expanded
-  useEffect(() => {
-    if (expandedSubject && !chapters[expandedSubject]) {
-      fetchChapters(expandedSubject);
-    }
-  }, [expandedSubject]);
-
-  useEffect(() => {
-    if (formSubjectId && !chapters[formSubjectId]) {
-      fetchChapters(formSubjectId);
-    }
-  }, [formSubjectId, chapters]);
-
-  // --- API Functions ---
-  const fetchDashboard = async () => {
-    try {
-      const res = await teacherApi.getDashboard();
-      if (res.success) setDashboardData(res.data);
-    } catch (error) { 
-      const msg = error.response?.data?.message || error.message || 'Failed to load dashboard';
-      showToast(msg, 'error'); 
-    }
-  };
-
-  const fetchSubjects = async () => {
-    try {
-      const res = await teacherApi.getSubjects();
-      if (res.success) setSubjects(res.data);
-    } catch (error) { 
-      const msg = error.response?.data?.message || error.message || 'Failed to load subjects';
-      showToast(msg, 'error'); 
-    }
-  };
-
-  const fetchChapters = async (subjectId) => {
-    try {
-      const res = await teacherApi.getChapters(subjectId);
-      if (res.success) setChapters(prev => ({ ...prev, [subjectId]: res.data }));
-    } catch (error) { 
-      const msg = error.response?.data?.message || error.message || 'Failed to load chapters';
-      showToast(msg, 'error'); 
-    }
-  };
-
-  const fetchAssignments = async () => {
-    try {
-      const res = await teacherApi.getAssignments();
-      if (res.success) setAssignments(res.data);
-    } catch (error) { 
-      const msg = error.response?.data?.message || error.message || 'Failed to load assignments';
-      showToast(msg, 'error'); 
-    }
-  };
-
-  const fetchQuizzes = async () => {
-    try {
-      const res = await teacherApi.getQuizzes();
-      if (res.success) setQuizzes(res.data);
-    } catch (error) { 
-      const msg = error.response?.data?.message || error.message || 'Failed to load quizzes';
-      showToast(msg, 'error'); 
-    }
-  };
-
-  const fetchAttendance = async () => {
-    try {
-      const res = await teacherApi.getAttendance({});
-      if (res.success) setAttendanceData(res.data);
-    } catch (error) { 
-      const msg = error.response?.data?.message || error.message || 'Failed to load attendance';
-      showToast(msg, 'error'); 
-    }
-  };
-
-  const loadStudentsForAttendance = async (subjectId) => {
-    if (!subjectId) {
-      setAttendanceStudents([]);
-      setAttendanceSelection(prev => ({ ...prev, subjectId, students: {} }));
-      return;
-    }
-
-    try {
-      const res = await teacherApi.getStudentsForSubject(subjectId);
-      if (res.success) {
-        const mapped = {};
-        res.data.forEach(student => {
-          mapped[student._id] = 'Present';
-        });
-        setAttendanceStudents(res.data);
-        setAttendanceSelection(prev => ({ ...prev, subjectId, students: mapped }));
-      }
-    } catch (error) {
-      const msg = error.message || 'Failed to load students';
-      showToast(msg, 'error');
-      setAttendanceStudents([]);
-    }
-  };
-
-  const fetchAnnouncements = async () => {
-    try {
-      const res = await teacherApi.getAnnouncements();
-      if (res.success) setAnnouncements(res.data);
-    } catch (error) { 
-      const msg = error.response?.data?.message || error.message || 'Failed to load announcements';
-      showToast(msg, 'error'); 
-    }
-  };
-
-  //  Toast helper
-  const showToast = (message, type = 'info') => {
-    setToast({ message, type });
-    setTimeout(() => setToast({ message: '', type: '' }), 3000);
-  };
-
-  // --- Modal helpers ---
-  const openModal = (type, data = {}, id = null) => {
-    setModalType(type);
-    setModalData(data);
-    setEditingId(id);
-    setFile(null);
-    setFormSubjectId(data.subjectId || '');
-    setShowModal(true);
-  };
-
-  const closeModal = () => {
-    setShowModal(false);
-    setModalData({});
-    setEditingId(null);
-    setFile(null);
-    setFormSubjectId('');
-    setFormLoading(false);
-  };
-
-  // CRUD Handlers 
-  const handleSubjectSubmit = async (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const payload = { title: formData.get('title'), description: formData.get('description') };
-    setFormLoading(true);
-    try {
-      let res;
-      if (editingId) {
-        res = await teacherApi.updateSubject(editingId, payload);
-      } else {
-        res = await teacherApi.createSubject(payload);
-      }
-      if (res.success) {
-        showToast(editingId ? 'Subject updated!' : 'Subject created!', 'success');
-        fetchSubjects();
-        closeModal();
-      } else {
-        showToast(res.message || 'Error', 'error');
-      }
-    } catch (err) { 
-      const msg = err.response?.data?.message || err.message || 'Server error';
-      showToast(msg, 'error'); 
-    }
-    setFormLoading(false);
-  };
-
-  const handleChapterSubmit = async (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const subjectId = formData.get('subjectId');
-
-    if (!subjectId || String(subjectId).trim() === '') {
-      showToast('Please select a subject before creating a chapter.', 'error');
-      return;
-    }
-
-    const payload = {
-      title: formData.get('title'),
-      content: formData.get('content') || '',
-      order: parseInt(formData.get('order')) || 0,
-      subjectId,
-    };
-    setFormLoading(true);
-    try {
-      let res;
-      if (editingId) {
-        res = await teacherApi.updateChapter(editingId, payload);
-      } else {
-        res = await teacherApi.createChapter(payload);
-      }
-      if (res.success) {
-        showToast(editingId ? 'Chapter updated!' : 'Chapter created!', 'success');
-        fetchChapters(payload.subjectId);
-        closeModal();
-      } else {
-        showToast(res.message || 'Error', 'error');
-      }
-    } catch (err) { 
-      const msg = err.response?.data?.message || err.message || 'Server error';
-      showToast(msg, 'error'); 
-    }
-    setFormLoading(false);
-  };
-
-  const handleMaterialSubmit = async (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const chapterId = formData.get('chapterId');
-    if (!file) {
-      showToast('Please select a file', 'error');
-      return;
-    }
-    formData.append('file', file);
-    setFormLoading(true);
-    try {
-      const res = await teacherApi.createMaterial(formData);
-      if (res.success) {
-        showToast('Material uploaded!', 'success');
-        fetchMaterials(chapterId);
-        closeModal();
-      } else {
-        showToast(res.message || 'Error uploading', 'error');
-      }
-    } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Server error';
-      showToast(msg, 'error');
-    }
-    setFormLoading(false);
-  };
-
-  const fetchMaterials = async (chapterId) => {
-    try {
-      const res = await teacherApi.getMaterials(chapterId);
-      if (res.success) setMaterials(prev => ({ ...prev, [chapterId]: res.data }));
-    } catch (error) { 
-      const msg = error.response?.data?.message || error.message || 'Failed to load materials';
-      showToast(msg, 'error'); 
-    }
-  };
-
-  const handleAssignmentSubmit = async (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const payload = {
-      title: formData.get('title'),
-      description: formData.get('description'),
-      type: formData.get('type') || 'Assignment',
-      deadline: formData.get('deadline'),
-      chapterId: formData.get('chapterId'),
-      referenceFiles: formData.get('referenceFiles') ? [formData.get('referenceFiles')] : [],
-    };
-    setFormLoading(true);
-    try {
-      let res;
-      if (editingId) {
-        res = await teacherApi.updateAssignment(editingId, payload);
-      } else {
-        res = await teacherApi.createAssignment(payload);
-      }
-      if (res.success) {
-        showToast(editingId ? 'Assignment updated!' : 'Assignment created!', 'success');
-        fetchAssignments();
-        closeModal();
-      } else {
-        showToast(res.message || 'Error', 'error');
-      }
-    } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Server error';
-      showToast(msg, 'error');
-    }
-    setFormLoading(false);
-  };
-
-  const handleQuizSubmit = async (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    let questions = [];
-    try {
-      questions = JSON.parse(formData.get('questions') || '[]');
-    } catch { questions = []; }
-    const payload = {
-      title: formData.get('title'),
-      description: formData.get('description'),
-      timeLimit: parseInt(formData.get('timeLimit')) || 30,
-      deadline: formData.get('deadline'),
-      chapterId: formData.get('chapterId'),
-      questions,
-    };
-    setFormLoading(true);
-    try {
-      let res;
-      if (editingId) {
-        res = await teacherApi.updateQuiz(editingId, payload);
-      } else {
-        res = await teacherApi.createQuiz(payload);
-      }
-      if (res.success) {
-        showToast(editingId ? 'Quiz updated!' : 'Quiz created!', 'success');
-        fetchQuizzes();
-        closeModal();
-      } else {
-        showToast(res.message || 'Error', 'error');
-      }
-    } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Server error';
-      showToast(msg, 'error');
-    }
-    setFormLoading(false);
-  };
-
-  const handleAttendanceSubmit = async (e) => {
-    e.preventDefault();
-    if (!attendanceSelection.subjectId) {
-      showToast('Please select a subject first', 'error');
-      return;
-    }
-
-    const studentEntries = attendanceStudents.filter(student => attendanceSelection.students[student._id]);
-    if (!studentEntries.length) {
-      showToast('No students found for this subject', 'error');
-      return;
-    }
-
-    setFormLoading(true);
-    try {
-      const submissions = studentEntries.map(student => ({
-        studentId: student._id,
-        subjectId: attendanceSelection.subjectId,
-        status: attendanceSelection.students[student._id] || 'Present',
-        date: attendanceSelection.date || new Date().toISOString().split('T')[0],
-      }));
-
-      const requests = submissions.map(item => teacherApi.markAttendance(item));
-      await Promise.all(requests);
-      showToast('Attendance saved successfully!', 'success');
-      fetchAttendance();
-      closeModal();
-    } catch (err) {
-      const msg = err.message || 'Failed to save attendance';
-      showToast(msg, 'error');
-    } finally {
-      setFormLoading(false);
-    }
-  };
-
-  const handleDelete = async (type, id) => {
-    if (!window.confirm('Are you sure you want to delete this?')) return;
-    try {
-      let res;
-      if (type === 'subject') res = await teacherApi.deleteSubject(id);
-      else if (type === 'chapter') res = await teacherApi.deleteChapter(id);
-      else if (type === 'material') res = await teacherApi.deleteMaterial(id);
-      else if (type === 'assignment') res = await teacherApi.deleteAssignment(id);
-      else if (type === 'quiz') res = await teacherApi.deleteQuiz(id);
-      else if (type === 'announcement') res = await teacherApi.deleteAnnouncement(id);
-      if (res.success) {
-        showToast('Deleted successfully!', 'success');
-        if (type === 'subject') fetchSubjects();
-        else if (type === 'chapter') fetchChapters(expandedSubject);
-        else if (type === 'material') { /* refresh materials */ }
-        else if (type === 'assignment') fetchAssignments();
-        else if (type === 'quiz') fetchQuizzes();
-        else if (type === 'announcement') fetchAnnouncements();
-      } else {
-        showToast(res.message || 'Error deleting', 'error');
-      }
-    } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Server error';
-      showToast(msg, 'error');
-    }
-  };
-
-  const handlePublishQuiz = async (id) => {
-    try {
-      const res = await teacherApi.publishQuiz(id);
-      if (res.success) {
-        showToast('Quiz published!', 'success');
-        fetchQuizzes();
-      } else {
-        showToast(res.message || 'Error publishing', 'error');
-      }
-    } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Server error';
-      showToast(msg, 'error');
-    }
-  };
-
-  const handleAnnouncementSubmit = async (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const payload = {
-      title: formData.get('title'),
-      content: formData.get('content'),
-      subjectId: formData.get('subjectId'),
-      priority: formData.get('priority') || 'Medium',
-      published: true,
-    };
-    setFormLoading(true);
-    try {
-      let res;
-      if (editingId) {
-        res = await teacherApi.updateAnnouncement(editingId, payload);
-      } else {
-        res = await teacherApi.createAnnouncement(payload);
-      }
-      if (res.success) {
-        showToast(editingId ? 'Announcement updated!' : 'Announcement created!', 'success');
-        fetchAnnouncements();
-        closeModal();
-      } else {
-        showToast(res.message || 'Error', 'error');
-      }
-    } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Server error';
-      showToast(msg, 'error');
-    }
-    setFormLoading(false);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/');
-  };
-
-  // --- Mock data for charts (can be replaced with real API data later) ---
-  const weeklyData = [
-    { day: 'Mon', assignments: 12, materials: 8, quizzes: 4 },
-    { day: 'Tue', assignments: 10, materials: 12, quizzes: 6 },
-    { day: 'Wed', assignments: 14, materials: 6, quizzes: 8 },
-    { day: 'Thu', assignments: 8, materials: 10, quizzes: 10 },
-    { day: 'Fri', assignments: 16, materials: 14, quizzes: 12 },
-  ];
-
-  const scheduleData = [
-    { time: '8:00 AM', subject: 'Mathematics', room: 'Room 201', classInfo: 'X-A', status: 'completed' },
-    { time: '10:30 AM', subject: 'Mathematics', room: 'Room 202', classInfo: 'X-B', status: 'ongoing' },
-    { time: '1:30 PM', subject: 'Physics', room: 'Room 103', classInfo: 'IX-A', status: 'upcoming' },
-    { time: '2:30 PM', subject: 'Computer Science', room: 'Room 105', classInfo: 'X-A', status: 'upcoming' },
-  ];
-
-  const pendingReviews = [
-    { title: 'Quadratic Equations...', classInfo: 'X-A · Mathematics', count: 5 },
-    { title: "Newton's Laws of M...", classInfo: 'X-A · Physics', count: 15 },
-    { title: 'Essay: The Great G...', classInfo: 'IX-A · English', count: 34 },
-    { title: 'Python Data Structu...', classInfo: 'IX-B · Computer Science', count: 12 },
-  ];
-
-  const subjectSubmissionData = [
-    { subject: 'Physics', pending: 8, submitted: 24 },
-    { subject: 'Biology', pending: 12, submitted: 18 },
-    { subject: 'CS', pending: 4, submitted: 28 },
-  ];
-
-  //  STAT CARD COMPONENT 
-  const StatCard = ({ title, value, subtitle, icon, color, trend, trendUp }) => (
-    <div className={`bg-linear-to-br ${color} rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-shadow duration-300`}>
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm font-medium text-white/80">{title}</p>
-          <p className="text-3xl font-bold mt-1">{value}</p>
-          {subtitle && <p className="text-xs text-white/70 mt-1">{subtitle}</p>}
-        </div>
-        <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">{icon}</div>
-      </div>
-      {trend && (
-        <div className="mt-3 flex items-center gap-1 text-xs">
-          {trendUp ? <ArrowTrendingUpIcon className="h-4 w-4" /> : <ArrowTrendingDownIcon className="h-4 w-4" />}
-          <span className="font-medium">{trend}</span>
-          <span className="opacity-80">vs last week</span>
-        </div>
-      )}
-    </div>
-  );
-
-  //  QUICK ACTION CARD 
-  const ActionCard = ({ icon: Icon, label, onClick }) => (
-    <button
-      onClick={onClick}
-      className="bg-white border border-gray-200 rounded-2xl p-4 text-center hover:shadow-lg transition-all duration-200 hover:border-blue-300 hover:-translate-y-1"
-    >
-      <div className="mb-2 flex justify-center">
-        {Icon && <Icon className="h-6 w-6 text-blue-600" />}
-      </div>
-      <p className="text-sm font-medium text-gray-700">{label}</p>
-    </button>
-  );
-
-  // SCHEDULE ITEM 
-  const ScheduleItem = ({ time, subject, room, classInfo, status }) => {
-    const statusColors = {
-      completed: 'bg-green-100 text-green-700',
-      ongoing: 'bg-yellow-100 text-yellow-700',
-      upcoming: 'bg-gray-100 text-gray-500',
-    };
-    const statusIcons = {
-      completed: '✅',
-      ongoing: '🔄',
-      upcoming: '⏳',
-    };
-    return (
-      <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition">
-        <div className="w-20 text-sm font-medium text-gray-700">{time}</div>
-        <div className="flex-1">
-          <p className="font-semibold text-gray-900">{subject}</p>
-          <p className="text-xs text-gray-500">{classInfo} · {room}</p>
-        </div>
-        <span className={`text-xs px-3 py-1 rounded-full font-medium ${statusColors[status]}`}>
-          {statusIcons[status]} {status}
-        </span>
-      </div>
-    );
-  };
-
-  // GOAL ITEM 
-  const GoalItem = ({ label, current, total }) => {
-    const percentage = Math.min(Math.round((current / total) * 100), 100);
-    const isComplete = percentage >= 100;
-    return (
-      <div>
-        <div className="flex justify-between text-sm mb-1.5">
-          <span className="text-gray-600">{label}</span>
-          <span className="text-gray-800 font-medium">{current}/{total}</span>
-        </div>
-        <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
-          <div
-            className={`rounded-full h-2.5 transition-all duration-500 ${isComplete ? 'bg-green-500' : 'bg-blue-600'}`}
-            style={{ width: `${percentage}%` }}
-          />
-        </div>
-      </div>
-    );
-  };
-
-  //  REVIEW CARD 
-  const ReviewCard = ({ title, classInfo, count, onClick }) => (
-    <div
-      className="bg-gray-50 rounded-2xl p-5 border border-gray-100 hover:border-blue-300 transition-all duration-200 cursor-pointer hover:shadow-md"
-      onClick={onClick}
-    >
-      <h4 className="font-semibold text-gray-900 text-sm">{title}</h4>
-      <p className="text-xs text-gray-500 mt-1">{classInfo}</p>
-      <div className="flex items-center gap-3 mt-3">
-        <span className="text-sm font-bold text-orange-600">{count} new</span>
-        <button className="text-xs text-blue-600 font-medium hover:underline">Review →</button>
-      </div>
-    </div>
-  );
-
-  //  DASHBOARD VIEW 
-  const DashboardView = () => (
-    <div>
-      <div className="mb-8 flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-            Dashboard <SparklesIcon className="h-6 w-6 text-yellow-500" />
-          </h1>
-          <p className="text-gray-500 mt-1">Welcome back, {user?.fullName?.split(' ')[0] || 'Teacher'}!</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-linear-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center text-white font-bold shadow-md">
-            {user?.fullName?.charAt(0) || 'T'}
-          </div>
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title="Total Students"
-          value="158"
-          subtitle="+12 this month"
-          color="from-blue-500 to-blue-700"
-          icon={<UsersIcon className="h-6 w-6" />}
-          trend="5%"
-          trendUp
-        />
-        <StatCard
-          title="My Subjects"
-          value={dashboardData.totalSubjects || 0}
-          subtitle="3 active"
-          color="from-purple-500 to-purple-700"
-          icon={<BookOpenIcon className="h-6 w-6" />}
-          trend="1 new"
-          trendUp
-        />
-        <StatCard
-          title="Learning Materials"
-          value={dashboardData.totalMaterials || 0}
-          subtitle="1,056 total views"
-          color="from-emerald-500 to-emerald-700"
-          icon={<DocumentTextIcon className="h-6 w-6" />}
-          trend="12%"
-          trendUp
-        />
-        <StatCard
-          title="Pending Reviews"
-          value="5"
-          subtitle="5 new submissions"
-          color="from-rose-500 to-rose-700"
-          icon={<ClipboardDocumentListIcon className="h-6 w-6" />}
-          trend="2 less"
-          trendUp={false}
-        />
-      </div>
-
-      {/* Quick Actions */}
-      <div className="mt-8">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <ActionCard icon={BookOpenIcon} label="Add Subject" onClick={() => openModal('subject')} />
-          <ActionCard icon={DocumentTextIcon} label="Add Chapter" onClick={() => openModal('chapter')} />
-          <ActionCard icon={CheckCircleIcon} label="Take Attendance" onClick={() => openModal('attendance')} />
-          <ActionCard icon={DocumentPlusIcon} label="New Assignment" onClick={() => openModal('assignment')} />
-          <ActionCard icon={ArrowUpTrayIcon} label="Upload Material" onClick={() => openModal('material')} />
-          <ActionCard icon={QuestionMarkCircleIcon} label="Create Quiz" onClick={() => openModal('quiz')} />
-          <ActionCard icon={BellIcon} label="Announcement" onClick={() => openModal('announcement')} />
-        </div>
-      </div>
-
-      {/* Activity Overview */}
-      <div className="mt-8 bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Activity Overview</h3>
-          <p className="text-sm text-gray-400">Teaching performance insights</p>
-        </div>
-        <div className="flex gap-2 mb-4">
-          <button className="px-4 py-1.5 bg-blue-600 text-white text-sm rounded-full font-medium">Weekly</button>
-          <button className="px-4 py-1.5 bg-gray-100 text-gray-600 text-sm rounded-full hover:bg-gray-200 transition">Attendance</button>
-          <button className="px-4 py-1.5 bg-gray-100 text-gray-600 text-sm rounded-full hover:bg-gray-200 transition">Performance</button>
-        </div>
-        <div className="flex items-end justify-between h-40 gap-3 px-2">
-          {weeklyData.map((item) => (
-            <div key={item.day} className="flex-1 flex flex-col items-center gap-1">
-              <div className="w-full flex flex-col items-center gap-0.5">
-                <div className="w-6 bg-blue-500 rounded-t-sm" style={{ height: `${item.assignments * 2}px` }}></div>
-                <div className="w-6 bg-emerald-500 rounded-t-sm" style={{ height: `${item.materials * 2}px` }}></div>
-                <div className="w-6 bg-purple-500 rounded-t-sm" style={{ height: `${item.quizzes * 2}px` }}></div>
-              </div>
-              <span className="text-xs text-gray-400 mt-1 font-medium">{item.day}</span>
-            </div>
-          ))}
-        </div>
-        <div className="flex justify-center gap-6 mt-4 text-xs text-gray-500">
-          <span><span className="inline-block w-3 h-3 bg-blue-500 rounded mr-1"></span> Assignments</span>
-          <span><span className="inline-block w-3 h-3 bg-emerald-500 rounded mr-1"></span> Materials</span>
-          <span><span className="inline-block w-3 h-3 bg-purple-500 rounded mr-1"></span> Quizzes</span>
-        </div>
-      </div>
-
-      {/* Schedule + Goals */}
-      <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Today's Schedule</h3>
-            <button className="text-sm text-blue-600 font-medium hover:underline" onClick={() => setActiveTab('attendance')}>View All →</button>
-          </div>
-          <div className="space-y-2">
-            {scheduleData.map((item, idx) => (
-              <ScheduleItem key={idx} {...item} />
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Weekly Goals</h3>
-          <div className="space-y-3">
-            <GoalItem label="Assignments Reviewed" current={28} total={34} />
-            <GoalItem label="Quizzes Created" current={2} total={3} />
-            <GoalItem label="Materials Uploaded" current={5} total={5} />
-            <GoalItem label="Classes Attended" current={18} total={20} />
-          </div>
-          <div className="mt-4 p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
-            <p className="text-sm text-emerald-700 font-medium">Great progress this week! ✨</p>
-            <p className="text-xs text-emerald-600">You've completed 3 of 4 weekly targets.</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Pending Reviews */}
-      <div className="mt-8 bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Pending Reviews</h3>
-          <button className="text-sm text-blue-600 font-medium hover:underline" onClick={() => setActiveTab('assignments')}>View All →</button>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {pendingReviews.map((item, idx) => (
-            <ReviewCard key={idx} {...item} onClick={() => showToast(`Reviewing ${item.title}`, 'info')} />
-          ))}
-        </div>
-      </div>
-
-      {/* Assignment Submission Rate */}
-      <div className="mt-8 bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Assignment Submission Rate by Subject</h3>
-          <p className="text-sm text-gray-400">Current semester progress</p>
-        </div>
-        <div className="space-y-4">
-          {subjectSubmissionData.map((item) => {
-            const total = item.pending + item.submitted;
-            const pendingPct = (item.pending / total) * 100;
-            const submittedPct = (item.submitted / total) * 100;
-            return (
-              <div key={item.subject}>
-                <div className="flex justify-between text-sm mb-1.5">
-                  <span className="font-medium text-gray-700">{item.subject}</span>
-                  <span className="text-gray-500">{item.submitted} / {total} submitted</span>
-                </div>
-                <div className="w-full bg-gray-100 rounded-full h-5 overflow-hidden flex">
-                  <div
-                    className="bg-amber-400 h-full flex items-center justify-center text-xs text-amber-800 font-medium transition-all duration-500"
-                    style={{ width: `${pendingPct}%` }}
-                  >
-                    {pendingPct > 0 && `${Math.round(pendingPct)}% Pending`}
-                  </div>
-                  <div
-                    className="bg-emerald-500 h-full flex items-center justify-center text-xs text-white font-medium transition-all duration-500"
-                    style={{ width: `${submittedPct}%` }}
-                  >
-                    {submittedPct > 0 && `${Math.round(submittedPct)}% Submitted`}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        <div className="flex justify-center gap-6 mt-4 text-xs text-gray-500">
-          <span><span className="inline-block w-3 h-3 bg-amber-400 rounded mr-1"></span> Pending</span>
-          <span><span className="inline-block w-3 h-3 bg-emerald-500 rounded mr-1"></span> Submitted</span>
-        </div>
-        <div className="mt-4 text-center">
-          <button
-            className="px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition shadow-sm hover:shadow-md"
-            onClick={() => openModal('assignment')}
-          >
-            + Create Assignment
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
-  //  SUBJECTS VIEW 
-  const SubjectsView = () => (
-    <div>
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">My Subjects</h1>
-          <p className="text-gray-500 mt-1">Manage subjects and chapters</p>
-        </div>
-        <button className="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition flex items-center gap-2" onClick={() => openModal('subject')}>
-          <PlusIcon className="h-5 w-5" /> Create Subject
-        </button>
-      </div>
-      <div className="space-y-4">
-        {subjects.map(subject => (
-          <div key={subject._id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
-            <div
-              className="p-6 cursor-pointer hover:bg-gray-50 transition-colors"
-              onClick={() => setExpandedSubject(expandedSubject === subject._id ? null : subject._id)}
-            >
-              <div className="flex justify-between items-center">
-                <div className="flex items-center space-x-4">
-                  {expandedSubject === subject._id ? (
-                    <ChevronDownIcon className="h-5 w-5 text-gray-400" />
-                  ) : (
-                    <ChevronRightIcon className="h-5 w-5 text-gray-400" />
-                  )}
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{subject.title}</h3>
-                    <p className="text-sm text-gray-500">{subject.description}</p>
-                  </div>
-                </div>
-                <div className="flex space-x-2">
-                  <button
-                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                    onClick={(e) => { e.stopPropagation(); openModal('subject', subject, subject._id); }}
-                  >
-                    <PencilIcon className="h-5 w-5" />
-                  </button>
-                  <button
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    onClick={(e) => { e.stopPropagation(); handleDelete('subject', subject._id); }}
-                  >
-                    <TrashIcon className="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-              <div className="ml-9 mt-2 flex items-center gap-4 text-xs text-gray-500">
-                <span className="flex items-center gap-1"><DocumentTextIcon className="h-4 w-4" /> {subject.materials || 0} materials</span>
-                <span className="flex items-center gap-1"><ClipboardDocumentListIcon className="h-4 w-4" /> {subject.tasks || 0} tasks</span>
-              </div>
-            </div>
-            {expandedSubject === subject._id && (
-              <div className="border-t border-gray-200 px-6 py-4 bg-gray-50">
-                <div className="flex justify-between items-center mb-3">
-                  <h4 className="text-sm font-medium text-gray-700">Chapters</h4>
-                  <button
-                    className="text-sm text-blue-600 hover:underline font-medium"
-                    onClick={() => openModal('chapter', { subjectId: subject._id })}
-                  >
-                    + Add Chapter
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {(chapters[subject._id] || []).map((ch, index) => (
-                    <div key={index} className="flex items-center justify-between bg-white p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                      <div className="flex items-center space-x-3">
-                        <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold">
-                          {index + 1}
-                        </span>
-                        <span className="text-sm text-gray-800">{ch.title}</span>
-                      </div>
-                      <div className="flex space-x-1">
-                        <button
-                          className="p-1 text-blue-600 hover:bg-blue-50 rounded"
-                          onClick={() => openModal('chapter', { ...ch, subjectId: subject._id }, ch._id)}
-                        >
-                          <PencilIcon className="h-4 w-4" />
-                        </button>
-                        <button
-                          className="p-1 text-red-600 hover:bg-red-50 rounded"
-                          onClick={() => handleDelete('chapter', ch._id)}
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  //  SIMPLE VIEWS 
-  const SimpleView = ({ title, description, addButton, addAction }) => (
-    <div>
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
-          <p className="text-gray-500 mt-1">{description}</p>
-        </div>
-        {addButton && (
-          <button
-            className="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition flex items-center gap-2"
-            onClick={addAction}
-          >
-            <PlusIcon className="h-5 w-5" /> {addButton}
-          </button>
-        )}
-      </div>
-      <div className="bg-white rounded-2xl p-8 text-center border border-gray-100">
-        <p className="text-gray-400">No {title.toLowerCase()} yet. Click the button above to create one.</p>
-      </div>
-    </div>
-  );
-
-  // ======================== ASSIGNMENTS VIEW ========================
-  const AssignmentsView = () => (
-    <div>
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Assignments</h1>
-          <p className="text-gray-500 mt-1">Create and manage assignments for your subjects</p>
-        </div>
-        <button
-          className="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition flex items-center gap-2"
-          onClick={() => openModal('assignment')}
-        >
-          <PlusIcon className="h-5 w-5" /> New Assignment
-        </button>
-      </div>
-      {assignments.length === 0 ? (
-        <div className="bg-white rounded-2xl p-8 text-center border border-gray-100">
-          <p className="text-gray-400">No assignments yet. Click the button above to create one.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {assignments.map(assignment => (
-            <div key={assignment._id} className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-md transition-shadow">
-              <div className="flex justify-between items-start mb-3">
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-gray-900">{assignment.title}</h3>
-                  <p className="text-sm text-gray-600 line-clamp-2">{assignment.description}</p>
-                </div>
-                <div className="flex space-x-2 ml-3">
-                  <button
-                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                    onClick={() => openModal('assignment', assignment, assignment._id)}
-                  >
-                    <PencilIcon className="h-4 w-4" />
-                  </button>
-                  <button
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    onClick={() => handleDelete('assignment', assignment._id)}
-                  >
-                    <TrashIcon className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-              <div className="space-y-2 text-sm text-gray-500">
-                <p><strong>Type:</strong> {assignment.type}</p>
-                <p><strong>Deadline:</strong> {new Date(assignment.deadline).toLocaleDateString()}</p>
-                {assignment.chapterId && <p><strong>Chapter:</strong> {assignment.chapterId.title}</p>}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-
-  //  QUIZZES VIEW 
-  const QuizzesView = () => (
-    <div>
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Quizzes</h1>
-          <p className="text-gray-500 mt-1">Create and manage quizzes for your subjects</p>
-        </div>
-        <button
-          className="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition flex items-center gap-2"
-          onClick={() => openModal('quiz')}
-        >
-          <PlusIcon className="h-5 w-5" /> Create Quiz
-        </button>
-      </div>
-      {quizzes.length === 0 ? (
-        <div className="bg-white rounded-2xl p-8 text-center border border-gray-100">
-          <p className="text-gray-400">No quizzes yet. Click the button above to create one.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {quizzes.map(quiz => (
-            <div key={quiz._id} className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-md transition-shadow">
-              <div className="flex justify-between items-start mb-3">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="text-lg font-semibold text-gray-900">{quiz.title}</h3>
-                    {quiz.published ? (
-                      <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full font-medium">Published</span>
-                    ) : (
-                      <span className="text-xs px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full font-medium">Draft</span>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-600 line-clamp-2">{quiz.description}</p>
-                </div>
-                <div className="flex space-x-2 ml-3">
-                  <button
-                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                    onClick={() => openModal('quiz', quiz, quiz._id)}
-                  >
-                    <PencilIcon className="h-4 w-4" />
-                  </button>
-                  <button
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    onClick={() => handleDelete('quiz', quiz._id)}
-                  >
-                    <TrashIcon className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-              <div className="space-y-2 text-sm text-gray-500">
-                <p><strong>Questions:</strong> {quiz.questions?.length || 0}</p>
-                <p><strong>Time Limit:</strong> {quiz.timeLimit} minutes</p>
-                <p><strong>Deadline:</strong> {new Date(quiz.deadline).toLocaleDateString()}</p>
-                {quiz.chapterId && <p><strong>Chapter:</strong> {quiz.chapterId.title}</p>}
-              </div>
-              {!quiz.published && (
-                <button
-                  className="mt-3 w-full bg-blue-100 text-blue-600 py-2 rounded-lg hover:bg-blue-200 transition text-sm font-medium"
-                  onClick={() => handlePublishQuiz(quiz._id)}
-                >
-                  Publish Quiz
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-
-  // ======================== ANNOUNCEMENTS VIEW ========================
-  const AnnouncementsView = () => (
-    <div>
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Announcements</h1>
-          <p className="text-gray-500 mt-1">Create and manage announcements for your subjects</p>
-        </div>
-        <button
-          className="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition flex items-center gap-2"
-          onClick={() => openModal('announcement')}
-        >
-          <PlusIcon className="h-5 w-5" /> Create Announcement
-        </button>
-      </div>
-      {announcements.length === 0 ? (
-        <div className="bg-white rounded-2xl p-8 text-center border border-gray-100">
-          <p className="text-gray-400">No announcements yet. Click the button above to create one.</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {announcements.map(announcement => (
-            <div key={announcement._id} className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-md transition-shadow">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-lg font-semibold text-gray-900">{announcement.title}</h3>
-                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                      announcement.priority === 'High' ? 'bg-red-100 text-red-700' :
-                      announcement.priority === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-green-100 text-green-700'
-                    }`}>
-                      {announcement.priority} Priority
-                    </span>
-                  </div>
-                  <p className="text-gray-600 text-sm mb-2">{announcement.content}</p>
-                  {announcement.subjectId && (
-                    <p className="text-xs text-gray-500">Subject: {announcement.subjectId.title}</p>
-                  )}
-                  <p className="text-xs text-gray-400 mt-1">
-                    {new Date(announcement.createdAt).toLocaleDateString()} at {new Date(announcement.createdAt).toLocaleTimeString()}
-                  </p>
-                </div>
-                <div className="flex space-x-2">
-                  <button
-                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                    onClick={() => openModal('announcement', announcement, announcement._id)}
-                  >
-                    <PencilIcon className="h-5 w-5" />
-                  </button>
-                  <button
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    onClick={() => handleDelete('announcement', announcement._id)}
-                  >
-                    <TrashIcon className="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-
-  // ======================== SIDEBAR ========================
-  const Sidebar = () => {
-    const navItems = [
-      { id: 'dashboard', label: 'Dashboard', icon: HomeIcon },
-      { id: 'subjects', label: 'My Subjects', icon: BookOpenIcon },
-      { id: 'assignments', label: 'Assignments', icon: ClipboardDocumentListIcon },
-      { id: 'quizzes', label: 'Quizzes', icon: ChartBarIcon },
-      { id: 'attendance', label: 'Attendance', icon: UsersIcon },
-      { id: 'announcements', label: 'Announcements', icon: BellIcon },
-    ];
-    return (
-      <aside className="w-64 bg-white shadow-lg flex flex-col fixed h-full z-30 border-r border-gray-100">
-        <div className="p-6 border-b border-gray-100">
-          <h1 className="text-2xl font-bold text-blue-700">SchoolLink</h1>
-          <p className="text-xs text-gray-400 uppercase tracking-wider">Teacher Portal</p>
-        </div>
-        <div className="p-5 border-b border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-linear-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md">
-              {user?.fullName?.charAt(0) || 'T'}
-            </div>
-            <div>
-              <p className="font-semibold text-gray-900">{user?.fullName || 'Teacher'}</p>
-              <p className="text-xs text-gray-400">Mathematics Teacher</p>
-            </div>
-          </div>
-        </div>
-        <nav className="flex-1 p-4 space-y-0.5 overflow-y-auto">
-          {navItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                activeTab === item.id
-                  ? 'bg-blue-50 text-blue-700'
-                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-              }`}
-            >
-              <item.icon className="h-5 w-5" />
-              {item.label}
-            </button>
-          ))}
-          <div className="pt-4 mt-4 border-t border-gray-100">
-            <button
-              onClick={() => setShowLogoutModal(true)}
-              className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-all duration-200"
-            >
-              <ArrowPathIcon className="h-5 w-5 rotate-45" />
-              Logout
-            </button>
-          </div>
-        </nav>
-        <div className="p-4 border-t border-gray-100 text-xs text-gray-400 text-center">v2.4.1 © 2024 SchoolLink</div>
-      </aside>
-    );
-  };
-
-  // ======================== MODAL COMPONENT ========================
-  const Modal = () => {
-    if (!showModal) return null;
-
-    const getTitle = () => {
-      switch (modalType) {
-        case 'subject': return editingId ? 'Edit Subject' : 'Create Subject';
-        case 'chapter': return editingId ? 'Edit Chapter' : 'Add Chapter';
-        case 'material': return 'Upload Material';
-        case 'assignment': return editingId ? 'Edit Assignment' : 'Create Assignment';
-        case 'quiz': return editingId ? 'Edit Quiz' : 'Create Quiz';
-        case 'attendance': return 'Mark Attendance';
-        case 'announcement': return editingId ? 'Edit Announcement' : 'Create Announcement';
-        default: return '';
-      }
-    };
-
-    const renderForm = () => {
-      switch (modalType) {
-        case 'subject':
-          return (
-            <form onSubmit={handleSubjectSubmit} className="space-y-4">
-              <input type="text" name="title" placeholder="Subject Title" defaultValue={modalData.title || ''} className="w-full border rounded-xl px-4 py-2" required />
-              <textarea name="description" placeholder="Description" defaultValue={modalData.description || ''} className="w-full border rounded-xl px-4 py-2" rows="3" />
-              <button type="submit" disabled={formLoading} className="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition">
-                {formLoading ? 'Saving...' : (editingId ? 'Update Subject' : 'Create Subject')}
-              </button>
-            </form>
-          );
-        case 'chapter':
-          return (
-            <form onSubmit={handleChapterSubmit} className="space-y-4">
-              <select
-                name="subjectId"
-                className="w-full border rounded-xl px-4 py-2"
-                value={modalData.subjectId || formSubjectId || ''}
-                onChange={(e) => setFormSubjectId(e.target.value)}
-                required
-              >
-                <option value="">Select Subject</option>
-                {subjects.map(s => <option key={s._id} value={s._id}>{s.title}</option>)}
-              </select>
-              <input type="text" name="title" placeholder="Chapter Title" defaultValue={modalData.title || ''} className="w-full border rounded-xl px-4 py-2" required />
-              <textarea name="content" placeholder="Content (optional)" defaultValue={modalData.content || ''} className="w-full border rounded-xl px-4 py-2" rows="3" />
-              <input type="number" name="order" placeholder="Order" defaultValue={modalData.order || 0} className="w-full border rounded-xl px-4 py-2" />
-              <button type="submit" disabled={formLoading || !(modalData.subjectId || formSubjectId)} className="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
-                {formLoading ? 'Saving...' : (editingId ? 'Update Chapter' : 'Add Chapter')}
-              </button>
-            </form>
-          );
-        case 'material': {
-          const chapterOptions = formSubjectId ? (chapters[formSubjectId] || []) : Object.values(chapters).flat();
-          return (
-            <form onSubmit={handleMaterialSubmit} className="space-y-4">
-              <select value={formSubjectId} onChange={(e) => setFormSubjectId(e.target.value)} className="w-full border rounded-xl px-4 py-2" required>
-                <option value="">Select Subject</option>
-                {subjects.map(s => <option key={s._id} value={s._id}>{s.title}</option>)}
-              </select>
-              <input type="text" name="title" placeholder="Material Title" defaultValue={modalData.title || ''} className="w-full border rounded-xl px-4 py-2" required />
-              <textarea name="description" placeholder="Description" defaultValue={modalData.description || ''} className="w-full border rounded-xl px-4 py-2" rows="3" />
-              <select name="type" className="w-full border rounded-xl px-4 py-2">
-                <option value="PDF">PDF</option>
-                <option value="PPT">PPT</option>
-                <option value="Video">Video</option>
-                <option value="Image">Image</option>
-                <option value="Document">Document</option>
-                <option value="Other">Other</option>
-              </select>
-              <select name="chapterId" className="w-full border rounded-xl px-4 py-2" required value={modalData.chapterId || ''}>
-                <option value="">Select Chapter</option>
-                {chapterOptions.map(ch => <option key={ch._id} value={ch._id}>{ch.title}</option>)}
-              </select>
-              <input type="file" onChange={(e) => setFile(e.target.files[0])} className="w-full border rounded-xl px-4 py-2" required />
-              <button type="submit" disabled={formLoading || !formSubjectId} className="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
-                {formLoading ? 'Uploading...' : 'Upload Material'}
-              </button>
-            </form>
-          );
-        }
-        case 'assignment': {
-          const chapterOptions = formSubjectId ? (chapters[formSubjectId] || []) : Object.values(chapters).flat();
-          return (
-            <form onSubmit={handleAssignmentSubmit} className="space-y-4">
-              <select value={formSubjectId} onChange={(e) => setFormSubjectId(e.target.value)} className="w-full border rounded-xl px-4 py-2" required>
-                <option value="">Select Subject</option>
-                {subjects.map(s => <option key={s._id} value={s._id}>{s.title}</option>)}
-              </select>
-              <input type="text" name="title" placeholder="Assignment Title" defaultValue={modalData.title || ''} className="w-full border rounded-xl px-4 py-2" required />
-              <textarea name="description" placeholder="Description" defaultValue={modalData.description || ''} className="w-full border rounded-xl px-4 py-2" rows="3" required />
-              <select name="type" className="w-full border rounded-xl px-4 py-2">
-                <option value="Homework">Homework</option>
-                <option value="Assignment">Assignment</option>
-                <option value="Task">Task</option>
-              </select>
-              <input type="date" name="deadline" defaultValue={modalData.deadline ? modalData.deadline.split('T')[0] : ''} className="w-full border rounded-xl px-4 py-2" required />
-              <select name="chapterId" className="w-full border rounded-xl px-4 py-2" required value={modalData.chapterId || ''}>
-                <option value="">Select Chapter</option>
-                {chapterOptions.map(ch => <option key={ch._id} value={ch._id}>{ch.title}</option>)}
-              </select>
-              <button type="submit" disabled={formLoading || !formSubjectId} className="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
-                {formLoading ? 'Saving...' : (editingId ? 'Update Assignment' : 'Create Assignment')}
-              </button>
-            </form>
-          );
-        }
-        case 'quiz': {
-          const chapterOptions = formSubjectId ? (chapters[formSubjectId] || []) : Object.values(chapters).flat();
-          return (
-            <form onSubmit={handleQuizSubmit} className="space-y-4">
-              <select value={formSubjectId} onChange={(e) => setFormSubjectId(e.target.value)} className="w-full border rounded-xl px-4 py-2" required>
-                <option value="">Select Subject</option>
-                {subjects.map(s => <option key={s._id} value={s._id}>{s.title}</option>)}
-              </select>
-              <input type="text" name="title" placeholder="Quiz Title" defaultValue={modalData.title || ''} className="w-full border rounded-xl px-4 py-2" required />
-              <textarea name="description" placeholder="Description" defaultValue={modalData.description || ''} className="w-full border rounded-xl px-4 py-2" rows="3" />
-              <input type="number" name="timeLimit" placeholder="Time Limit (minutes)" defaultValue={modalData.timeLimit || 30} className="w-full border rounded-xl px-4 py-2" />
-              <input type="date" name="deadline" defaultValue={modalData.deadline ? modalData.deadline.split('T')[0] : ''} className="w-full border rounded-xl px-4 py-2" required />
-              <select name="chapterId" className="w-full border rounded-xl px-4 py-2" required value={modalData.chapterId || ''}>
-                <option value="">Select Chapter</option>
-                {chapterOptions.map(ch => <option key={ch._id} value={ch._id}>{ch.title}</option>)}
-              </select>
-              <textarea name="questions" placeholder='Questions as JSON: [{"question":"...","options":["a","b","c"],"correctAnswer":0}]' defaultValue={JSON.stringify(modalData.questions || [])} className="w-full border rounded-xl px-4 py-2" rows="4" />
-              <button type="submit" disabled={formLoading || !formSubjectId} className="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
-                {formLoading ? 'Saving...' : (editingId ? 'Update Quiz' : 'Create Quiz')}
-              </button>
-            </form>
-          );
-        }
-        case 'attendance':
-          return (
-            <form onSubmit={handleAttendanceSubmit} className="space-y-4">
-              <select
-                name="subjectId"
-                className="w-full border rounded-xl px-4 py-2"
-                value={attendanceSelection.subjectId}
-                onChange={(e) => {
-                  const subjectId = e.target.value;
-                  setAttendanceSelection(prev => ({ ...prev, subjectId, date: prev.date || new Date().toISOString().split('T')[0] }));
-                  loadStudentsForAttendance(subjectId);
-                }}
-                required
-              >
-                <option value="">Select Subject</option>
-                {subjects.map(s => <option key={s._id} value={s._id}>{s.title}</option>)}
-              </select>
-              <input
-                type="date"
-                name="date"
-                value={attendanceSelection.date}
-                onChange={(e) => setAttendanceSelection(prev => ({ ...prev, date: e.target.value }))}
-                className="w-full border rounded-xl px-4 py-2"
-              />
-              {attendanceStudents.length > 0 ? (
-                <div className="space-y-3 max-h-80 overflow-y-auto border rounded-xl p-3">
-                  {attendanceStudents.map(student => (
-                    <div key={student._id} className="flex items-center justify-between gap-3 border-b last:border-b-0 pb-2 last:pb-0">
-                      <div>
-                        <p className="font-medium text-gray-800">{student.fullName}</p>
-                        <p className="text-xs text-gray-500">{student.rollNumber || 'Roll N/A'} · {student.className || 'Class N/A'}</p>
-                      </div>
-                      <select
-                        value={attendanceSelection.students[student._id] || 'Present'}
-                        onChange={(e) => setAttendanceSelection(prev => ({
-                          ...prev,
-                          students: { ...prev.students, [student._id]: e.target.value }
-                        }))}
-                        className="border rounded-lg px-2 py-1 text-sm"
-                      >
-                        <option value="Present">Present</option>
-                        <option value="Absent">Absent</option>
-                        <option value="Late">Late</option>
-                      </select>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="rounded-xl border border-dashed border-gray-200 p-3 text-sm text-gray-500">
-                  {attendanceSelection.subjectId ? 'Loading students...' : 'Select a subject to load students'}
-                </div>
-              )}
-              <button type="submit" disabled={formLoading || !attendanceSelection.subjectId} className="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
-                {formLoading ? 'Saving...' : 'Save Attendance'}
-              </button>
-            </form>
-          );
-        case 'announcement':
-          return (
-            <form onSubmit={handleAnnouncementSubmit} className="space-y-4">
-              <select name="subjectId" className="w-full border rounded-xl px-4 py-2" required defaultValue={modalData.subjectId || formSubjectId || ''} onChange={(e) => setFormSubjectId(e.target.value)}>
-                <option value="">Select Subject</option>
-                {subjects.map(s => <option key={s._id} value={s._id}>{s.title}</option>)}
-              </select>
-              <input type="text" name="title" placeholder="Announcement Title" defaultValue={modalData.title || ''} className="w-full border rounded-xl px-4 py-2" required />
-              <textarea name="content" placeholder="Announcement Content" defaultValue={modalData.content || ''} className="w-full border rounded-xl px-4 py-2" rows="4" required />
-              <select name="priority" className="w-full border rounded-xl px-4 py-2" defaultValue={modalData.priority || 'Medium'}>
-                <option value="Low">Low Priority</option>
-                <option value="Medium">Medium Priority</option>
-                <option value="High">High Priority</option>
-              </select>
-              <button type="submit" disabled={formLoading || !formSubjectId} className="w-full bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
-                {formLoading ? 'Saving...' : (editingId ? 'Update Announcement' : 'Create Announcement')}
-              </button>
-            </form>
-          );
-        default: return null;
-      }
-    };
-
-    return (
-      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
-        <div className="bg-white rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-gray-900">{getTitle()}</h2>
-            <button onClick={closeModal} className="p-1 hover:bg-gray-100 rounded-full">
-              <XMarkIcon className="h-6 w-6 text-gray-500" />
-            </button>
-          </div>
-          {renderForm()}
-        </div>
-      </div>
-    );
-  };
-
-  // ======================== MAIN RENDER ========================
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  if (!user) return null;
-
+const Modal = ({ isOpen, onClose, title, children }) => {
+  if (!isOpen) return null;
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <Sidebar />
-      <main className="ml-64 flex-1 p-8">
-        {toast.message && (
-          <div className={`fixed top-6 right-6 p-4 rounded-xl shadow-2xl text-white z-50 ${toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'}`}>
-            {toast.message}
-          </div>
-        )}
-        {activeTab === 'dashboard' && <DashboardView />}
-        {activeTab === 'subjects' && <SubjectsView />}
-        {activeTab === 'assignments' && <AssignmentsView />}
-        {activeTab === 'quizzes' && <QuizzesView />}
-        {activeTab === 'attendance' && (
-          <div>
-            <div className="flex justify-between items-center mb-8">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Attendance</h1>
-                <p className="text-gray-500 mt-1">Record and review daily attendance for your classes</p>
-              </div>
-              <button
-                className="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition flex items-center gap-2"
-                onClick={() => openModal('attendance')}
-              >
-                <PlusIcon className="h-5 w-5" /> Mark Attendance
-              </button>
-            </div>
-            {attendanceData.length === 0 ? (
-              <div className="bg-white rounded-2xl p-8 text-center border border-gray-100">
-                <p className="text-gray-400">No attendance records yet. Mark class attendance to get started.</p>
-              </div>
-            ) : (
-              <div className="bg-white rounded-2xl border border-gray-100 p-4 overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-gray-600 border-b">
-                      <th className="py-3 px-2">Student</th>
-                      <th className="py-3 px-2">Subject</th>
-                      <th className="py-3 px-2">Date</th>
-                      <th className="py-3 px-2">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {attendanceData.map(record => (
-                      <tr key={record._id} className="border-b last:border-b-0">
-                        <td className="py-3 px-2">{record.studentId?.fullName || 'Student'}</td>
-                        <td className="py-3 px-2">{record.subjectId?.title || 'Subject'}</td>
-                        <td className="py-3 px-2">{new Date(record.date).toLocaleDateString()}</td>
-                        <td className="py-3 px-2">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            record.status === 'Present' ? 'bg-green-100 text-green-700' :
-                            record.status === 'Absent' ? 'bg-red-100 text-red-700' :
-                            'bg-yellow-100 text-yellow-700'}
-                          `}>{record.status}</span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
-        {activeTab === 'announcements' && <AnnouncementsView />}
-        <Modal />
-      </main>
-
-      {showLogoutModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl">
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Confirm Logout</h3>
-            <p className="text-sm text-gray-500 mb-4">Are you sure you want to logout?</p>
-            <div className="flex gap-3 justify-end">
-              <button onClick={() => setShowLogoutModal(false)} className="px-4 py-2 border border-gray-200 rounded-xl text-sm hover:bg-gray-50 transition">Cancel</button>
-              <button onClick={handleLogout} className="px-4 py-2 bg-red-600 text-white rounded-xl text-sm hover:bg-red-700 transition shadow-sm">Logout</button>
-            </div>
-          </div>
-        </div>
-      )}
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 relative">
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+          <XMarkIcon className="h-6 w-6" />
+        </button>
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">{title}</h2>
+        {children}
+      </div>
     </div>
   );
 };
+
+const Input = ({ label, ...props }) => (
+  <div className="mb-4">
+    <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+    <input
+      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      {...props}
+    />
+  </div>
+);
+
+const FileInput = ({ label, onFileChange, accept = ".pdf,.ppt,.pptx,.doc,.docx,.jpg,.jpeg,.png" }) => (
+  <div className="mb-4">
+    <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+    <input
+      type="file"
+      accept={accept}
+      onChange={onFileChange}
+      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+    />
+  </div>
+);
+
+const Textarea = ({ label, ...props }) => (
+  <div className="mb-4">
+    <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+    <textarea
+      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      rows="3"
+      {...props}
+    />
+  </div>
+);
+
+const Select = ({ label, options, ...props }) => (
+  <div className="mb-4">
+    <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+    <select
+      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      {...props}
+    >
+      <option value="">Select...</option>
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value}>
+          {opt.label}
+        </option>
+      ))}
+    </select>
+  </div>
+);
+
+const TeacherDashboard = ({ onLogout }) => {
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('dashboard');
+
+  const [userEmail, setUserEmail] = useState('teacher@school.com');
+  const [userName, setUserName] = useState('Teacher');
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const user = JSON.parse(storedUser);
+        if (user.email) setUserEmail(user.email);
+        if (user.name) setUserName(user.name);
+      } catch (e) {}
+    }
+  }, []);
+
+  const STUDENTS = ['Binoj Acharya', 'Smita Poudel', 'Dilasha Thapa', 'Nisha Acharya'];
+
+  const [subjects, setSubjects] = useState([
+    { id: 1, name: 'Mathematics', chapters: ['Algebra', 'Geometry', 'Trigonometry'] },
+    { id: 2, name: 'Science', chapters: ['Physics', 'Chemistry', 'Biology'] },
+  ]);
+  const [showSubjectModal, setShowSubjectModal] = useState(false);
+  const [editingSubject, setEditingSubject] = useState(null);
+  const [subjectForm, setSubjectForm] = useState({ name: '', chapters: [] });
+  const [newChapter, setNewChapter] = useState('');
+
+  const [materials, setMaterials] = useState([
+    { id: 1, title: 'Algebra Notes', type: 'PDF', chapter: 'Algebra', subject: 'Mathematics', uploaded: '2026-08-15', fileName: 'algebra_notes.pdf', fileSize: '2.4 MB' },
+    { id: 2, title: 'Physics PPT', type: 'PPT', chapter: 'Physics', subject: 'Science', uploaded: '2026-08-14', fileName: 'physics_ch1.pptx', fileSize: '5.1 MB' },
+  ]);
+  const [showMaterialModal, setShowMaterialModal] = useState(false);
+  const [materialForm, setMaterialForm] = useState({ title: '', type: 'PDF', chapter: '', subject: '', file: null, fileName: '' });
+  const [materialFile, setMaterialFile] = useState(null);
+  const [showMaterialPreviewModal, setShowMaterialPreviewModal] = useState(false);
+  const [selectedMaterial, setSelectedMaterial] = useState(null);
+
+  const [tasks, setTasks] = useState([
+    { id: 1, title: 'Chapter 5 Homework', subject: 'Mathematics', deadline: '2026-08-20', description: 'Solve all odd problems', status: 'Active' },
+    { id: 2, title: 'Lab Report', subject: 'Science', deadline: '2026-08-25', description: 'Write a report on the experiment', status: 'Active' },
+  ]);
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
+  const [taskForm, setTaskForm] = useState({ title: '', subject: '', deadline: '', description: '', status: 'Active' });
+
+  const [submissions, setSubmissions] = useState([
+    { id: 1, student: 'Binoj Acharya', task: 'Chapter 5 Homework', subject: 'Mathematics', submitted: '2026-08-18', status: 'Submitted', file: 'binoj_hw.pdf' },
+    { id: 2, student: 'Smita Poudel', task: 'Lab Report', subject: 'Science', submitted: '2026-08-19', status: 'Submitted', file: 'smita_lab.pdf' },
+    { id: 3, student: 'Dilasha Thapa', task: 'Chapter 5 Homework', subject: 'Mathematics', submitted: '2026-08-20', status: 'Late', file: 'dilasha_hw.pdf' },
+    { id: 4, student: 'Nisha Acharya', task: 'Lab Report', subject: 'Science', submitted: '2026-08-21', status: 'Submitted', file: 'nisha_lab.pdf' },
+  ]);
+  const [showHomeworkDetailModal, setShowHomeworkDetailModal] = useState(false);
+  const [selectedSubmission, setSelectedSubmission] = useState(null);
+
+  const [reviews, setReviews] = useState([
+    { id: 1, student: 'Binoj Acharya', task: 'Chapter 5 Homework', feedback: 'Good work, but need more detail.', reviewed: true },
+    { id: 2, student: 'Dilasha Thapa', task: 'Lab Report', feedback: '', reviewed: false },
+    { id: 3, student: 'Smita Poudel', task: 'Chapter 5 Homework', feedback: 'Excellent!', reviewed: true },
+  ]);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewForm, setReviewForm] = useState({ id: null, feedback: '' });
+
+  const [quizzes, setQuizzes] = useState([
+    { id: 1, title: 'Algebra Quiz', subject: 'Mathematics', deadline: '2026-08-22', timeLimit: 30, published: true },
+    { id: 2, title: 'Physics Quiz', subject: 'Science', deadline: '2026-08-28', timeLimit: 20, published: false },
+  ]);
+  const [showQuizModal, setShowQuizModal] = useState(false);
+  const [editingQuiz, setEditingQuiz] = useState(null);
+  const [quizForm, setQuizForm] = useState({ title: '', subject: '', deadline: '', timeLimit: 30, published: false, questions: [] });
+
+  const [attendanceRecords, setAttendanceRecords] = useState([
+    { date: '2026-08-16', class: '10-A', present: 28, absent: 2, late: 1 },
+    { date: '2026-08-15', class: '10-A', present: 26, absent: 3, late: 2 },
+  ]);
+  const [showAttendanceModal, setShowAttendanceModal] = useState(false);
+  const [attendanceForm, setAttendanceForm] = useState({ date: '', class: '', present: 0, absent: 0, late: 0 });
+
+  const [grades, setGrades] = useState([
+    { id: 1, student: 'Binoj Acharya', subject: 'Mathematics', marks: 85, grade: 'A', remark: 'Excellent' },
+    { id: 2, student: 'Smita Poudel', subject: 'Mathematics', marks: 72, grade: 'B', remark: '' },
+    { id: 3, student: 'Dilasha Thapa', subject: 'Science', marks: 90, grade: 'A', remark: 'Outstanding' },
+    { id: 4, student: 'Nisha Acharya', subject: 'Science', marks: 65, grade: 'C', remark: 'Needs improvement' },
+  ]);
+  const [showGradeModal, setShowGradeModal] = useState(false);
+  const [gradeForm, setGradeForm] = useState({ student: '', subject: '', marks: '', grade: '', remark: '' });
+
+  const [announcements, setAnnouncements] = useState([
+    { id: 1, title: 'Mid-term exams', content: 'Exams start from 1st September.', date: '2026-08-16' },
+    { id: 2, title: 'Science fair', content: 'Submit projects by 25th August.', date: '2026-08-15' },
+  ]);
+  const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
+  const [announcementForm, setAnnouncementForm] = useState({ title: '', content: '', date: '' });
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    if (onLogout) onLogout();
+    navigate('/');
+  };
+
+  const handleAddSubject = () => {
+    if (editingSubject) {
+      setSubjects(subjects.map(s => s.id === editingSubject.id ? { ...s, name: subjectForm.name, chapters: subjectForm.chapters } : s));
+    } else {
+      setSubjects([...subjects, { id: Date.now(), name: subjectForm.name, chapters: subjectForm.chapters }]);
+    }
+    setShowSubjectModal(false);
+    setSubjectForm({ name: '', chapters: [] });
+    setEditingSubject(null);
+  };
+
+  const handleDeleteSubject = (id) => {
+    setSubjects(subjects.filter(s => s.id !== id));
+  };
+
+  const handleEditSubject = (subject) => {
+    setEditingSubject(subject);
+    setSubjectForm({ name: subject.name, chapters: [...subject.chapters] });
+    setShowSubjectModal(true);
+  };
+
+  const addChapter = () => {
+    if (newChapter.trim()) {
+      setSubjectForm({ ...subjectForm, chapters: [...subjectForm.chapters, newChapter.trim()] });
+      setNewChapter('');
+    }
+  };
+  const removeChapter = (index) => {
+    const updated = [...subjectForm.chapters];
+    updated.splice(index, 1);
+    setSubjectForm({ ...subjectForm, chapters: updated });
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setMaterialFile(file);
+      setMaterialForm({
+        ...materialForm,
+        file: file,
+        fileName: file.name,
+        fileSize: (file.size / (1024 * 1024)).toFixed(2) + ' MB',
+      });
+    }
+  };
+
+  const handleAddMaterial = () => {
+    setMaterials([
+      ...materials,
+      {
+        id: Date.now(),
+        title: materialForm.title,
+        type: materialForm.type,
+        chapter: materialForm.chapter,
+        subject: materialForm.subject,
+        uploaded: new Date().toISOString().split('T')[0],
+        fileName: materialForm.file ? materialForm.file.name : materialForm.fileName || 'No file',
+        fileSize: materialForm.file ? (materialForm.file.size / (1024 * 1024)).toFixed(2) + ' MB' : 'N/A',
+      },
+    ]);
+    setShowMaterialModal(false);
+    setMaterialForm({ title: '', type: 'PDF', chapter: '', subject: '', file: null, fileName: '' });
+    setMaterialFile(null);
+  };
+
+  const handleDeleteMaterial = (id) => {
+    setMaterials(materials.filter(m => m.id !== id));
+  };
+
+  const handleDownloadMaterial = (fileName) => {
+    alert(`Downloading file: ${fileName} (simulated)`);
+  };
+
+  const handlePreviewMaterial = (material) => {
+    setSelectedMaterial(material);
+    setShowMaterialPreviewModal(true);
+  };
+
+  const handleAddTask = () => {
+    if (editingTask) {
+      setTasks(tasks.map(t => t.id === editingTask.id ? { ...t, ...taskForm } : t));
+    } else {
+      setTasks([...tasks, { id: Date.now(), ...taskForm }]);
+    }
+    setShowTaskModal(false);
+    setTaskForm({ title: '', subject: '', deadline: '', description: '', status: 'Active' });
+    setEditingTask(null);
+  };
+
+  const handleDeleteTask = (id) => {
+    setTasks(tasks.filter(t => t.id !== id));
+  };
+
+  const handleEditTask = (task) => {
+    setEditingTask(task);
+    setTaskForm({ title: task.title, subject: task.subject, deadline: task.deadline, description: task.description, status: task.status });
+    setShowTaskModal(true);
+  };
+
+  const handleOpenHomeworkDetail = (submission) => {
+    setSelectedSubmission(submission);
+    setShowHomeworkDetailModal(true);
+  };
+
+  const handleDownloadFile = (filename) => {
+    alert(`Downloading file: ${filename} (simulated)`);
+  };
+
+  const handleReviewSubmit = () => {
+    setReviews(reviews.map(r => r.id === reviewForm.id ? { ...r, feedback: reviewForm.feedback, reviewed: true } : r));
+    setShowReviewModal(false);
+    setReviewForm({ id: null, feedback: '' });
+  };
+
+  const openReviewModal = (id) => {
+    const review = reviews.find(r => r.id === id);
+    setReviewForm({ id: review.id, feedback: review.feedback });
+    setShowReviewModal(true);
+  };
+
+  const handleAddQuiz = () => {
+    if (editingQuiz) {
+      setQuizzes(quizzes.map(q => q.id === editingQuiz.id ? { ...q, ...quizForm } : q));
+    } else {
+      setQuizzes([...quizzes, { id: Date.now(), ...quizForm }]);
+    }
+    setShowQuizModal(false);
+    setQuizForm({ title: '', subject: '', deadline: '', timeLimit: 30, published: false, questions: [] });
+    setEditingQuiz(null);
+  };
+
+  const handleDeleteQuiz = (id) => {
+    setQuizzes(quizzes.filter(q => q.id !== id));
+  };
+
+  const handleEditQuiz = (quiz) => {
+    setEditingQuiz(quiz);
+    setQuizForm({ title: quiz.title, subject: quiz.subject, deadline: quiz.deadline, timeLimit: quiz.timeLimit, published: quiz.published, questions: quiz.questions || [] });
+    setShowQuizModal(true);
+  };
+
+  const handleAddAttendance = () => {
+    setAttendanceRecords([...attendanceRecords, { ...attendanceForm }]);
+    setShowAttendanceModal(false);
+    setAttendanceForm({ date: '', class: '', present: 0, absent: 0, late: 0 });
+  };
+
+  const handleAddGrade = () => {
+    setGrades([...grades, { id: Date.now(), ...gradeForm }]);
+    setShowGradeModal(false);
+    setGradeForm({ student: '', subject: '', marks: '', grade: '', remark: '' });
+  };
+
+  const handleDeleteGrade = (id) => {
+    setGrades(grades.filter(g => g.id !== id));
+  };
+
+  const handleAddAnnouncement = () => {
+    if (announcementForm.title && announcementForm.content) {
+      setAnnouncements([...announcements, { id: Date.now(), ...announcementForm, date: new Date().toISOString().split('T')[0] }]);
+      setShowAnnouncementModal(false);
+      setAnnouncementForm({ title: '', content: '', date: '' });
+    }
+  };
+
+  const handleDeleteAnnouncement = (id) => {
+    setAnnouncements(announcements.filter(a => a.id !== id));
+  };
+
+  const renderDashboard = () => (
+    <>
+      <div className="mb-8 flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Teacher Dashboard</h1>
+          <p className="text-gray-600 mt-1">Welcome back! Here's your teaching summary.</p>
+        </div>
+        <button
+          onClick={handleLogout}
+          className="flex items-center space-x-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200 font-medium"
+        >
+          <ArrowRightOnRectangleIcon className="h-5 w-5" />
+          <span>Logout</span>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard icon={ClipboardDocumentIcon} label="Today's Tasks" value="4" color="text-blue-600" bgColor="bg-blue-100" />
+        <StatCard icon={CheckCircleIcon} label="Total Tasks Created" value={tasks.length} color="text-green-600" bgColor="bg-green-100" />
+        <StatCard icon={BookOpenIcon} label="Assigned Subjects" value={subjects.length} color="text-purple-600" bgColor="bg-purple-100" />
+        <StatCard icon={DocumentTextIcon} label="Materials Uploaded" value={materials.length} color="text-yellow-600" bgColor="bg-yellow-100" />
+        <StatCard icon={UserGroupIcon} label="Recent Submissions" value={submissions.filter(s => s.status === 'Submitted' || s.status === 'Late').length} color="text-pink-600" bgColor="bg-pink-100" />
+        <StatCard icon={CheckCircleIcon} label="Total Submissions" value={submissions.length} color="text-indigo-600" bgColor="bg-indigo-100" />
+        <StatCard icon={ClockIcon} label="Upcoming Deadlines" value="3" color="text-red-600" bgColor="bg-red-100" />
+        <StatCard icon={UsersIcon} label="Attendance Summary" value="92%" color="text-orange-600" bgColor="bg-orange-100" />
+      </div>
+
+      <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Activities</h2>
+          <div className="space-y-4">
+            {recentActivities.map((activity, index) => (
+              <div key={index} className="border-b border-gray-100 pb-3 last:border-0 last:pb-0">
+                <p className="text-sm text-gray-800">{activity.message}</p>
+                <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+          <div className="grid grid-cols-2 gap-4">
+            <button onClick={() => setActiveTab('subjects')} className="p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors text-blue-700">
+              <BookOpenIcon className="h-6 w-6 mx-auto mb-2" />
+              <span className="text-sm font-medium">Create Subject</span>
+            </button>
+            <button onClick={() => setActiveTab('materials')} className="p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors text-green-700">
+              <DocumentTextIcon className="h-6 w-6 mx-auto mb-2" />
+              <span className="text-sm font-medium">Upload Material</span>
+            </button>
+            <button onClick={() => setActiveTab('tasks')} className="p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors text-purple-700">
+              <ClipboardDocumentIcon className="h-6 w-6 mx-auto mb-2" />
+              <span className="text-sm font-medium">Create Task</span>
+            </button>
+            <button onClick={() => setActiveTab('attendance')} className="p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors text-orange-700">
+              <UserGroupIcon className="h-6 w-6 mx-auto mb-2" />
+              <span className="text-sm font-medium">Take Attendance</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+
+  const renderSubjects = () => (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-gray-800">Subject Management</h2>
+        <button
+          onClick={() => { setEditingSubject(null); setSubjectForm({ name: '', chapters: [] }); setShowSubjectModal(true); }}
+          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          <PlusIcon className="h-5 w-5" />
+          <span>Add Subject</span>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {subjects.map((subject) => (
+          <div key={subject.id} className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <div className="flex justify-between items-start">
+              <h3 className="text-xl font-semibold text-gray-800">{subject.name}</h3>
+              <div className="flex space-x-2">
+                <button onClick={() => handleEditSubject(subject)} className="text-blue-500 hover:text-blue-700">
+                  <PencilIcon className="h-5 w-5" />
+                </button>
+                <button onClick={() => handleDeleteSubject(subject.id)} className="text-red-500 hover:text-red-700">
+                  <TrashIcon className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+            <div className="mt-3">
+              <p className="text-sm text-gray-500 mb-1">Chapters:</p>
+              <ul className="list-disc list-inside space-y-1">
+                {subject.chapters.map((ch, idx) => (
+                  <li key={idx} className="text-gray-700">{ch}</li>
+                ))}
+                {subject.chapters.length === 0 && <li className="text-gray-400 italic">No chapters added</li>}
+              </ul>
+            </div>
+          </div>
+        ))}
+        {subjects.length === 0 && (
+          <div className="col-span-2 text-center py-12 text-gray-400">No subjects yet. Click "Add Subject" to create one.</div>
+        )}
+      </div>
+
+      <Modal isOpen={showSubjectModal} onClose={() => setShowSubjectModal(false)} title={editingSubject ? 'Edit Subject' : 'Add Subject'}>
+        <Input label="Subject Name" value={subjectForm.name} onChange={(e) => setSubjectForm({ ...subjectForm, name: e.target.value })} />
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Chapters</label>
+          <div className="flex space-x-2">
+            <input
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
+              value={newChapter}
+              onChange={(e) => setNewChapter(e.target.value)}
+              placeholder="Chapter name"
+            />
+            <button onClick={addChapter} className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">Add</button>
+          </div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {subjectForm.chapters.map((ch, idx) => (
+              <span key={idx} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full flex items-center text-sm">
+                {ch}
+                <button onClick={() => removeChapter(idx)} className="ml-2 text-red-500 hover:text-red-700">
+                  <XMarkIcon className="h-4 w-4" />
+                </button>
+              </span>
+            ))}
+          </div>
+        </div>
+        <button onClick={handleAddSubject} className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+          {editingSubject ? 'Update Subject' : 'Create Subject'}
+        </button>
+      </Modal>
+    </div>
+  );
+
+  const renderMaterials = () => (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-gray-800">Learning Materials</h2>
+        <button
+          onClick={() => setShowMaterialModal(true)}
+          className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+        >
+          <ArrowUpTrayIcon className="h-5 w-5" />
+          <span>Upload Material</span>
+        </button>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Subject</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Chapter</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">File</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Uploaded</th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {materials.map((material) => (
+              <tr key={material.id}>
+                <td className="px-6 py-4 text-sm text-gray-800">{material.title}</td>
+                <td className="px-6 py-4 text-sm text-gray-600">{material.type}</td>
+                <td className="px-6 py-4 text-sm text-gray-600">{material.subject}</td>
+                <td className="px-6 py-4 text-sm text-gray-600">{material.chapter}</td>
+                <td className="px-6 py-4 text-sm text-gray-600">
+                  <span className="flex items-center">
+                    <PaperClipIcon className="h-4 w-4 mr-1 text-gray-400" />
+                    <span className="truncate max-w-[120px]">{material.fileName || 'No file'}</span>
+                    {material.fileSize && <span className="text-xs text-gray-400 ml-1">({material.fileSize})</span>}
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-600">{material.uploaded}</td>
+                <td className="px-6 py-4 text-right space-x-2">
+                  <button onClick={() => handlePreviewMaterial(material)} className="text-blue-500 hover:text-blue-700">
+                    <EyeIcon className="h-5 w-5 inline" />
+                  </button>
+                  {material.fileName && material.fileName !== 'No file' && (
+                    <button onClick={() => handleDownloadMaterial(material.fileName)} className="text-indigo-500 hover:text-indigo-700">
+                      <ArrowDownTrayIcon className="h-5 w-5 inline" />
+                    </button>
+                  )}
+                  <button onClick={() => handleDeleteMaterial(material.id)} className="text-red-500 hover:text-red-700">
+                    <TrashIcon className="h-5 w-5 inline" />
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {materials.length === 0 && (
+              <tr><td colSpan="7" className="px-6 py-4 text-center text-gray-400">No materials uploaded yet.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <Modal isOpen={showMaterialModal} onClose={() => setShowMaterialModal(false)} title="Upload Learning Material">
+        <Input label="Title" value={materialForm.title} onChange={(e) => setMaterialForm({ ...materialForm, title: e.target.value })} />
+        <Select
+          label="Type"
+          options={[{ value: 'PDF', label: 'PDF' }, { value: 'PPT', label: 'PPT' }, { value: 'Notes', label: 'Notes' }, { value: 'Image', label: 'Image' }, { value: 'Video Link', label: 'Video Link' }]}
+          value={materialForm.type}
+          onChange={(e) => setMaterialForm({ ...materialForm, type: e.target.value })}
+        />
+        <Select
+          label="Subject"
+          options={subjects.map(s => ({ value: s.name, label: s.name }))}
+          value={materialForm.subject}
+          onChange={(e) => setMaterialForm({ ...materialForm, subject: e.target.value })}
+        />
+        <Input label="Chapter" value={materialForm.chapter} onChange={(e) => setMaterialForm({ ...materialForm, chapter: e.target.value })} />
+        <FileInput label="Upload File (PDF, PPT, DOC, Image)" onFileChange={handleFileChange} />
+        {materialFile && (
+          <div className="text-sm text-gray-600 mb-4 flex items-center">
+            <PaperClipIcon className="h-4 w-4 mr-1" />
+            <span>{materialFile.name} ({(materialFile.size / (1024 * 1024)).toFixed(2)} MB)</span>
+          </div>
+        )}
+        <button onClick={handleAddMaterial} className="w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Upload</button>
+      </Modal>
+
+      <Modal isOpen={showMaterialPreviewModal} onClose={() => setShowMaterialPreviewModal(false)} title="Material Preview">
+        {selectedMaterial && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div><span className="font-medium">Title:</span> {selectedMaterial.title}</div>
+              <div><span className="font-medium">Type:</span> {selectedMaterial.type}</div>
+              <div><span className="font-medium">Subject:</span> {selectedMaterial.subject}</div>
+              <div><span className="font-medium">Chapter:</span> {selectedMaterial.chapter}</div>
+              <div><span className="font-medium">Uploaded:</span> {selectedMaterial.uploaded}</div>
+              <div><span className="font-medium">File:</span> {selectedMaterial.fileName}</div>
+              {selectedMaterial.fileSize && <div><span className="font-medium">Size:</span> {selectedMaterial.fileSize}</div>}
+            </div>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowMaterialPreviewModal(false)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+    </div>
+  );
+
+  const renderTasks = () => (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-gray-800">Tasks & Assignments</h2>
+        <button
+          onClick={() => { setEditingTask(null); setTaskForm({ title: '', subject: '', deadline: '', description: '', status: 'Active' }); setShowTaskModal(true); }}
+          className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+        >
+          <PlusIcon className="h-5 w-5" />
+          <span>Create Task</span>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {tasks.map((task) => (
+          <div key={task.id} className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800">{task.title}</h3>
+                <p className="text-sm text-gray-500">{task.subject}</p>
+              </div>
+              <span className={`px-2 py-1 text-xs rounded-full ${task.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                {task.status}
+              </span>
+            </div>
+            <p className="mt-2 text-gray-600 text-sm">{task.description}</p>
+            <div className="mt-3 flex items-center text-sm text-gray-500">
+              <CalendarIcon className="h-4 w-4 mr-1" />
+              Deadline: {task.deadline}
+            </div>
+            <div className="mt-4 flex space-x-2">
+              <button onClick={() => handleEditTask(task)} className="text-blue-500 hover:text-blue-700">
+                <PencilIcon className="h-5 w-5" />
+              </button>
+              <button onClick={() => handleDeleteTask(task.id)} className="text-red-500 hover:text-red-700">
+                <TrashIcon className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+        ))}
+        {tasks.length === 0 && <div className="col-span-2 text-center py-12 text-gray-400">No tasks created yet.</div>}
+      </div>
+
+      <Modal isOpen={showTaskModal} onClose={() => setShowTaskModal(false)} title={editingTask ? 'Edit Task' : 'Create New Task'}>
+        <Input label="Task Title" value={taskForm.title} onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })} />
+        <Select
+          label="Subject"
+          options={subjects.map(s => ({ value: s.name, label: s.name }))}
+          value={taskForm.subject}
+          onChange={(e) => setTaskForm({ ...taskForm, subject: e.target.value })}
+        />
+        <Input label="Deadline" type="date" value={taskForm.deadline} onChange={(e) => setTaskForm({ ...taskForm, deadline: e.target.value })} />
+        <Textarea label="Description" value={taskForm.description} onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })} />
+        <button onClick={handleAddTask} className="w-full py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+          {editingTask ? 'Update Task' : 'Create Task'}
+        </button>
+      </Modal>
+    </div>
+  );
+
+  const renderHomework = () => (
+    <div>
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">Homework Submissions</h2>
+
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Student</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Task</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Subject</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Submitted</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {submissions.map((sub) => (
+              <tr key={sub.id}>
+                <td className="px-6 py-4 text-sm text-gray-800">{sub.student}</td>
+                <td className="px-6 py-4 text-sm text-gray-600">{sub.task}</td>
+                <td className="px-6 py-4 text-sm text-gray-600">{sub.subject}</td>
+                <td className="px-6 py-4 text-sm text-gray-600">{sub.submitted}</td>
+                <td className="px-6 py-4 text-sm">
+                  <span className={`px-2 py-1 rounded-full text-xs ${
+                    sub.status === 'Submitted' ? 'bg-green-100 text-green-800' :
+                    sub.status === 'Late' ? 'bg-red-100 text-red-800' :
+                    'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {sub.status}
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-right space-x-2">
+                  <button onClick={() => handleOpenHomeworkDetail(sub)} className="text-blue-500 hover:text-blue-700">
+                    <EyeIcon className="h-5 w-5 inline" />
+                  </button>
+                  <button onClick={() => handleDownloadFile(sub.file)} className="text-indigo-500 hover:text-indigo-700">
+                    <ArrowDownTrayIcon className="h-5 w-5 inline" />
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {submissions.length === 0 && <tr><td colSpan="6" className="px-6 py-4 text-center text-gray-400">No submissions.</td></tr>}
+          </tbody>
+        </table>
+      </div>
+
+      <Modal isOpen={showHomeworkDetailModal} onClose={() => setShowHomeworkDetailModal(false)} title={`Submission: ${selectedSubmission?.student} - ${selectedSubmission?.task}`}>
+        {selectedSubmission && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div><span className="font-medium">Student:</span> {selectedSubmission.student}</div>
+              <div><span className="font-medium">Task:</span> {selectedSubmission.task}</div>
+              <div><span className="font-medium">Subject:</span> {selectedSubmission.subject}</div>
+              <div><span className="font-medium">Submitted:</span> {selectedSubmission.submitted}</div>
+              <div><span className="font-medium">Status:</span>
+                <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
+                  selectedSubmission.status === 'Submitted' ? 'bg-green-100 text-green-800' :
+                  selectedSubmission.status === 'Late' ? 'bg-red-100 text-red-800' :
+                  'bg-yellow-100 text-yellow-800'
+                }`}>
+                  {selectedSubmission.status}
+                </span>
+              </div>
+              <div><span className="font-medium">File:</span>
+                <button onClick={() => handleDownloadFile(selectedSubmission.file)} className="text-indigo-600 hover:text-indigo-800 underline ml-1">
+                  {selectedSubmission.file}
+                </button>
+              </div>
+            </div>
+            <div className="flex justify-end mt-4">
+              <button onClick={() => setShowHomeworkDetailModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+    </div>
+  );
+
+  const renderReviews = () => (
+    <div>
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">Assignment Review & Feedback</h2>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Student</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Task</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Feedback</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reviewed</th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {reviews.map((review) => (
+              <tr key={review.id}>
+                <td className="px-6 py-4 text-sm text-gray-800">{review.student}</td>
+                <td className="px-6 py-4 text-sm text-gray-600">{review.task}</td>
+                <td className="px-6 py-4 text-sm text-gray-600">{review.feedback || '—'}</td>
+                <td className="px-6 py-4 text-sm">
+                  <span className={`px-2 py-1 rounded-full text-xs ${review.reviewed ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                    {review.reviewed ? 'Reviewed' : 'Pending'}
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-right">
+                  <button onClick={() => openReviewModal(review.id)} className="text-blue-500 hover:text-blue-700">
+                    <PencilIcon className="h-5 w-5 inline" />
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {reviews.length === 0 && <tr><td colSpan="5" className="px-6 py-4 text-center text-gray-400">No reviews pending.</td></tr>}
+          </tbody>
+        </table>
+      </div>
+
+      <Modal isOpen={showReviewModal} onClose={() => setShowReviewModal(false)} title="Provide Feedback">
+        <Textarea label="Feedback" value={reviewForm.feedback} onChange={(e) => setReviewForm({ ...reviewForm, feedback: e.target.value })} />
+        <button onClick={handleReviewSubmit} className="w-full py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Submit Review</button>
+      </Modal>
+    </div>
+  );
+
+  const renderQuizzes = () => (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-gray-800">Quizzes</h2>
+        <button
+          onClick={() => { setEditingQuiz(null); setQuizForm({ title: '', subject: '', deadline: '', timeLimit: 30, published: false, questions: [] }); setShowQuizModal(true); }}
+          className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+        >
+          <PlusIcon className="h-5 w-5" />
+          <span>Create Quiz</span>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {quizzes.map((quiz) => (
+          <div key={quiz.id} className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800">{quiz.title}</h3>
+                <p className="text-sm text-gray-500">{quiz.subject}</p>
+              </div>
+              <span className={`px-2 py-1 text-xs rounded-full ${quiz.published ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                {quiz.published ? 'Published' : 'Draft'}
+              </span>
+            </div>
+            <p className="mt-2 text-sm text-gray-600">Deadline: {quiz.deadline} | Time Limit: {quiz.timeLimit} min</p>
+            <div className="mt-4 flex space-x-2">
+              <button onClick={() => handleEditQuiz(quiz)} className="text-blue-500 hover:text-blue-700">
+                <PencilIcon className="h-5 w-5" />
+              </button>
+              <button onClick={() => handleDeleteQuiz(quiz.id)} className="text-red-500 hover:text-red-700">
+                <TrashIcon className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+        ))}
+        {quizzes.length === 0 && <div className="col-span-2 text-center py-12 text-gray-400">No quizzes created yet.</div>}
+      </div>
+
+      <Modal isOpen={showQuizModal} onClose={() => setShowQuizModal(false)} title={editingQuiz ? 'Edit Quiz' : 'Create New Quiz'}>
+        <Input label="Quiz Title" value={quizForm.title} onChange={(e) => setQuizForm({ ...quizForm, title: e.target.value })} />
+        <Select
+          label="Subject"
+          options={subjects.map(s => ({ value: s.name, label: s.name }))}
+          value={quizForm.subject}
+          onChange={(e) => setQuizForm({ ...quizForm, subject: e.target.value })}
+        />
+        <Input label="Deadline" type="date" value={quizForm.deadline} onChange={(e) => setQuizForm({ ...quizForm, deadline: e.target.value })} />
+        <Input label="Time Limit (minutes)" type="number" value={quizForm.timeLimit} onChange={(e) => setQuizForm({ ...quizForm, timeLimit: parseInt(e.target.value) })} />
+        <div className="mb-4 flex items-center">
+          <input type="checkbox" checked={quizForm.published} onChange={(e) => setQuizForm({ ...quizForm, published: e.target.checked })} className="mr-2" />
+          <label className="text-sm text-gray-700">Publish immediately</label>
+        </div>
+        <button onClick={handleAddQuiz} className="w-full py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+          {editingQuiz ? 'Update Quiz' : 'Create Quiz'}
+        </button>
+      </Modal>
+    </div>
+  );
+
+  const renderAttendance = () => (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-gray-800">Attendance Management</h2>
+        <button
+          onClick={() => setShowAttendanceModal(true)}
+          className="flex items-center space-x-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
+        >
+          <PlusIcon className="h-5 w-5" />
+          <span>Take Attendance</span>
+        </button>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Class</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Present</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Absent</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Late</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {attendanceRecords.map((record, idx) => (
+              <tr key={idx}>
+                <td className="px-6 py-4 text-sm text-gray-800">{record.date}</td>
+                <td className="px-6 py-4 text-sm text-gray-600">{record.class}</td>
+                <td className="px-6 py-4 text-sm text-green-600 font-medium">{record.present}</td>
+                <td className="px-6 py-4 text-sm text-red-600 font-medium">{record.absent}</td>
+                <td className="px-6 py-4 text-sm text-yellow-600 font-medium">{record.late}</td>
+              </tr>
+            ))}
+            {attendanceRecords.length === 0 && <tr><td colSpan="5" className="px-6 py-4 text-center text-gray-400">No attendance records.</td></tr>}
+          </tbody>
+        </table>
+      </div>
+
+      <Modal isOpen={showAttendanceModal} onClose={() => setShowAttendanceModal(false)} title="Take Attendance">
+        <Input label="Date" type="date" value={attendanceForm.date} onChange={(e) => setAttendanceForm({ ...attendanceForm, date: e.target.value })} />
+        <Input label="Class" value={attendanceForm.class} onChange={(e) => setAttendanceForm({ ...attendanceForm, class: e.target.value })} />
+        <Input label="Present" type="number" value={attendanceForm.present} onChange={(e) => setAttendanceForm({ ...attendanceForm, present: parseInt(e.target.value) })} />
+        <Input label="Absent" type="number" value={attendanceForm.absent} onChange={(e) => setAttendanceForm({ ...attendanceForm, absent: parseInt(e.target.value) })} />
+        <Input label="Late" type="number" value={attendanceForm.late} onChange={(e) => setAttendanceForm({ ...attendanceForm, late: parseInt(e.target.value) })} />
+        <button onClick={handleAddAttendance} className="w-full py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">Save Attendance</button>
+      </Modal>
+    </div>
+  );
+
+  const renderGrades = () => (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-gray-800">Grades & Results</h2>
+        <button
+          onClick={() => setShowGradeModal(true)}
+          className="flex items-center space-x-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700"
+        >
+          <PlusIcon className="h-5 w-5" />
+          <span>Add Grade</span>
+        </button>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Student</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Subject</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Marks</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Grade</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Remark</th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {grades.map((grade) => (
+              <tr key={grade.id}>
+                <td className="px-6 py-4 text-sm text-gray-800">{grade.student}</td>
+                <td className="px-6 py-4 text-sm text-gray-600">{grade.subject}</td>
+                <td className="px-6 py-4 text-sm font-medium text-gray-800">{grade.marks}</td>
+                <td className="px-6 py-4 text-sm">
+                  <span className={`px-2 py-1 rounded-full text-xs ${grade.grade === 'A' ? 'bg-green-100 text-green-800' : grade.grade === 'B' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                    {grade.grade}
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-600">{grade.remark || '—'}</td>
+                <td className="px-6 py-4 text-right">
+                  <button onClick={() => handleDeleteGrade(grade.id)} className="text-red-500 hover:text-red-700"><TrashIcon className="h-5 w-5 inline" /></button>
+                </td>
+              </tr>
+            ))}
+            {grades.length === 0 && <tr><td colSpan="6" className="px-6 py-4 text-center text-gray-400">No grades entered.</td></tr>}
+          </tbody>
+        </table>
+      </div>
+
+      <Modal isOpen={showGradeModal} onClose={() => setShowGradeModal(false)} title="Add Grade">
+        <Select
+          label="Student"
+          options={STUDENTS.map(s => ({ value: s, label: s }))}
+          value={gradeForm.student}
+          onChange={(e) => setGradeForm({ ...gradeForm, student: e.target.value })}
+        />
+        <Select
+          label="Subject"
+          options={subjects.map(s => ({ value: s.name, label: s.name }))}
+          value={gradeForm.subject}
+          onChange={(e) => setGradeForm({ ...gradeForm, subject: e.target.value })}
+        />
+        <Input label="Marks" type="number" value={gradeForm.marks} onChange={(e) => setGradeForm({ ...gradeForm, marks: e.target.value })} />
+        <Input label="Grade" value={gradeForm.grade} onChange={(e) => setGradeForm({ ...gradeForm, grade: e.target.value })} />
+        <Input label="Remark" value={gradeForm.remark} onChange={(e) => setGradeForm({ ...gradeForm, remark: e.target.value })} />
+        <button onClick={handleAddGrade} className="w-full py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">Add Grade</button>
+      </Modal>
+    </div>
+  );
+
+  const renderAnnouncements = () => (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-gray-800">Announcements</h2>
+        <button
+          onClick={() => setShowAnnouncementModal(true)}
+          className="flex items-center space-x-2 px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700"
+        >
+          <MegaphoneIcon className="h-5 w-5" />
+          <span>Post Announcement</span>
+        </button>
+      </div>
+
+      <div className="space-y-4">
+        {announcements.map((ann) => (
+          <div key={ann.id} className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800">{ann.title}</h3>
+                <p className="text-sm text-gray-500">{ann.date}</p>
+              </div>
+              <button onClick={() => handleDeleteAnnouncement(ann.id)} className="text-red-500 hover:text-red-700">
+                <TrashIcon className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="mt-2 text-gray-700">{ann.content}</p>
+          </div>
+        ))}
+        {announcements.length === 0 && <div className="text-center py-12 text-gray-400">No announcements.</div>}
+      </div>
+
+      <Modal isOpen={showAnnouncementModal} onClose={() => setShowAnnouncementModal(false)} title="Post Announcement">
+        <Input label="Title" value={announcementForm.title} onChange={(e) => setAnnouncementForm({ ...announcementForm, title: e.target.value })} />
+        <Textarea label="Content" value={announcementForm.content} onChange={(e) => setAnnouncementForm({ ...announcementForm, content: e.target.value })} />
+        <button onClick={handleAddAnnouncement} className="w-full py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700">Post</button>
+      </Modal>
+    </div>
+  );
+
+  return (
+    <div className="flex min-h-screen bg-gray-50">
+      <TeacherSidebar 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab} 
+        userEmail={userEmail}
+        userName={userName}
+      />
+      <div className="ml-64 flex-1 p-8">
+        {activeTab === 'dashboard' && renderDashboard()}
+        {activeTab === 'subjects' && renderSubjects()}
+        {activeTab === 'materials' && renderMaterials()}
+        {activeTab === 'tasks' && renderTasks()}
+        {activeTab === 'homework' && renderHomework()}
+        {activeTab === 'review' && renderReviews()}
+        {activeTab === 'quizzes' && renderQuizzes()}
+        {activeTab === 'attendance' && renderAttendance()}
+        {activeTab === 'grades' && renderGrades()}
+        {activeTab === 'announcements' && renderAnnouncements()}
+      </div>
+    </div>
+  );
+};
+
+const StatCard = ({ icon: Icon, label, value, color, bgColor }) => (
+  <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-sm text-gray-500">{label}</p>
+        <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
+      </div>
+      <div className={`p-3 rounded-lg ${bgColor}`}>
+        <Icon className={`h-6 w-6 ${color}`} />
+      </div>
+    </div>
+  </div>
+);
+
+const recentActivities = [
+  { message: 'Binoj Acharya submitted homework for Mathematics', time: '2 min ago' },
+  { message: 'New assignment created: Chapter 5 Quiz', time: '15 min ago' },
+  { message: 'Smita Poudel reviewed 3 pending assignments', time: '1 hour ago' },
+  { message: 'Attendance marked for Class 10-A', time: '3 hours ago' },
+  { message: 'Learning material uploaded: PPT - Algebra by Dilasha Thapa', time: '5 hours ago' },
+];
 
 export default TeacherDashboard;
