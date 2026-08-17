@@ -23,8 +23,8 @@ const subjectSchema = new mongoose.Schema({
   },
   createdByRole: {
     type: String,
-    enum: ['admin', 'teacher'],
-    default: 'teacher'
+    enum: ['ADMIN', 'TEACHER'],
+    default: 'ADMIN'
   },
   code: {
     type: String,

@@ -5,18 +5,23 @@ import RegisterPage from "./Pages/auth/RegisterPage";
 import AdminDashboard from "./Pages/AdminDashboard";
 import ResetPasswordPage from "./Pages/auth/ResetPasswordPage";
 import TeacherDashboard from "./Pages/TeacherDashboard";
-import ProtectedRoute from "./components/ProtectedRoute"; 
+import StudentDashboard from "./Pages/StudentDashboard";
+import StudentSidebar from "./components/StudentSidebar";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 
 function App() {
   return (
     <Routes>
-      {/* Public Routes */}
+      {/* PUBLIC ROUTES*/}
       <Route path="/" element={<LoginPage />} />
+      <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-      {/* Protected Routes */}
+      {/*PROTECTED ROUTES  */}
+      
+      {/* Admin Dashboard - Only accessible by users with ADMIN role */}
       <Route
         path="/admin"
         element={
@@ -25,6 +30,8 @@ function App() {
           </ProtectedRoute>
         }
       />
+
+      {/* Teacher Dashboard - Only accessible by users with TEACHER role */}
       <Route
         path="/teacher"
         element={
@@ -34,7 +41,17 @@ function App() {
         }
       />
 
-      {/* Catch-all */}
+      {/* Student Dashboard - Only accessible by users with STUDENT role */}
+      <Route
+        path="/student"
+        element={
+          <ProtectedRoute allowedRoles={["STUDENT"]}>
+            <StudentDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* CATCH-ALL ROUTE*/}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

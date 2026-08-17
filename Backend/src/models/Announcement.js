@@ -6,11 +6,13 @@ const announcementSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
+  message: {
   content: {
     type: String,
     required: true,
     trim: true,
   },
+  createdBy: {
   subjectId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Subject',
@@ -21,6 +23,18 @@ const announcementSchema = new mongoose.Schema({
     ref: 'User',
     required: true,
   },
+  createdByRole: {
+    type: String,
+    enum: ['ADMIN', 'TEACHER', 'STUDENT'],
+    default: 'ADMIN',
+  },
+  isPublished: {
+    type: Boolean,
+    default: true,
+  },
+}, {
+  timestamps: true,
+});
   priority: {
     type: String,
     enum: ['Low', 'Medium', 'High'],

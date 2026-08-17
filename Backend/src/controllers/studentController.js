@@ -63,16 +63,12 @@ exports.createStudent = async (req, res) => {
       });
     }
 
-    // Hash password manually
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // Create user with hashed password
+    // Create user and let the User schema hash the password once via pre-save.
     const user = new User({
       fullName,
       email,
-      password: hashedPassword,
-      role: 'student',
+      password,
+      role: 'STUDENT',
       isActive: true,
     });
 
