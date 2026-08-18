@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const sendEmail = require('../utils/email');
 
 const normalizeRole = (role = '') => String(role).trim().toUpperCase();
 
@@ -99,6 +100,7 @@ exports.login = async (req, res) => {
   }
 };
 
+// ============ SEND RESET OTP (with email) ============
 exports.sendResetOTP = async (req, res) => {
   try {
     const { email } = req.body;
@@ -111,19 +113,40 @@ exports.sendResetOTP = async (req, res) => {
       return res.status(404).json({ message: 'User not found with this email.' });
     }
 
+    // Generate 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     user.resetOTP = otp;
-    user.resetOTPExpiry = Date.now() + 10 * 60 * 1000;
+    user.resetOTPExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
     await user.save();
 
-    console.log(`OTP for ${email}: ${otp}`);
-    res.json({ message: 'OTP sent. Check server console for the OTP.' });
+    // Send email with OTP
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; background: #f9f9f9; border-radius: 10px;">
+        <h2 style="color: #2563eb;">SchoolLink Password Reset</h2>
+        <p>You requested to reset your password. Use the 6-digit code below:</p>
+        <div style="background: white; padding: 15px; text-align: center; font-size: 32px; letter-spacing: 8px; font-weight: bold; border-radius: 8px; border: 1px solid #ddd;">
+          ${otp}
+        </div>
+        <p style="margin-top: 20px; color: #666;">This code expires in 10 minutes.</p>
+        <p style="color: #999; font-size: 12px;">If you didn't request this, please ignore this email.</p>
+      </div>
+    `;
+
+    const emailSent = await sendEmail(email, 'SchoolLink Password Reset OTP', html);
+
+    if (!emailSent) {
+      return res.status(500).json({ message: 'Failed to send OTP email.' });
+    }
+
+    console.log(`OTP for ${email}: ${otp}`); // keep for debugging
+    res.json({ message: 'OTP sent to your email.' });
   } catch (error) {
     console.error('Send OTP error:', error);
     res.status(500).json({ message: 'Server error sending OTP.' });
   }
 };
 
+// ============ RESET PASSWORD WITH OTP ============
 exports.resetPassword = async (req, res) => {
   try {
     const { email, otp, newPassword } = req.body;
@@ -137,6 +160,7 @@ exports.resetPassword = async (req, res) => {
       return res.status(404).json({ message: 'User not found.' });
     }
 
+    // Verify OTP
     if (user.resetOTP !== otp) {
       return res.status(400).json({ message: 'Invalid OTP.' });
     }
@@ -145,7 +169,11 @@ exports.resetPassword = async (req, res) => {
       return res.status(400).json({ message: 'OTP has expired. Please request a new one.' });
     }
 
-    user.password = newPassword;
+    // Hash the new password before saving
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+
+    // Clear OTP fields
     user.resetOTP = null;
     user.resetOTPExpiry = null;
     await user.save();
