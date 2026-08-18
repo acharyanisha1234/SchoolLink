@@ -56,3 +56,5 @@ exports.authorize = (...roles) => {
     next();
   };
 };
+
+exports.auth = exports.protect;
