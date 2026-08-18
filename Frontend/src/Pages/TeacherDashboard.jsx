@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import {
   ArrowRightOnRectangleIcon,
   UsersIcon,
@@ -102,6 +103,9 @@ const TeacherDashboard = ({ onLogout }) => {
 
   const [userEmail, setUserEmail] = useState('teacher@school.com');
   const [userName, setUserName] = useState('Teacher');
+  const [userId, setUserId] = useState(null);
+  const [userRole, setUserRole] = useState('TEACHER');
+
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
@@ -109,6 +113,8 @@ const TeacherDashboard = ({ onLogout }) => {
         const user = JSON.parse(storedUser);
         if (user.email) setUserEmail(user.email);
         if (user.name) setUserName(user.name);
+        if (user.id) setUserId(user.id);
+        if (user.role) setUserRole(user.role);
       } catch (e) {}
     }
   }, []);
@@ -116,13 +122,19 @@ const TeacherDashboard = ({ onLogout }) => {
   const STUDENTS = ['Binoj Acharya', 'Smita Poudel', 'Dilasha Thapa', 'Nisha Acharya'];
 
   const [subjects, setSubjects] = useState([
-    { id: 1, name: 'Mathematics', chapters: ['Algebra', 'Geometry', 'Trigonometry'] },
-    { id: 2, name: 'Science', chapters: ['Physics', 'Chemistry', 'Biology'] },
+    { id: 1, title: 'Mathematics', code: 'MATH101', class: 10, teacher: 'Mr. Sharma', description: 'Algebra & Geometry', status: 'Active' },
+    { id: 2, title: 'Science', code: 'SCI101', class: 10, teacher: 'Ms. Poudel', description: 'Physics, Chemistry, Biology', status: 'Active' },
   ]);
   const [showSubjectModal, setShowSubjectModal] = useState(false);
   const [editingSubject, setEditingSubject] = useState(null);
-  const [subjectForm, setSubjectForm] = useState({ name: '', chapters: [] });
-  const [newChapter, setNewChapter] = useState('');
+  const [subjectForm, setSubjectForm] = useState({
+    title: '',
+    code: '',
+    class: '',
+    teacher: '',
+    description: '',
+    status: 'Active'
+  });
 
   const [materials, setMaterials] = useState([
     { id: 1, title: 'Algebra Notes', type: 'PDF', chapter: 'Algebra', subject: 'Mathematics', uploaded: '2026-08-15', fileName: 'algebra_notes.pdf', fileSize: '2.4 MB' },
@@ -143,13 +155,14 @@ const TeacherDashboard = ({ onLogout }) => {
   const [taskForm, setTaskForm] = useState({ title: '', subject: '', deadline: '', description: '', status: 'Active' });
 
   const [submissions, setSubmissions] = useState([
-    { id: 1, student: 'Binoj Acharya', task: 'Chapter 5 Homework', subject: 'Mathematics', submitted: '2026-08-18', status: 'Submitted', file: 'binoj_hw.pdf' },
-    { id: 2, student: 'Smita Poudel', task: 'Lab Report', subject: 'Science', submitted: '2026-08-19', status: 'Submitted', file: 'smita_lab.pdf' },
-    { id: 3, student: 'Dilasha Thapa', task: 'Chapter 5 Homework', subject: 'Mathematics', submitted: '2026-08-20', status: 'Late', file: 'dilasha_hw.pdf' },
-    { id: 4, student: 'Nisha Acharya', task: 'Lab Report', subject: 'Science', submitted: '2026-08-21', status: 'Submitted', file: 'nisha_lab.pdf' },
+    { id: 1, student: 'Binoj Acharya', task: 'Chapter 5 Homework', subject: 'Mathematics', submitted: '2026-08-18', status: 'Submitted', file: 'binoj_hw.pdf', feedback: '' },
+    { id: 2, student: 'Smita Poudel', task: 'Lab Report', subject: 'Science', submitted: '2026-08-19', status: 'Submitted', file: 'smita_lab.pdf', feedback: '' },
+    { id: 3, student: 'Dilasha Thapa', task: 'Chapter 5 Homework', subject: 'Mathematics', submitted: '2026-08-20', status: 'Late', file: 'dilasha_hw.pdf', feedback: '' },
+    { id: 4, student: 'Nisha Acharya', task: 'Lab Report', subject: 'Science', submitted: '2026-08-21', status: 'Submitted', file: 'nisha_lab.pdf', feedback: '' },
   ]);
   const [showHomeworkDetailModal, setShowHomeworkDetailModal] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState(null);
+  const [feedbackText, setFeedbackText] = useState('');
 
   const [reviews, setReviews] = useState([
     { id: 1, student: 'Binoj Acharya', task: 'Chapter 5 Homework', feedback: 'Good work, but need more detail.', reviewed: true },
@@ -160,19 +173,48 @@ const TeacherDashboard = ({ onLogout }) => {
   const [reviewForm, setReviewForm] = useState({ id: null, feedback: '' });
 
   const [quizzes, setQuizzes] = useState([
-    { id: 1, title: 'Algebra Quiz', subject: 'Mathematics', deadline: '2026-08-22', timeLimit: 30, published: true },
-    { id: 2, title: 'Physics Quiz', subject: 'Science', deadline: '2026-08-28', timeLimit: 20, published: false },
+    { id: 1, title: 'Algebra Quiz', subject: 'Mathematics', deadline: '2026-08-22', timeLimit: 30, published: true, questions: [{ question: 'What is 2+2?', options: ['3', '4', '5', '6'], correctAnswer: '4' }] },
+    { id: 2, title: 'Physics Quiz', subject: 'Science', deadline: '2026-08-28', timeLimit: 20, published: false, questions: [{ question: 'What is the speed of light?', options: ['3e8 m/s', '3e6 m/s', '3e10 m/s', '3e4 m/s'], correctAnswer: '3e8 m/s' }] },
   ]);
   const [showQuizModal, setShowQuizModal] = useState(false);
   const [editingQuiz, setEditingQuiz] = useState(null);
-  const [quizForm, setQuizForm] = useState({ title: '', subject: '', deadline: '', timeLimit: 30, published: false, questions: [] });
+  const [quizForm, setQuizForm] = useState({
+    title: '',
+    subject: '',
+    deadline: '',
+    timeLimit: 30,
+    published: false,
+    questions: [{ question: '', options: ['', '', '', ''], correctAnswer: '' }]
+  });
 
   const [attendanceRecords, setAttendanceRecords] = useState([
-    { date: '2026-08-16', class: '10-A', present: 28, absent: 2, late: 1 },
-    { date: '2026-08-15', class: '10-A', present: 26, absent: 3, late: 2 },
+    { 
+      date: '2026-08-16', 
+      class: '10-A', 
+      students: [
+        { name: 'Binoj Acharya', status: 'present' },
+        { name: 'Smita Poudel', status: 'present' },
+        { name: 'Dilasha Thapa', status: 'absent' },
+        { name: 'Nisha Acharya', status: 'present' },
+      ]
+    },
+    { 
+      date: '2026-08-15', 
+      class: '10-A', 
+      students: [
+        { name: 'Binoj Acharya', status: 'present' },
+        { name: 'Smita Poudel', status: 'absent' },
+        { name: 'Dilasha Thapa', status: 'present' },
+        { name: 'Nisha Acharya', status: 'present' },
+      ]
+    },
   ]);
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
-  const [attendanceForm, setAttendanceForm] = useState({ date: '', class: '', present: 0, absent: 0, late: 0 });
+  const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
+  const [attendanceClass, setAttendanceClass] = useState('');
+  const [attendanceData, setAttendanceData] = useState({});
+  const [showAttendanceDetailModal, setShowAttendanceDetailModal] = useState(false);
+  const [selectedAttendanceRecord, setSelectedAttendanceRecord] = useState(null);
 
   const [grades, setGrades] = useState([
     { id: 1, student: 'Binoj Acharya', subject: 'Mathematics', marks: 85, grade: 'A', remark: 'Excellent' },
@@ -183,28 +225,72 @@ const TeacherDashboard = ({ onLogout }) => {
   const [showGradeModal, setShowGradeModal] = useState(false);
   const [gradeForm, setGradeForm] = useState({ student: '', subject: '', marks: '', grade: '', remark: '' });
 
-  const [announcements, setAnnouncements] = useState([
-    { id: 1, title: 'Mid-term exams', content: 'Exams start from 1st September.', date: '2026-08-16' },
-    { id: 2, title: 'Science fair', content: 'Submit projects by 25th August.', date: '2026-08-15' },
-  ]);
+  const [announcements, setAnnouncements] = useState([]);
+  const [loadingAnnouncements, setLoadingAnnouncements] = useState(false);
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
   const [announcementForm, setAnnouncementForm] = useState({ title: '', content: '', date: '' });
 
-  const handleLogout = () => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
-    if (onLogout) onLogout();
-    navigate('/');
+  const API_URL = 'http://localhost:5000/api';
+
+  useEffect(() => {
+    const fetchAnnouncements = async () => {
+      setLoadingAnnouncements(true);
+      try {
+        const token = localStorage.getItem('token');
+        const res = await axios.get(`${API_URL}/announcements`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setAnnouncements(res.data.data || []);
+      } catch (err) {
+        console.error('Failed to fetch announcements', err);
+      } finally {
+        setLoadingAnnouncements(false);
+      }
+    };
+    fetchAnnouncements();
+  }, []);
+
+  const handleAddAnnouncement = async () => {
+    if (!announcementForm.title || !announcementForm.content) return;
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.post(
+        `${API_URL}/announcements`,
+        {
+          title: announcementForm.title,
+          content: announcementForm.content,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setAnnouncements([res.data.data, ...announcements]);
+      setShowAnnouncementModal(false);
+      setAnnouncementForm({ title: '', content: '', date: '' });
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to create announcement');
+    }
+  };
+
+  const handleDeleteAnnouncement = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this announcement?')) return;
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${API_URL}/announcements/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setAnnouncements(announcements.filter(a => a._id !== id));
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to delete announcement');
+    }
   };
 
   const handleAddSubject = () => {
     if (editingSubject) {
-      setSubjects(subjects.map(s => s.id === editingSubject.id ? { ...s, name: subjectForm.name, chapters: subjectForm.chapters } : s));
+      setSubjects(subjects.map(s => s.id === editingSubject.id ? { ...s, ...subjectForm } : s));
     } else {
-      setSubjects([...subjects, { id: Date.now(), name: subjectForm.name, chapters: subjectForm.chapters }]);
+      setSubjects([...subjects, { id: Date.now(), ...subjectForm }]);
     }
     setShowSubjectModal(false);
-    setSubjectForm({ name: '', chapters: [] });
+    setSubjectForm({ title: '', code: '', class: '', teacher: '', description: '', status: 'Active' });
     setEditingSubject(null);
   };
 
@@ -214,20 +300,134 @@ const TeacherDashboard = ({ onLogout }) => {
 
   const handleEditSubject = (subject) => {
     setEditingSubject(subject);
-    setSubjectForm({ name: subject.name, chapters: [...subject.chapters] });
+    setSubjectForm({
+      title: subject.title,
+      code: subject.code || '',
+      class: subject.class || '',
+      teacher: subject.teacher || '',
+      description: subject.description || '',
+      status: subject.status || 'Active'
+    });
     setShowSubjectModal(true);
   };
 
-  const addChapter = () => {
-    if (newChapter.trim()) {
-      setSubjectForm({ ...subjectForm, chapters: [...subjectForm.chapters, newChapter.trim()] });
-      setNewChapter('');
+  const handleAddQuiz = () => {
+    const hasEmpty = quizForm.questions.some(q => !q.question || q.options.some(o => !o) || !q.correctAnswer);
+    if (hasEmpty) {
+      alert('Please fill all question fields, options, and correct answer');
+      return;
     }
+    if (editingQuiz) {
+      setQuizzes(quizzes.map(q => q.id === editingQuiz.id ? { ...q, ...quizForm } : q));
+    } else {
+      setQuizzes([...quizzes, { id: Date.now(), ...quizForm }]);
+    }
+    setShowQuizModal(false);
+    setQuizForm({
+      title: '',
+      subject: '',
+      deadline: '',
+      timeLimit: 30,
+      published: false,
+      questions: [{ question: '', options: ['', '', '', ''], correctAnswer: '' }]
+    });
+    setEditingQuiz(null);
   };
-  const removeChapter = (index) => {
-    const updated = [...subjectForm.chapters];
-    updated.splice(index, 1);
-    setSubjectForm({ ...subjectForm, chapters: updated });
+
+  const handleDeleteQuiz = (id) => {
+    setQuizzes(quizzes.filter(q => q.id !== id));
+  };
+
+  const handleEditQuiz = (quiz) => {
+    setEditingQuiz(quiz);
+    setQuizForm({
+      title: quiz.title,
+      subject: quiz.subject,
+      deadline: quiz.deadline,
+      timeLimit: quiz.timeLimit,
+      published: quiz.published,
+      questions: quiz.questions || [{ question: '', options: ['', '', '', ''], correctAnswer: '' }]
+    });
+    setShowQuizModal(true);
+  };
+
+  const addQuestionField = () => {
+    setQuizForm({
+      ...quizForm,
+      questions: [
+        ...quizForm.questions,
+        { question: '', options: ['', '', '', ''], correctAnswer: '' }
+      ]
+    });
+  };
+
+  const removeQuestionField = (index) => {
+    const newQuestions = quizForm.questions.filter((_, i) => i !== index);
+    setQuizForm({ ...quizForm, questions: newQuestions });
+  };
+
+  const handleQuestionChange = (index, field, value) => {
+    const newQuestions = [...quizForm.questions];
+    if (field === 'question') {
+      newQuestions[index].question = value;
+    } else if (field === 'correctAnswer') {
+      newQuestions[index].correctAnswer = value;
+    } else if (field.startsWith('option')) {
+      const optIdx = parseInt(field.split('-')[1]);
+      newQuestions[index].options[optIdx] = value;
+    }
+    setQuizForm({ ...quizForm, questions: newQuestions });
+  };
+
+  const handleAddAttendance = () => {
+    const studentsList = STUDENTS.map((name, idx) => ({
+      name,
+      status: attendanceData[idx] || 'absent'
+    }));
+    setAttendanceRecords([
+      ...attendanceRecords,
+      {
+        date: attendanceDate,
+        class: attendanceClass,
+        students: studentsList
+      }
+    ]);
+    setShowAttendanceModal(false);
+    setAttendanceDate(new Date().toISOString().split('T')[0]);
+    setAttendanceClass('');
+    setAttendanceData({});
+  };
+
+  const openAttendanceModal = () => {
+    const initial = {};
+    STUDENTS.forEach((_, idx) => {
+      initial[idx] = 'present';
+    });
+    setAttendanceData(initial);
+    setAttendanceDate(new Date().toISOString().split('T')[0]);
+    setAttendanceClass('');
+    setShowAttendanceModal(true);
+  };
+
+  const viewAttendanceDetails = (record) => {
+    setSelectedAttendanceRecord(record);
+    setShowAttendanceDetailModal(true);
+  };
+
+  const handleOpenHomeworkDetail = (submission) => {
+    setSelectedSubmission(submission);
+    setFeedbackText(submission.feedback || '');
+    setShowHomeworkDetailModal(true);
+  };
+
+  const handleSaveFeedback = () => {
+    setSubmissions(submissions.map(s =>
+      s.id === selectedSubmission.id ? { ...s, feedback: feedbackText } : s
+    ));
+    setShowHomeworkDetailModal(false);
+    setSelectedSubmission(null);
+    setFeedbackText('');
+    alert('Feedback saved!');
   };
 
   const handleFileChange = (e) => {
@@ -296,11 +496,6 @@ const TeacherDashboard = ({ onLogout }) => {
     setShowTaskModal(true);
   };
 
-  const handleOpenHomeworkDetail = (submission) => {
-    setSelectedSubmission(submission);
-    setShowHomeworkDetailModal(true);
-  };
-
   const handleDownloadFile = (filename) => {
     alert(`Downloading file: ${filename} (simulated)`);
   };
@@ -317,33 +512,6 @@ const TeacherDashboard = ({ onLogout }) => {
     setShowReviewModal(true);
   };
 
-  const handleAddQuiz = () => {
-    if (editingQuiz) {
-      setQuizzes(quizzes.map(q => q.id === editingQuiz.id ? { ...q, ...quizForm } : q));
-    } else {
-      setQuizzes([...quizzes, { id: Date.now(), ...quizForm }]);
-    }
-    setShowQuizModal(false);
-    setQuizForm({ title: '', subject: '', deadline: '', timeLimit: 30, published: false, questions: [] });
-    setEditingQuiz(null);
-  };
-
-  const handleDeleteQuiz = (id) => {
-    setQuizzes(quizzes.filter(q => q.id !== id));
-  };
-
-  const handleEditQuiz = (quiz) => {
-    setEditingQuiz(quiz);
-    setQuizForm({ title: quiz.title, subject: quiz.subject, deadline: quiz.deadline, timeLimit: quiz.timeLimit, published: quiz.published, questions: quiz.questions || [] });
-    setShowQuizModal(true);
-  };
-
-  const handleAddAttendance = () => {
-    setAttendanceRecords([...attendanceRecords, { ...attendanceForm }]);
-    setShowAttendanceModal(false);
-    setAttendanceForm({ date: '', class: '', present: 0, absent: 0, late: 0 });
-  };
-
   const handleAddGrade = () => {
     setGrades([...grades, { id: Date.now(), ...gradeForm }]);
     setShowGradeModal(false);
@@ -354,88 +522,94 @@ const TeacherDashboard = ({ onLogout }) => {
     setGrades(grades.filter(g => g.id !== id));
   };
 
-  const handleAddAnnouncement = () => {
-    if (announcementForm.title && announcementForm.content) {
-      setAnnouncements([...announcements, { id: Date.now(), ...announcementForm, date: new Date().toISOString().split('T')[0] }]);
-      setShowAnnouncementModal(false);
-      setAnnouncementForm({ title: '', content: '', date: '' });
+  const renderDashboard = () => {
+    const totalTasks = tasks.length;
+    const totalSubjects = subjects.length;
+    const totalMaterials = materials.length;
+    const totalSubmissions = submissions.length;
+    const upcomingDeadlines = tasks.filter(t => t.status === 'Active').length;
+    
+    let attendanceAvg = 92;
+    if (attendanceRecords.length > 0) {
+      const totalPresent = attendanceRecords.reduce((sum, rec) => {
+        const present = rec.students ? rec.students.filter(s => s.status === 'present').length : 0;
+        const total = rec.students ? rec.students.length : 0;
+        return sum + (total > 0 ? (present / total) * 100 : 0);
+      }, 0);
+      attendanceAvg = Math.round(totalPresent / attendanceRecords.length);
     }
-  };
 
-  const handleDeleteAnnouncement = (id) => {
-    setAnnouncements(announcements.filter(a => a.id !== id));
-  };
-
-  const renderDashboard = () => (
-    <>
-      <div className="mb-8 flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Teacher Dashboard</h1>
-          <p className="text-gray-600 mt-1">Welcome back! Here's your teaching summary.</p>
+    return (
+      <>
+        <div className="mb-8 flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Teacher Dashboard</h1>
+            <p className="text-gray-600 mt-1">Welcome back! Here's your teaching summary.</p>
+          </div>
+          <button
+            onClick={() => { localStorage.removeItem('user'); localStorage.removeItem('token'); if (onLogout) onLogout(); navigate('/'); }}
+            className="flex items-center space-x-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200 font-medium"
+          >
+            <ArrowRightOnRectangleIcon className="h-5 w-5" />
+            <span>Logout</span>
+          </button>
         </div>
-        <button
-          onClick={handleLogout}
-          className="flex items-center space-x-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200 font-medium"
-        >
-          <ArrowRightOnRectangleIcon className="h-5 w-5" />
-          <span>Logout</span>
-        </button>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard icon={ClipboardDocumentIcon} label="Today's Tasks" value="4" color="text-blue-600" bgColor="bg-blue-100" />
-        <StatCard icon={CheckCircleIcon} label="Total Tasks Created" value={tasks.length} color="text-green-600" bgColor="bg-green-100" />
-        <StatCard icon={BookOpenIcon} label="Assigned Subjects" value={subjects.length} color="text-purple-600" bgColor="bg-purple-100" />
-        <StatCard icon={DocumentTextIcon} label="Materials Uploaded" value={materials.length} color="text-yellow-600" bgColor="bg-yellow-100" />
-        <StatCard icon={UserGroupIcon} label="Recent Submissions" value={submissions.filter(s => s.status === 'Submitted' || s.status === 'Late').length} color="text-pink-600" bgColor="bg-pink-100" />
-        <StatCard icon={CheckCircleIcon} label="Total Submissions" value={submissions.length} color="text-indigo-600" bgColor="bg-indigo-100" />
-        <StatCard icon={ClockIcon} label="Upcoming Deadlines" value="3" color="text-red-600" bgColor="bg-red-100" />
-        <StatCard icon={UsersIcon} label="Attendance Summary" value="92%" color="text-orange-600" bgColor="bg-orange-100" />
-      </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatCard icon={ClipboardDocumentIcon} label="Today's Tasks" value={totalTasks} color="text-blue-600" bgColor="bg-blue-100" />
+          <StatCard icon={CheckCircleIcon} label="Total Tasks Created" value={totalTasks} color="text-green-600" bgColor="bg-green-100" />
+          <StatCard icon={BookOpenIcon} label="Assigned Subjects" value={totalSubjects} color="text-purple-600" bgColor="bg-purple-100" />
+          <StatCard icon={DocumentTextIcon} label="Materials Uploaded" value={totalMaterials} color="text-yellow-600" bgColor="bg-yellow-100" />
+          <StatCard icon={UserGroupIcon} label="Homework Submissions" value={totalSubmissions} color="text-pink-600" bgColor="bg-pink-100" />
+          <StatCard icon={CheckCircleIcon} label="Total Submissions" value={totalSubmissions} color="text-indigo-600" bgColor="bg-indigo-100" />
+          <StatCard icon={ClockIcon} label="Upcoming Deadlines" value={upcomingDeadlines} color="text-red-600" bgColor="bg-red-100" />
+          <StatCard icon={UsersIcon} label="Attendance Summary" value={`${attendanceAvg}%`} color="text-orange-600" bgColor="bg-orange-100" />
+        </div>
 
-      <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Activities</h2>
-          <div className="space-y-4">
-            {recentActivities.map((activity, index) => (
-              <div key={index} className="border-b border-gray-100 pb-3 last:border-0 last:pb-0">
-                <p className="text-sm text-gray-800">{activity.message}</p>
-                <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
-              </div>
-            ))}
+        <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Activities</h2>
+            <div className="space-y-4">
+              {recentActivities.map((activity, index) => (
+                <div key={index} className="border-b border-gray-100 pb-3 last:border-0 last:pb-0">
+                  <p className="text-sm text-gray-800">{activity.message}</p>
+                  <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <button onClick={() => setActiveTab('subjects')} className="p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors text-blue-700">
+                <BookOpenIcon className="h-6 w-6 mx-auto mb-2" />
+                <span className="text-sm font-medium">Create Subject</span>
+              </button>
+              <button onClick={() => setActiveTab('materials')} className="p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors text-blue-700">
+                <DocumentTextIcon className="h-6 w-6 mx-auto mb-2" />
+                <span className="text-sm font-medium">Upload Material</span>
+              </button>
+              <button onClick={() => setActiveTab('tasks')} className="p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors text-blue-700">
+                <ClipboardDocumentIcon className="h-6 w-6 mx-auto mb-2" />
+                <span className="text-sm font-medium">Create Task</span>
+              </button>
+              <button onClick={() => { setActiveTab('attendance'); openAttendanceModal(); }} className="p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors text-blue-700">
+                <UserGroupIcon className="h-6 w-6 mx-auto mb-2" />
+                <span className="text-sm font-medium">Take Attendance</span>
+              </button>
+            </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <button onClick={() => setActiveTab('subjects')} className="p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors text-blue-700">
-              <BookOpenIcon className="h-6 w-6 mx-auto mb-2" />
-              <span className="text-sm font-medium">Create Subject</span>
-            </button>
-            <button onClick={() => setActiveTab('materials')} className="p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors text-green-700">
-              <DocumentTextIcon className="h-6 w-6 mx-auto mb-2" />
-              <span className="text-sm font-medium">Upload Material</span>
-            </button>
-            <button onClick={() => setActiveTab('tasks')} className="p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors text-purple-700">
-              <ClipboardDocumentIcon className="h-6 w-6 mx-auto mb-2" />
-              <span className="text-sm font-medium">Create Task</span>
-            </button>
-            <button onClick={() => setActiveTab('attendance')} className="p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors text-orange-700">
-              <UserGroupIcon className="h-6 w-6 mx-auto mb-2" />
-              <span className="text-sm font-medium">Take Attendance</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </>
-  );
+      </>
+    );
+  };
 
   const renderSubjects = () => (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-800">Subject Management</h2>
         <button
-          onClick={() => { setEditingSubject(null); setSubjectForm({ name: '', chapters: [] }); setShowSubjectModal(true); }}
+          onClick={() => { setEditingSubject(null); setSubjectForm({ title: '', code: '', class: '', teacher: '', description: '', status: 'Active' }); setShowSubjectModal(true); }}
           className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
           <PlusIcon className="h-5 w-5" />
@@ -443,63 +617,70 @@ const TeacherDashboard = ({ onLogout }) => {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {subjects.map((subject) => (
-          <div key={subject.id} className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-            <div className="flex justify-between items-start">
-              <h3 className="text-xl font-semibold text-gray-800">{subject.name}</h3>
-              <div className="flex space-x-2">
-                <button onClick={() => handleEditSubject(subject)} className="text-blue-500 hover:text-blue-700">
-                  <PencilIcon className="h-5 w-5" />
-                </button>
-                <button onClick={() => handleDeleteSubject(subject.id)} className="text-red-500 hover:text-red-700">
-                  <TrashIcon className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
-            <div className="mt-3">
-              <p className="text-sm text-gray-500 mb-1">Chapters:</p>
-              <ul className="list-disc list-inside space-y-1">
-                {subject.chapters.map((ch, idx) => (
-                  <li key={idx} className="text-gray-700">{ch}</li>
-                ))}
-                {subject.chapters.length === 0 && <li className="text-gray-400 italic">No chapters added</li>}
-              </ul>
-            </div>
-          </div>
-        ))}
-        {subjects.length === 0 && (
-          <div className="col-span-2 text-center py-12 text-gray-400">No subjects yet. Click "Add Subject" to create one.</div>
-        )}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Code</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Class</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Teacher</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {subjects.map((subject) => (
+              <tr key={subject.id} className="border-t">
+                <td className="px-6 py-4 text-sm">{subject.code || '—'}</td>
+                <td className="px-6 py-4 text-sm font-medium">{subject.title}</td>
+                <td className="px-6 py-4 text-sm">{subject.class ? `Class ${subject.class}` : '—'}</td>
+                <td className="px-6 py-4 text-sm">{subject.teacher || 'Not Assigned'}</td>
+                <td className="px-6 py-4 text-sm">
+                  <span className={`px-2 py-1 rounded-full text-xs ${subject.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                    {subject.status || 'Active'}
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-right space-x-2">
+                  <button onClick={() => handleEditSubject(subject)} className="text-blue-500 hover:text-blue-700">
+                    <PencilIcon className="h-5 w-5 inline" />
+                  </button>
+                  <button onClick={() => handleDeleteSubject(subject.id)} className="text-red-500 hover:text-red-700">
+                    <TrashIcon className="h-5 w-5 inline" />
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {subjects.length === 0 && (
+              <tr><td colSpan="6" className="p-4 text-center text-gray-400">No subjects yet.</td></tr>
+            )}
+          </tbody>
+        </table>
       </div>
 
-      <Modal isOpen={showSubjectModal} onClose={() => setShowSubjectModal(false)} title={editingSubject ? 'Edit Subject' : 'Add Subject'}>
-        <Input label="Subject Name" value={subjectForm.name} onChange={(e) => setSubjectForm({ ...subjectForm, name: e.target.value })} />
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Chapters</label>
-          <div className="flex space-x-2">
-            <input
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
-              value={newChapter}
-              onChange={(e) => setNewChapter(e.target.value)}
-              placeholder="Chapter name"
-            />
-            <button onClick={addChapter} className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">Add</button>
-          </div>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {subjectForm.chapters.map((ch, idx) => (
-              <span key={idx} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full flex items-center text-sm">
-                {ch}
-                <button onClick={() => removeChapter(idx)} className="ml-2 text-red-500 hover:text-red-700">
-                  <XMarkIcon className="h-4 w-4" />
-                </button>
-              </span>
-            ))}
-          </div>
-        </div>
-        <button onClick={handleAddSubject} className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-          {editingSubject ? 'Update Subject' : 'Create Subject'}
-        </button>
+      <Modal isOpen={showSubjectModal} onClose={() => setShowSubjectModal(false)} title={editingSubject ? 'Edit Subject' : 'Create New Subject'}>
+        <form onSubmit={(e) => { e.preventDefault(); handleAddSubject(); }} className="space-y-4">
+          <Input label="Subject Title *" value={subjectForm.title} onChange={(e) => setSubjectForm({ ...subjectForm, title: e.target.value })} required />
+          <Input label="Subject Code" value={subjectForm.code} onChange={(e) => setSubjectForm({ ...subjectForm, code: e.target.value })} placeholder="e.g., MATH101" />
+          <Select
+            label="Class *"
+            options={[1,2,3,4,5,6,7,8,9,10,11,12].map(n => ({ value: n, label: `Class ${n}` }))}
+            value={subjectForm.class}
+            onChange={(e) => setSubjectForm({ ...subjectForm, class: e.target.value })}
+            required
+          />
+          <Input label="Assign Teacher" value={subjectForm.teacher} onChange={(e) => setSubjectForm({ ...subjectForm, teacher: e.target.value })} placeholder="Teacher name" />
+          <Textarea label="Description" value={subjectForm.description} onChange={(e) => setSubjectForm({ ...subjectForm, description: e.target.value })} placeholder="Enter subject description" />
+          <Select
+            label="Status"
+            options={[{ value: 'Active', label: 'Active' }, { value: 'Inactive', label: 'Inactive' }]}
+            value={subjectForm.status}
+            onChange={(e) => setSubjectForm({ ...subjectForm, status: e.target.value })}
+          />
+          <button type="submit" className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            {editingSubject ? 'Update Subject' : 'Create Subject'}
+          </button>
+        </form>
       </Modal>
     </div>
   );
@@ -510,7 +691,7 @@ const TeacherDashboard = ({ onLogout }) => {
         <h2 className="text-2xl font-bold text-gray-800">Learning Materials</h2>
         <button
           onClick={() => setShowMaterialModal(true)}
-          className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
           <ArrowUpTrayIcon className="h-5 w-5" />
           <span>Upload Material</span>
@@ -577,7 +758,7 @@ const TeacherDashboard = ({ onLogout }) => {
         />
         <Select
           label="Subject"
-          options={subjects.map(s => ({ value: s.name, label: s.name }))}
+          options={subjects.map(s => ({ value: s.title, label: s.title }))}
           value={materialForm.subject}
           onChange={(e) => setMaterialForm({ ...materialForm, subject: e.target.value })}
         />
@@ -589,7 +770,7 @@ const TeacherDashboard = ({ onLogout }) => {
             <span>{materialFile.name} ({(materialFile.size / (1024 * 1024)).toFixed(2)} MB)</span>
           </div>
         )}
-        <button onClick={handleAddMaterial} className="w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Upload</button>
+        <button onClick={handleAddMaterial} className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Upload</button>
       </Modal>
 
       <Modal isOpen={showMaterialPreviewModal} onClose={() => setShowMaterialPreviewModal(false)} title="Material Preview">
@@ -624,7 +805,7 @@ const TeacherDashboard = ({ onLogout }) => {
         <h2 className="text-2xl font-bold text-gray-800">Tasks & Assignments</h2>
         <button
           onClick={() => { setEditingTask(null); setTaskForm({ title: '', subject: '', deadline: '', description: '', status: 'Active' }); setShowTaskModal(true); }}
-          className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
           <PlusIcon className="h-5 w-5" />
           <span>Create Task</span>
@@ -665,13 +846,13 @@ const TeacherDashboard = ({ onLogout }) => {
         <Input label="Task Title" value={taskForm.title} onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })} />
         <Select
           label="Subject"
-          options={subjects.map(s => ({ value: s.name, label: s.name }))}
+          options={subjects.map(s => ({ value: s.title, label: s.title }))}
           value={taskForm.subject}
           onChange={(e) => setTaskForm({ ...taskForm, subject: e.target.value })}
         />
         <Input label="Deadline" type="date" value={taskForm.deadline} onChange={(e) => setTaskForm({ ...taskForm, deadline: e.target.value })} />
         <Textarea label="Description" value={taskForm.description} onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })} />
-        <button onClick={handleAddTask} className="w-full py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+        <button onClick={handleAddTask} className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
           {editingTask ? 'Update Task' : 'Create Task'}
         </button>
       </Modal>
@@ -734,11 +915,7 @@ const TeacherDashboard = ({ onLogout }) => {
               <div><span className="font-medium">Subject:</span> {selectedSubmission.subject}</div>
               <div><span className="font-medium">Submitted:</span> {selectedSubmission.submitted}</div>
               <div><span className="font-medium">Status:</span>
-                <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
-                  selectedSubmission.status === 'Submitted' ? 'bg-green-100 text-green-800' :
-                  selectedSubmission.status === 'Late' ? 'bg-red-100 text-red-800' :
-                  'bg-yellow-100 text-yellow-800'
-                }`}>
+                <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${selectedSubmission.status === 'Submitted' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                   {selectedSubmission.status}
                 </span>
               </div>
@@ -748,9 +925,18 @@ const TeacherDashboard = ({ onLogout }) => {
                 </button>
               </div>
             </div>
-            <div className="flex justify-end mt-4">
+            <Textarea
+              label="Feedback"
+              value={feedbackText}
+              onChange={(e) => setFeedbackText(e.target.value)}
+              placeholder="Write your feedback here..."
+            />
+            <div className="flex justify-end space-x-2">
               <button onClick={() => setShowHomeworkDetailModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-                Close
+                Cancel
+              </button>
+              <button onClick={handleSaveFeedback} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                Save Feedback
               </button>
             </div>
           </div>
@@ -798,7 +984,7 @@ const TeacherDashboard = ({ onLogout }) => {
 
       <Modal isOpen={showReviewModal} onClose={() => setShowReviewModal(false)} title="Provide Feedback">
         <Textarea label="Feedback" value={reviewForm.feedback} onChange={(e) => setReviewForm({ ...reviewForm, feedback: e.target.value })} />
-        <button onClick={handleReviewSubmit} className="w-full py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Submit Review</button>
+        <button onClick={handleReviewSubmit} className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Submit Review</button>
       </Modal>
     </div>
   );
@@ -808,8 +994,8 @@ const TeacherDashboard = ({ onLogout }) => {
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-800">Quizzes</h2>
         <button
-          onClick={() => { setEditingQuiz(null); setQuizForm({ title: '', subject: '', deadline: '', timeLimit: 30, published: false, questions: [] }); setShowQuizModal(true); }}
-          className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+          onClick={() => { setEditingQuiz(null); setQuizForm({ title: '', subject: '', deadline: '', timeLimit: 30, published: false, questions: [{ question: '', options: ['', '', '', ''], correctAnswer: '' }] }); setShowQuizModal(true); }}
+          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
           <PlusIcon className="h-5 w-5" />
           <span>Create Quiz</span>
@@ -829,6 +1015,7 @@ const TeacherDashboard = ({ onLogout }) => {
               </span>
             </div>
             <p className="mt-2 text-sm text-gray-600">Deadline: {quiz.deadline} | Time Limit: {quiz.timeLimit} min</p>
+            <p className="text-sm text-gray-500">Questions: {quiz.questions ? quiz.questions.length : 0}</p>
             <div className="mt-4 flex space-x-2">
               <button onClick={() => handleEditQuiz(quiz)} className="text-blue-500 hover:text-blue-700">
                 <PencilIcon className="h-5 w-5" />
@@ -843,22 +1030,56 @@ const TeacherDashboard = ({ onLogout }) => {
       </div>
 
       <Modal isOpen={showQuizModal} onClose={() => setShowQuizModal(false)} title={editingQuiz ? 'Edit Quiz' : 'Create New Quiz'}>
-        <Input label="Quiz Title" value={quizForm.title} onChange={(e) => setQuizForm({ ...quizForm, title: e.target.value })} />
-        <Select
-          label="Subject"
-          options={subjects.map(s => ({ value: s.name, label: s.name }))}
-          value={quizForm.subject}
-          onChange={(e) => setQuizForm({ ...quizForm, subject: e.target.value })}
-        />
-        <Input label="Deadline" type="date" value={quizForm.deadline} onChange={(e) => setQuizForm({ ...quizForm, deadline: e.target.value })} />
-        <Input label="Time Limit (minutes)" type="number" value={quizForm.timeLimit} onChange={(e) => setQuizForm({ ...quizForm, timeLimit: parseInt(e.target.value) })} />
-        <div className="mb-4 flex items-center">
-          <input type="checkbox" checked={quizForm.published} onChange={(e) => setQuizForm({ ...quizForm, published: e.target.checked })} className="mr-2" />
-          <label className="text-sm text-gray-700">Publish immediately</label>
-        </div>
-        <button onClick={handleAddQuiz} className="w-full py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
-          {editingQuiz ? 'Update Quiz' : 'Create Quiz'}
-        </button>
+        <form onSubmit={(e) => { e.preventDefault(); handleAddQuiz(); }} className="space-y-4">
+          <Input label="Quiz Title" value={quizForm.title} onChange={(e) => setQuizForm({ ...quizForm, title: e.target.value })} required />
+          <Select
+            label="Subject"
+            options={subjects.map(s => ({ value: s.title, label: s.title }))}
+            value={quizForm.subject}
+            onChange={(e) => setQuizForm({ ...quizForm, subject: e.target.value })}
+            required
+          />
+          <Input label="Deadline" type="date" value={quizForm.deadline} onChange={(e) => setQuizForm({ ...quizForm, deadline: e.target.value })} />
+          <Input label="Time Limit (minutes)" type="number" value={quizForm.timeLimit} onChange={(e) => setQuizForm({ ...quizForm, timeLimit: parseInt(e.target.value) })} />
+          <div className="mb-4 flex items-center">
+            <input type="checkbox" checked={quizForm.published} onChange={(e) => setQuizForm({ ...quizForm, published: e.target.checked })} className="mr-2" />
+            <label className="text-sm text-gray-700">Publish immediately</label>
+          </div>
+
+          <div className="border-t pt-4">
+            <h4 className="font-medium mb-2">Questions</h4>
+            {quizForm.questions.map((q, idx) => (
+              <div key={idx} className="border p-3 rounded mb-3 bg-gray-50">
+                <div className="flex justify-between">
+                  <span className="font-medium">Q{idx+1}</span>
+                  {quizForm.questions.length > 1 && (
+                    <button type="button" onClick={() => removeQuestionField(idx)} className="text-red-500">
+                      <TrashIcon className="h-5 w-5" />
+                    </button>
+                  )}
+                </div>
+                <Input label="Question" value={q.question} onChange={(e) => handleQuestionChange(idx, 'question', e.target.value)} required />
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  {q.options.map((opt, oi) => (
+                    <Input key={oi} label={`Option ${oi+1}`} value={opt} onChange={(e) => handleQuestionChange(idx, `option-${oi}`, e.target.value)} required />
+                  ))}
+                </div>
+                <Select
+                  label="Correct Answer"
+                  options={q.options.map((opt, oi) => ({ value: opt, label: opt || `Option ${oi+1}` }))}
+                  value={q.correctAnswer}
+                  onChange={(e) => handleQuestionChange(idx, 'correctAnswer', e.target.value)}
+                  required
+                />
+              </div>
+            ))}
+            <button type="button" onClick={addQuestionField} className="text-blue-600 hover:underline">+ Add Question</button>
+          </div>
+
+          <button type="submit" className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            {editingQuiz ? 'Update Quiz' : 'Create Quiz'}
+          </button>
+        </form>
       </Modal>
     </div>
   );
@@ -868,8 +1089,8 @@ const TeacherDashboard = ({ onLogout }) => {
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-800">Attendance Management</h2>
         <button
-          onClick={() => setShowAttendanceModal(true)}
-          className="flex items-center space-x-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
+          onClick={openAttendanceModal}
+          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
           <PlusIcon className="h-5 w-5" />
           <span>Take Attendance</span>
@@ -884,31 +1105,91 @@ const TeacherDashboard = ({ onLogout }) => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Class</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Present</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Absent</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Late</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Details</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {attendanceRecords.map((record, idx) => (
-              <tr key={idx}>
-                <td className="px-6 py-4 text-sm text-gray-800">{record.date}</td>
-                <td className="px-6 py-4 text-sm text-gray-600">{record.class}</td>
-                <td className="px-6 py-4 text-sm text-green-600 font-medium">{record.present}</td>
-                <td className="px-6 py-4 text-sm text-red-600 font-medium">{record.absent}</td>
-                <td className="px-6 py-4 text-sm text-yellow-600 font-medium">{record.late}</td>
-              </tr>
-            ))}
-            {attendanceRecords.length === 0 && <tr><td colSpan="5" className="px-6 py-4 text-center text-gray-400">No attendance records.</td></tr>}
+            {attendanceRecords.map((record, idx) => {
+              const presentCount = record.students.filter(s => s.status === 'present').length;
+              const absentCount = record.students.filter(s => s.status === 'absent').length;
+              const total = record.students.length;
+              return (
+                <tr key={idx}>
+                  <td className="px-6 py-4 text-sm text-gray-800">{record.date}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{record.class}</td>
+                  <td className="px-6 py-4 text-sm text-green-600 font-medium">{presentCount}</td>
+                  <td className="px-6 py-4 text-sm text-red-600 font-medium">{absentCount}</td>
+                  <td className="px-6 py-4 text-sm">{total}</td>
+                  <td className="px-6 py-4 text-right">
+                    <button
+                      onClick={() => viewAttendanceDetails(record)}
+                      className="text-blue-500 hover:text-blue-700"
+                    >
+                      <EyeIcon className="h-5 w-5 inline" />
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+            {attendanceRecords.length === 0 && <tr><td colSpan="6" className="px-6 py-4 text-center text-gray-400">No attendance records.</td></tr>}
           </tbody>
         </table>
       </div>
 
       <Modal isOpen={showAttendanceModal} onClose={() => setShowAttendanceModal(false)} title="Take Attendance">
-        <Input label="Date" type="date" value={attendanceForm.date} onChange={(e) => setAttendanceForm({ ...attendanceForm, date: e.target.value })} />
-        <Input label="Class" value={attendanceForm.class} onChange={(e) => setAttendanceForm({ ...attendanceForm, class: e.target.value })} />
-        <Input label="Present" type="number" value={attendanceForm.present} onChange={(e) => setAttendanceForm({ ...attendanceForm, present: parseInt(e.target.value) })} />
-        <Input label="Absent" type="number" value={attendanceForm.absent} onChange={(e) => setAttendanceForm({ ...attendanceForm, absent: parseInt(e.target.value) })} />
-        <Input label="Late" type="number" value={attendanceForm.late} onChange={(e) => setAttendanceForm({ ...attendanceForm, late: parseInt(e.target.value) })} />
-        <button onClick={handleAddAttendance} className="w-full py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">Save Attendance</button>
+        <form onSubmit={(e) => { e.preventDefault(); handleAddAttendance(); }} className="space-y-4">
+          <Input label="Date" type="date" value={attendanceDate} onChange={(e) => setAttendanceDate(e.target.value)} required />
+          <Input label="Class" value={attendanceClass} onChange={(e) => setAttendanceClass(e.target.value)} required />
+
+          {STUDENTS.length === 0 ? (
+            <div>No students found</div>
+          ) : (
+            <div className="max-h-60 overflow-y-auto border rounded p-2">
+              {STUDENTS.map((name, idx) => (
+                <div key={idx} className="flex items-center space-x-2 border-b py-1">
+                  <input
+                    type="checkbox"
+                    checked={attendanceData[idx] === 'present'}
+                    onChange={(e) => setAttendanceData({ ...attendanceData, [idx]: e.target.checked ? 'present' : 'absent' })}
+                  />
+                  <span>{name}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <button type="submit" className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Save Attendance</button>
+        </form>
+      </Modal>
+
+      <Modal
+        isOpen={showAttendanceDetailModal}
+        onClose={() => setShowAttendanceDetailModal(false)}
+        title={`Attendance Details - ${selectedAttendanceRecord?.date} (${selectedAttendanceRecord?.class})`}
+      >
+        {selectedAttendanceRecord && (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <p><strong>Date:</strong> {selectedAttendanceRecord.date}</p>
+              <p><strong>Class:</strong> {selectedAttendanceRecord.class}</p>
+            </div>
+            <div className="border-t pt-3">
+              <p className="font-medium mb-2">Students</p>
+              <div className="max-h-60 overflow-y-auto">
+                {selectedAttendanceRecord.students.map((student, idx) => (
+                  <div key={idx} className="flex justify-between items-center border-b py-1">
+                    <span>{student.name}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-xs ${
+                      student.status === 'present' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {student.status === 'present' ? 'Present' : 'Absent'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );
@@ -919,7 +1200,7 @@ const TeacherDashboard = ({ onLogout }) => {
         <h2 className="text-2xl font-bold text-gray-800">Grades & Results</h2>
         <button
           onClick={() => setShowGradeModal(true)}
-          className="flex items-center space-x-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700"
+          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
           <PlusIcon className="h-5 w-5" />
           <span>Add Grade</span>
@@ -969,14 +1250,14 @@ const TeacherDashboard = ({ onLogout }) => {
         />
         <Select
           label="Subject"
-          options={subjects.map(s => ({ value: s.name, label: s.name }))}
+          options={subjects.map(s => ({ value: s.title, label: s.title }))}
           value={gradeForm.subject}
           onChange={(e) => setGradeForm({ ...gradeForm, subject: e.target.value })}
         />
         <Input label="Marks" type="number" value={gradeForm.marks} onChange={(e) => setGradeForm({ ...gradeForm, marks: e.target.value })} />
         <Input label="Grade" value={gradeForm.grade} onChange={(e) => setGradeForm({ ...gradeForm, grade: e.target.value })} />
         <Input label="Remark" value={gradeForm.remark} onChange={(e) => setGradeForm({ ...gradeForm, remark: e.target.value })} />
-        <button onClick={handleAddGrade} className="w-full py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">Add Grade</button>
+        <button onClick={handleAddGrade} className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Add Grade</button>
       </Modal>
     </div>
   );
@@ -987,44 +1268,80 @@ const TeacherDashboard = ({ onLogout }) => {
         <h2 className="text-2xl font-bold text-gray-800">Announcements</h2>
         <button
           onClick={() => setShowAnnouncementModal(true)}
-          className="flex items-center space-x-2 px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700"
+          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
           <MegaphoneIcon className="h-5 w-5" />
           <span>Post Announcement</span>
         </button>
       </div>
 
-      <div className="space-y-4">
-        {announcements.map((ann) => (
-          <div key={ann.id} className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800">{ann.title}</h3>
-                <p className="text-sm text-gray-500">{ann.date}</p>
+      {loadingAnnouncements ? (
+        <div className="text-center py-8 text-gray-500">Loading announcements...</div>
+      ) : (
+        <div className="space-y-4">
+          {announcements.length === 0 ? (
+            <div className="text-center py-12 text-gray-400">No announcements.</div>
+          ) : (
+            announcements.map((ann) => (
+              <div key={ann._id} className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-800">{ann.title}</h3>
+                    <p className="text-sm text-gray-500">
+                      {new Date(ann.createdAt).toLocaleDateString()}
+                    </p>
+                    <span
+                      className={`inline-block mt-1 text-xs px-2 py-0.5 rounded-full ${
+                        ann.createdByRole === 'ADMIN'
+                          ? 'bg-purple-100 text-purple-800'
+                          : 'bg-blue-100 text-blue-800'
+                      }`}
+                    >
+                      {ann.createdByRole === 'ADMIN' ? '📢 Admin' : '👩‍🏫 Teacher'}
+                    </span>
+                  </div>
+                  {(userRole === 'ADMIN' || ann.createdBy === userId) && (
+                    <button
+                      onClick={() => handleDeleteAnnouncement(ann._id)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <TrashIcon className="h-5 w-5" />
+                    </button>
+                  )}
+                </div>
+                <p className="mt-2 text-gray-700">{ann.content}</p>
               </div>
-              <button onClick={() => handleDeleteAnnouncement(ann.id)} className="text-red-500 hover:text-red-700">
-                <TrashIcon className="h-5 w-5" />
-              </button>
-            </div>
-            <p className="mt-2 text-gray-700">{ann.content}</p>
-          </div>
-        ))}
-        {announcements.length === 0 && <div className="text-center py-12 text-gray-400">No announcements.</div>}
-      </div>
+            ))
+          )}
+        </div>
+      )}
 
       <Modal isOpen={showAnnouncementModal} onClose={() => setShowAnnouncementModal(false)} title="Post Announcement">
-        <Input label="Title" value={announcementForm.title} onChange={(e) => setAnnouncementForm({ ...announcementForm, title: e.target.value })} />
-        <Textarea label="Content" value={announcementForm.content} onChange={(e) => setAnnouncementForm({ ...announcementForm, content: e.target.value })} />
-        <button onClick={handleAddAnnouncement} className="w-full py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700">Post</button>
+        <Input
+          label="Title"
+          value={announcementForm.title}
+          onChange={(e) => setAnnouncementForm({ ...announcementForm, title: e.target.value })}
+        />
+        <Textarea
+          label="Content"
+          value={announcementForm.content}
+          onChange={(e) => setAnnouncementForm({ ...announcementForm, content: e.target.value })}
+        />
+        <button
+          onClick={handleAddAnnouncement}
+          className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          Post
+        </button>
       </Modal>
     </div>
   );
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <TeacherSidebar 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
+      <TeacherSidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
         userEmail={userEmail}
         userName={userName}
       />
