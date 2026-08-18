@@ -53,37 +53,29 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    console.log('\n📨 Login request body:', req.body);
+    console.log('Login request body:', req.body);
 
     const { email, password } = req.body;
 
     if (!email || !password) {
-      console.log('Email or password missing!');
       return res.status(400).json({ message: 'Email and password are required.' });
     }
 
     const user = await User.findOne({ email }).select('+password');
 
     if (!user) {
-      console.log('User not found for email:', email);
       return res.status(400).json({ message: 'Invalid credentials.' });
     }
 
-    console.log('User found:', user.email);
-    console.log('Stored hash:', user.password);
-
     const isMatch = await bcrypt.compare(password, user.password);
-    console.log('Password match?', isMatch);
 
     if (!isMatch) {
-      console.log('Password does NOT match');
       return res.status(400).json({ message: 'Invalid credentials.' });
     }
 
     const token = generateToken(user);
     const normalizedRole = normalizeRole(user.role);
 
-    console.log('Login successful for:', user.email);
     res.json({
       message: 'Login successful.',
       user: {
@@ -95,15 +87,16 @@ exports.login = async (req, res) => {
       accessToken: token,
     });
   } catch (error) {
-    console.error('Login error (catch):', error);
+    console.error('Login error:', error);
     res.status(500).json({ message: 'Server error during login.' });
   }
 };
 
-// ============ SEND RESET OTP (with email) ============
 exports.sendResetOTP = async (req, res) => {
   try {
     const { email } = req.body;
+    console.log('Sending OTP to:', email);
+
     if (!email) {
       return res.status(400).json({ message: 'Email is required.' });
     }
@@ -113,13 +106,13 @@ exports.sendResetOTP = async (req, res) => {
       return res.status(404).json({ message: 'User not found with this email.' });
     }
 
-    // Generate 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log('Generated OTP:', otp);
+
     user.resetOTP = otp;
-    user.resetOTPExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
+    user.resetOTPExpiry = Date.now() + 10 * 60 * 1000;
     await user.save();
 
-    // Send email with OTP
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; background: #f9f9f9; border-radius: 10px;">
         <h2 style="color: #2563eb;">SchoolLink Password Reset</h2>
@@ -132,13 +125,15 @@ exports.sendResetOTP = async (req, res) => {
       </div>
     `;
 
+    console.log('Attempting to send email...');
     const emailSent = await sendEmail(email, 'SchoolLink Password Reset OTP', html);
 
     if (!emailSent) {
-      return res.status(500).json({ message: 'Failed to send OTP email.' });
+      console.log('Email sending failed.');
+      return res.status(500).json({ message: 'Failed to send OTP email. Please check your email configuration.' });
     }
 
-    console.log(`OTP for ${email}: ${otp}`); // keep for debugging
+    console.log('Email sent successfully.');
     res.json({ message: 'OTP sent to your email.' });
   } catch (error) {
     console.error('Send OTP error:', error);
@@ -146,7 +141,6 @@ exports.sendResetOTP = async (req, res) => {
   }
 };
 
-// ============ RESET PASSWORD WITH OTP ============
 exports.resetPassword = async (req, res) => {
   try {
     const { email, otp, newPassword } = req.body;
@@ -160,7 +154,6 @@ exports.resetPassword = async (req, res) => {
       return res.status(404).json({ message: 'User not found.' });
     }
 
-    // Verify OTP
     if (user.resetOTP !== otp) {
       return res.status(400).json({ message: 'Invalid OTP.' });
     }
@@ -169,11 +162,9 @@ exports.resetPassword = async (req, res) => {
       return res.status(400).json({ message: 'OTP has expired. Please request a new one.' });
     }
 
-    // Hash the new password before saving
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(newPassword, salt);
 
-    // Clear OTP fields
     user.resetOTP = null;
     user.resetOTPExpiry = null;
     await user.save();
