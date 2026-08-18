@@ -133,6 +133,15 @@ try {
   console.warn('Announcement routes not found:', err.message);
 }
 
+// NEW: Student Dashboard routes (for student-specific APIs)
+try {
+  const studentDashboardRoutes = require('./src/routes/studentDashboardRoutes');
+  app.use('/api/student-dashboard', studentDashboardRoutes);
+  console.log('Student Dashboard routes loaded');
+} catch (err) {
+  console.warn('Student Dashboard routes not found:', err.message);
+}
+
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,
@@ -168,4 +177,5 @@ server.listen(PORT, () => {
   console.log(`Teacher API: http://localhost:${PORT}/api/teacher`);
   console.log(`Admin Teacher API: http://localhost:${PORT}/api/admin/teachers`);
   console.log(`Admin Subject API: http://localhost:${PORT}/api/admin/subjects`);
+  console.log(`Student Dashboard API: http://localhost:${PORT}/api/student-dashboard`);
 });
