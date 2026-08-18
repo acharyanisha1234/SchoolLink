@@ -35,7 +35,6 @@ const upload = multer({
   storage: storage,
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
   fileFilter: (req, file, cb) => {
-    // Accept any file type for now
     cb(null, true);
   }
 });
@@ -80,13 +79,13 @@ const createAdminIfNotExists = async () => {
   }
 };
 
-// Auth routes
+// ✅ Auth routes (already registered)
 try {
   const authRoutes = require('./src/routes/auth');
   app.use('/api/auth', authRoutes);
-  console.log('Auth routes loaded');
+  console.log('✅ Auth routes loaded');
 } catch (err) {
-  console.warn('Auth routes not found:', err.message);
+  console.warn('⚠️ Auth routes not found:', err.message);
 }
 
 // Student routes
@@ -169,5 +168,4 @@ server.listen(PORT, () => {
   console.log(`Teacher API: http://localhost:${PORT}/api/teacher`);
   console.log(`Admin Teacher API: http://localhost:${PORT}/api/admin/teachers`);
   console.log(`Admin Subject API: http://localhost:${PORT}/api/admin/subjects`);
-
 });
